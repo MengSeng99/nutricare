@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:nutricare/mainscreen.dart';
+import 'package:nutricare/navigation_bar.dart';
 import 'signup.dart'; // Import the signup page
 import 'authentication.dart'; // Import the authentication service
 

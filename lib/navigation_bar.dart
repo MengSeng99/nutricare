@@ -57,7 +57,7 @@ class _MainScreenState extends State<MainScreen> {
         unselectedItemColor: Colors.grey,
         backgroundColor: Colors.white,
         onTap: _onItemTapped,
-        showUnselectedLabels: true, // Show labels for unselected items
+        // showUnselectedLabels: true, // Show labels for unselected items
       ),
     );
   }
