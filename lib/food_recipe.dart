@@ -30,14 +30,14 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                "Make your own food, stay healthy!",
-                style: TextStyle(
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              padding: EdgeInsets.all(12.0),
+              // child: Text(
+              //   "Make your own food, stay healthy!",
+              //   style: TextStyle(
+              //     fontSize: 24.0,
+              //     fontWeight: FontWeight.bold,
+              //   ),
+              // ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -148,8 +148,8 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(15.0),
-                  topRight: Radius.circular(15.0),
+                  topLeft: Radius.circular(10.0),
+                  topRight: Radius.circular(10.0),
                 ),
                 child: Image.asset(
                   // 'images/recipe_${index + 1}.jpg', // Placeholder image for each recipe

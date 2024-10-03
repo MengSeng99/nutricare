@@ -166,7 +166,7 @@ class HomeScreen extends StatelessWidget {
               );
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: _buildConsultationBox(
                 _consultations[index]['image'],
                 _consultations[index]['title'],
