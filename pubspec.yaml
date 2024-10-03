@@ -1,0 +1,45 @@
+name: nutricare
+description: "A new Flutter project."
+publish_to: 'none' 
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_launcher_icons: ^0.10.0
+  google_fonts: ^6.2.1
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  assets:
+    - images/recovery.png
+    - images/Logo-1x1.jpeg
+    - images/Logo-rounded.png
+    - images/appointment.png
+    - images/BMI Tracker.png
+    - images/counseling.png
+    - images/nutritionist.png
+    - images/online-consultation.png
+    - images/nutritionist-2.png
+    - images/dietitian.png
+    - images/health-record.png
+    - images/health-record-2.png  
+    - images/bmi.png
+    - images/recipe_image.jpg
+    - images/food_category/breakfast.png
+    - images/food_category/lunch.png
+    - images/food_category/dinner.png
+    - images/food_category/snack.png
+  uses-material-design: true
