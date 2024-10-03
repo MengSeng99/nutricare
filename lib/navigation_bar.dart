@@ -44,8 +44,8 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Diets', // Add text label "Diets"
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle),
-            label: 'Activity', // Add text label "Activity"
+            icon: Icon(Icons.calendar_month),
+            label: 'Schedule', // Add text label "Activity"
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.more_horiz),
@@ -57,7 +57,7 @@ class _MainScreenState extends State<MainScreen> {
         unselectedItemColor: Colors.grey,
         backgroundColor: Colors.white,
         onTap: _onItemTapped,
-        // showUnselectedLabels: true, // Show labels for unselected items
+        //showUnselectedLabels: true, // Show labels for unselected items
       ),
     );
   }

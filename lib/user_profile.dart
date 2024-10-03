@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:nutricare/change_password.dart';
 import 'login.dart';
+import 'edit_profile.dart'; // Import the EditProfileScreen
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -21,15 +23,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     _fetchUserProfile();
   }
 
-  // Fetch user profile from Firestore based on current user's UID
   Future<void> _fetchUserProfile() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Retrieve the email from the Firebase Auth user
         final userEmail = user.email ?? 'guest@example.com';
-
-        // Retrieve the user's document from Firestore to get the username
         final userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
         if (userData.exists && userData.data() != null) {
@@ -60,95 +58,114 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         backgroundColor: const Color.fromARGB(255, 90, 113, 243),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          // Edit Profile Button
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator()) // Show loading indicator while fetching data
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Profile Picture
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: CircleAvatar(
-                      radius: 60.0,
-                      backgroundImage: const AssetImage('images/nutritionist.png'), // Placeholder image
-                      backgroundColor: Colors.grey[200],
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Profile Picture
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: CircleAvatar(
+                        radius: 60.0,
+                        backgroundImage: const AssetImage('images/nutritionist.png'), // Placeholder image
+                        backgroundColor: Colors.grey[200],
+                      ),
                     ),
-                  ),
 
-                  // User Name
-                  Text(
-                    _username,
-                    style: const TextStyle(
-                      fontSize: 24.0,
-                      fontWeight: FontWeight.bold,
+                    // User Name
+                    Text(
+                      _username,
+                      style: const TextStyle(
+                        fontSize: 28.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 90, 113, 243),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 8.0),
 
-                  // Email Address
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
+                    // Email Address
+                    Text(
                       _email,
                       style: TextStyle(
                         fontSize: 16.0,
                         color: Colors.grey[600],
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 20.0),
 
-                  const Divider(height: 30, thickness: 1),
+                    // Change Password Button
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(vertical: 10.0),
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        icon: const Icon(Icons.lock_outline, color: Colors.white),
+                        label: const Text(
+                          "Change Password",
+                          style: TextStyle(color: Colors.white, fontSize: 16.0),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
+                          );
+                        },
+                      ),
+                    ),
 
-                  // Profile Options
-                  ListTile(
-                    leading: const Icon(Icons.person_outline, color: Color.fromARGB(255, 90, 113, 243)),
-                    title: const Text("Edit Profile"),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // Navigate to edit profile page
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.lock_outline, color: Color.fromARGB(255, 90, 113, 243)),
-                    title: const Text("Change Password"),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // Navigate to change password page
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.notifications_outlined, color: Color.fromARGB(255, 90, 113, 243)),
-                    title: const Text("Notification Settings"),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // Navigate to notification settings page
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.help_outline, color: Color.fromARGB(255, 90, 113, 243)),
-                    title: const Text("Help & Support"),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // Navigate to help and support page
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.logout, color: Colors.red), // Logout icon in red color
-                    title: const Text("Logout"),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // Handle logout action and navigate to Login page
-                      FirebaseAuth.instance.signOut().then((value) {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => const LoginPage()),
-                          (Route<dynamic> route) => false,
-                        );
-                      });
-                    },
-                  ),
-                ],
+                    // Logout Button
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(vertical: 10.0),
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        icon: const Icon(Icons.logout, color: Colors.red),
+                        label: const Text(
+                          "Logout",
+                          style: TextStyle(color: Colors.red, fontSize: 16.0),
+                        ),
+                        onPressed: () {
+                          FirebaseAuth.instance.signOut().then((value) {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LoginPage()),
+                              (Route<dynamic> route) => false,
+                            );
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
     );
