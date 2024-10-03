@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'login.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -101,7 +102,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
                   // Profile Options
                   ListTile(
-                    leading: const Icon(Icons.person_outline),
+                    leading: const Icon(Icons.person_outline, color: Color.fromARGB(255, 90, 113, 243)),
                     title: const Text("Edit Profile"),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () {
@@ -109,7 +110,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.lock_outline),
+                    leading: const Icon(Icons.lock_outline, color: Color.fromARGB(255, 90, 113, 243)),
                     title: const Text("Change Password"),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () {
@@ -117,7 +118,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.notifications_outlined),
+                    leading: const Icon(Icons.notifications_outlined, color: Color.fromARGB(255, 90, 113, 243)),
                     title: const Text("Notification Settings"),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () {
@@ -125,7 +126,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.help_outline),
+                    leading: const Icon(Icons.help_outline, color: Color.fromARGB(255, 90, 113, 243)),
                     title: const Text("Help & Support"),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () {
@@ -133,13 +134,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.logout),
+                    leading: const Icon(Icons.logout, color: Colors.red), // Logout icon in red color
                     title: const Text("Logout"),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () {
-                      // Handle logout action
+                      // Handle logout action and navigate to Login page
                       FirebaseAuth.instance.signOut().then((value) {
-                        Navigator.of(context).pop(); // Close the profile page
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginPage()),
+                          (Route<dynamic> route) => false,
+                        );
                       });
                     },
                   ),
