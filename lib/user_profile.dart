@@ -15,6 +15,7 @@ class UserProfileScreen extends StatefulWidget {
 class _UserProfileScreenState extends State<UserProfileScreen> {
   String _username = 'Guest';
   String _email = 'guest@example.com';
+  String? _profilePicUrl; // Add a variable to store the profile picture URL
   bool _isLoading = true;
 
   @override
@@ -34,6 +35,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           setState(() {
             _username = userData['name'] ?? 'Guest';
             _email = userEmail;
+            _profilePicUrl = userData['profile_pic']; // Fetch and store the profile picture URL
             _isLoading = false;
           });
         }
@@ -42,6 +44,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       setState(() {
         _username = 'Guest';
         _email = 'guest@example.com';
+        _profilePicUrl = null;
         _isLoading = false;
       });
     }
@@ -52,7 +55,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "User Profile",
+          "Your Profile",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color.fromARGB(255, 90, 113, 243),
@@ -62,11 +65,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           // Edit Profile Button
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              // Navigate to the EditProfileScreen and wait for the result
+              final updatedUsername = await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const EditProfileScreen()),
               );
+
+              // If the result is not null, update the username state
+              if (updatedUsername != null && updatedUsername is String) {
+                setState(() {
+                  _username = updatedUsername;
+                });
+              }
             },
           ),
         ],
@@ -79,12 +90,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Profile Picture
+                    // Profile Picture with the fetched profile_pic URL
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: CircleAvatar(
                         radius: 60.0,
-                        backgroundImage: const AssetImage('images/nutritionist.png'), // Placeholder image
+                        backgroundImage: _profilePicUrl != null
+                            ? NetworkImage(_profilePicUrl!) // Use the fetched profile picture URL
+                            : const AssetImage('') as ImageProvider, // Placeholder image
                         backgroundColor: Colors.grey[200],
                       ),
                     ),
