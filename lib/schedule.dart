@@ -17,7 +17,7 @@ class ActivityScreen extends StatelessWidget {
       //   iconTheme: const IconThemeData(color: Colors.white),
       // ),
       body: Center(
-        child: Text('Welcome to the Activity Screen!'),
+        child: Text('Welcome to the Schedule Screen!'),
       ),
     );
   }

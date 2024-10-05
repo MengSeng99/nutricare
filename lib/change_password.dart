@@ -11,6 +11,7 @@ class ChangePasswordScreen extends StatelessWidget {
     final userEmail = FirebaseAuth.instance.currentUser?.email ?? 'guest@example.com';
 
     return Scaffold(
+      backgroundColor: Colors.white, // Set the background color to white
       appBar: AppBar(
         title: const Text(
           "Change Password",
@@ -57,11 +58,11 @@ class ChangePasswordScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.grey.withOpacity(0.7),
                     spreadRadius: 2,
                     blurRadius: 5,
                     offset: const Offset(0, 3),
@@ -88,7 +89,7 @@ class ChangePasswordScreen extends StatelessWidget {
                 backgroundColor: const Color.fromARGB(255, 90, 113, 243), // Blue background
                 padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 15.0),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(30),
                 ),
               ),
               child: const Text(
@@ -122,7 +123,7 @@ class ChangePasswordScreen extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color.fromARGB(255, 90, 113, 243), // Blue background
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(30),
                           ),
                         ),
                         onPressed: () async {

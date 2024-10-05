@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'specialist_details.dart';
+
 class Specialist {
   final String name;
   final String specialization;
@@ -38,14 +40,14 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
   // Sample data for specialists
   final List<Specialist> specialists = [
     Specialist(
-      name: 'Dr. John Doe',
+      name: 'John Doe',
       specialization: 'Nutritionist',
       organization: 'HealthCare Inc.',
       earliestTimeSlot: '10:00 AM',
       profilePictureUrl: 'https://hips.hearstapps.com/hmg-prod/images/portrait-of-a-happy-young-doctor-in-his-clinic-royalty-free-image-1661432441.jpg',
     ),
     Specialist(
-      name: 'Dr. Jane Smith',
+      name: 'Jane Smith',
       specialization: 'Dietitian',
       organization: 'Wellness Center',
       earliestTimeSlot: '11:00 AM',
@@ -243,7 +245,7 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
             leading: CircleAvatar(
               backgroundImage: NetworkImage(specialist.profilePictureUrl),
             ),
-            title: Text(specialist.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text("Dr. ${specialist.name}", style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -272,6 +274,14 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                 );
               },
             ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SpecialistDetailsScreen(specialist: specialist),
+                ),
+              );
+            },
           ),
         );
       },
@@ -285,7 +295,7 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
       appBar: AppBar(
         title: Text(
           widget.title,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color.fromARGB(255, 90, 113, 243),
         elevation: 0,
@@ -308,7 +318,7 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                           hintText: 'Search $placeholder',
                           prefixIcon: const Icon(Icons.search),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
+                            borderRadius: BorderRadius.circular(30),
                           ),
                           filled: true,
                           fillColor: Colors.white, // White background for search field

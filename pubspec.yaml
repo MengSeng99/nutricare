@@ -18,6 +18,8 @@ dependencies:
   cloud_firestore: ^5.4.3
   image_picker: ^1.1.2
   firebase_storage: ^12.3.2
+  intl: ^0.19.0
+  table_calendar: ^3.1.2
 
 dev_dependencies:
   flutter_test:
@@ -45,4 +47,5 @@ flutter:
     - images/food_category/dinner.png
     - images/food_category/snack.png
     - images/user_profile/forgot_password.png
+    - images/user_profile/default_profile.png
   uses-material-design: true

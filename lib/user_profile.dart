@@ -25,34 +25,43 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _fetchUserProfile() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final userEmail = user.email ?? 'guest@example.com';
-        final userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final userEmail = user.email ?? 'guest@example.com';
+      final userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
-        if (userData.exists && userData.data() != null) {
-          setState(() {
-            _username = userData['name'] ?? 'Guest';
-            _email = userEmail;
-            _profilePicUrl = userData['profile_pic']; // Fetch and store the profile picture URL
-            _isLoading = false;
-          });
-        }
+      if (userData.exists && userData.data() != null) {
+        setState(() {
+          _username = userData['name'] ?? 'Guest';
+          _email = userEmail;
+          _profilePicUrl = userData.data()?.containsKey('profile_pic') == true ? userData['profile_pic'] : null;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _username = 'Guest';
+          _email = 'guest@example.com';
+          _profilePicUrl = null;
+          _isLoading = false;
+        });
       }
-    } catch (e) {
-      setState(() {
-        _username = 'Guest';
-        _email = 'guest@example.com';
-        _profilePicUrl = null;
-        _isLoading = false;
-      });
     }
+  } catch (e) {
+    setState(() {
+      _username = 'Guest';
+      _email = 'guest@example.com';
+      _profilePicUrl = null;
+      _isLoading = false;
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           "Your Profile",
@@ -67,15 +76,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () async {
               // Navigate to the EditProfileScreen and wait for the result
-              final updatedUsername = await Navigator.push(
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const EditProfileScreen()),
               );
 
-              // If the result is not null, update the username state
-              if (updatedUsername != null && updatedUsername is String) {
+              // If the result is not null, update the username and profile_pic URL
+              if (result != null && result is Map<String, dynamic>) {
                 setState(() {
-                  _username = updatedUsername;
+                  _username = result['username'] ?? _username;
+                  _profilePicUrl = result['profile_pic'] ?? _profilePicUrl;
                 });
               }
             },
@@ -97,7 +107,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         radius: 60.0,
                         backgroundImage: _profilePicUrl != null
                             ? NetworkImage(_profilePicUrl!) // Use the fetched profile picture URL
-                            : const AssetImage('') as ImageProvider, // Placeholder image
+                            : const AssetImage('images/user_profile/default_profile.png') as ImageProvider, // Placeholder image
                         backgroundColor: Colors.grey[200],
                       ),
                     ),
@@ -158,7 +168,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           side: const BorderSide(color: Colors.red),
                           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(30),
                           ),
                         ),
                         icon: const Icon(Icons.logout, color: Colors.red),

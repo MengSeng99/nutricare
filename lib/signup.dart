@@ -16,6 +16,7 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   final AuthenticationService _authService = AuthenticationService();
+  final _formKey = GlobalKey<FormState>(); // Create a GlobalKey for the Form widget
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
   bool _isHovered = false;
@@ -33,182 +34,204 @@ class _SignupPageState extends State<SignupPage> {
         children: [
           SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 40),
-                Image.asset(
-                  'images/recovery.png',
-                  width: 200,
-                  height: 200,
-                ),
-                const SizedBox(height: 20),
-                const Padding(
-                  padding: EdgeInsets.all(2),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Join NutriCare Today!',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 90, 113, 243),
+            child: Form(
+              key: _formKey, // Attach the form key to the Form widget
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 40),
+                  Image.asset(
+                    'images/recovery.png',
+                    width: 200,
+                    height: 200,
+                  ),
+                  const SizedBox(height: 20),
+                  const Padding(
+                    padding: EdgeInsets.all(2),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Join NutriCare Today!',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(255, 90, 113, 243),
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Name TextField
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Name',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    prefixIcon: const Icon(Icons.person),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Email TextField
-                TextField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    prefixIcon: const Icon(Icons.email),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Password TextField
-                TextField(
-                  controller: _passwordController,
-                  obscureText: !_passwordVisible,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    prefixIcon: const Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _passwordVisible ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _passwordVisible = !_passwordVisible;
-                        });
-                      },
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                // Confirm Password TextField
-                TextField(
-                  controller: _confirmPasswordController,
-                  obscureText: !_confirmPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    prefixIcon: const Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _confirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _confirmPasswordVisible = !_confirmPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Modern Signup Button
-                GestureDetector(
-                  onTap: () async {
-                    // Validate inputs
-                    if (_nameController.text.isEmpty || 
-                        _emailController.text.isEmpty || 
-                        _passwordController.text.isEmpty || 
-                        _confirmPasswordController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please fill in all fields.')),
-                      );
-                      return;
-                    }
-
-                    if (_passwordController.text != _confirmPasswordController.text) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Passwords do not match.')),
-                      );
-                      return;
-                    }
-
-                    try {
-                      User? user = await _authService.createUserWithEmail(
-                        _emailController.text.trim(),
-                        _passwordController.text.trim(),
-                        _nameController.text.trim(), // Add the missing argument
-                      );
-
-                      if (user != null) {
-                        // Save user details to Firestore
-                        await _authService.saveUserDetails(
-                          _nameController.text.trim(),
-                          _emailController.text.trim(),
-                        );
-
-                        // If signup is successful, navigate to the Login page
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Signup successful! Please log in.')),
-                        );
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const LoginPage()),
-                        );
-                      }
-                    } catch (e) {
-                      // Catching any exceptions from Firestore save operation
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString())), // Display the error
-                      );
-                    }
-                  },
-                  child: MouseRegion(
-                    onEnter: (_) => setState(() => _isHovered = true),
-                    onExit: (_) => setState(() => _isHovered = false),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      decoration: BoxDecoration(
-                        color: _isHovered ? Colors.blueAccent : const Color.fromARGB(255, 90, 113, 243),
+                  const SizedBox(height: 20),
+                  // Name TextFormField
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Name',
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                      child: const Text(
-                        'Sign Up',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      prefixIcon: const Icon(Icons.person),
+                    ),
+                    // Validator for name field
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your name.';
+                      }
+                      return null; // No error
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  // Email TextFormField
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      prefixIcon: const Icon(Icons.email),
+                    ),
+                    // Validator for email field
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email.';
+                      } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                        return 'Please enter a valid email address.';
+                      }
+                      return null; // No error
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  // Password TextFormField
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: !_passwordVisible,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _passwordVisible = !_passwordVisible;
+                          });
+                        },
+                      ),
+                    ),
+                    // Validator for password field
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your password.';
+                      } else if (value.length < 6) {
+                        return 'Password must be at least 6 characters long.';
+                      }
+                      return null; // No error
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  // Confirm Password TextFormField
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: !_confirmPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _confirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _confirmPasswordVisible = !_confirmPasswordVisible;
+                          });
+                        },
+                      ),
+                    ),
+                    // Validator for confirm password field
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please confirm your password.';
+                      } else if (value != _passwordController.text) {
+                        return 'Passwords do not match.';
+                      }
+                      return null; // No error
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  // Modern Signup Button
+                  GestureDetector(
+                    onTap: () async {
+                      // Validate the form before attempting signup
+                      if (_formKey.currentState!.validate()) {
+                        try {
+                          User? user = await _authService.createUserWithEmail(
+                            _emailController.text.trim(),
+                            _passwordController.text.trim(),
+                            _nameController.text.trim(),
+                          );
+
+                          if (user != null) {
+                            // Save user details to Firestore
+                            await _authService.saveUserDetails(
+                              _nameController.text.trim(),
+                              _emailController.text.trim(),
+                            );
+
+                            // If signup is successful, navigate to the Login page
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Signup successful! Please log in.')),
+                            );
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LoginPage()),
+                            );
+                          }
+                        } catch (e) {
+                          // Catching any exceptions from Firestore save operation
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(e.toString())), // Display the error
+                          );
+                        }
+                      }
+                    },
+                    child: MouseRegion(
+                      onEnter: (_) => setState(() => _isHovered = true),
+                      onExit: (_) => setState(() => _isHovered = false),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          color: _isHovered ? Colors.blueAccent : const Color.fromARGB(255, 90, 113, 243),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        child: const Text(
+                          'Sign Up',
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LoginPage()),
-                    );
-                  },
-                  child: const Text('Already have an account? Log In'),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginPage()),
+                      );
+                    },
+                    child: const Text('Already have an account? Log In'),
+                  ),
+                ],
+              ),
             ),
           ),
           Positioned(

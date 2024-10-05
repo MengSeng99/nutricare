@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  const EditProfileScreen({Key? key}) : super(key: key);
 
   @override
   _EditProfileScreenState createState() => _EditProfileScreenState();
@@ -13,33 +14,35 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _usernameController = TextEditingController();
-  File? _profileImage;
   String? _profilePicUrl;
-  bool _isLoading = true;
+  bool _isLoading = false;
+  File? _image;
 
   @override
   void initState() {
     super.initState();
-    _fetchCurrentUser();
+    _loadUserProfile();
   }
 
-  Future<void> _fetchCurrentUser() async {
+  Future<void> _loadUserProfile() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-
-        if (userData.exists && userData.data() != null) {
+        if (userData.exists) {
           setState(() {
-            _usernameController.text = userData['name'] ?? 'Guest';
+            _usernameController.text = userData['name'] ?? '';
             _profilePicUrl = userData['profile_pic'];
-            _isLoading = false;
           });
         }
       }
     } catch (e) {
+      print('Failed to load user data: $e');
+    } finally {
       setState(() {
-        _usernameController.text = 'Guest';
         _isLoading = false;
       });
     }
@@ -49,26 +52,71 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
-        _profileImage = File(pickedFile.path);
-        _profilePicUrl = null; // Reset profile pic URL when picking a new image
+        _image = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String?> _uploadImage(File imageFile) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final storageRef = FirebaseStorage.instance.ref().child('user_profiles/${user.uid}.jpg');
+        await storageRef.putFile(imageFile);
+        return await storageRef.getDownloadURL();
+      }
+    } catch (e) {
+      print('Image upload failed: $e');
+    }
+    return null;
+  }
+
+  Future<void> _saveProfile() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Upload the new profile picture if a new image is selected
+        if (_image != null) {
+          _profilePicUrl = await _uploadImage(_image!);
+        }
+
+        // Update the user's profile information in Firestore
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+          'name': _usernameController.text,
+          'profile_pic': _profilePicUrl,
+        });
+
+        // Navigate back to the UserProfileScreen with the updated data
+        Navigator.pop(context, {'username': _usernameController.text, 'profile_pic': _profilePicUrl});
+
+        // Show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
+      }
+    } catch (e) {
+      print('Failed to update profile: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update profile. Please try again.')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
       });
     }
   }
 
   @override
-  void dispose() {
-    _usernameController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          "Edit Profile",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Edit Profile', 
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
         backgroundColor: const Color.fromARGB(255, 90, 113, 243),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -76,101 +124,60 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Profile Image Picker with larger size
-                  GestureDetector(
-                    onTap: _pickImage,
-                    child: Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        CircleAvatar(
-                          radius: 80, // Increased size for profile image
-                          backgroundImage: _profileImage != null
-                              ? FileImage(_profileImage!)
-                              : _profilePicUrl != null
-                                  ? NetworkImage(_profilePicUrl!) as ImageProvider
-                                  : null,
-                          backgroundColor: Colors.grey[200],
-                          child: (_profileImage == null && _profilePicUrl == null)
-                              ? const Icon(
-                                  Icons.person,
-                                  size: 80,
-                                  color: Colors.grey,
-                                )
-                              : null,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    // Profile Picture
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 100.0,
+                        backgroundImage: _image != null
+                            ? FileImage(_image!)
+                            : (_profilePicUrl != null
+                                ? NetworkImage(_profilePicUrl!)
+                                : const AssetImage('images/user_profile/default_profile.png')) as ImageProvider,
+                        child: _image == null && _profilePicUrl == null
+                            ? const Icon(Icons.camera_alt, size: 40.0, color: Colors.grey)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 20.0),
+
+                    // Username Text Field
+                    TextField(
+                      controller: _usernameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Username',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(10)),
                         ),
-                        Positioned(
-                          bottom: 8,
-                          right: 8,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.blueAccent,
-                            ),
-                            child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 20.0),
+
+                    // Save Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  // Modern Username TextField
-                  TextField(
-                    controller: _usernameController,
-                    style: const TextStyle(fontSize: 18),
-                    decoration: InputDecoration(
-                      labelText: 'Username',
-                      labelStyle: const TextStyle(fontSize: 16, color: Colors.grey),
-                      prefixIcon: const Icon(Icons.person, color: Colors.blueAccent),
-                      filled: true,
-                      fillColor: Colors.grey[200],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.0),
-                        borderSide: BorderSide.none,
+                        icon: const Icon(Icons.save, color: Colors.white),
+                        label: const Text(
+                          "Save",
+                          style: TextStyle(color: Colors.white, fontSize: 16.0),
+                        ),
+                        onPressed: _saveProfile,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  // Save Button with modern styling
-                  ElevatedButton(
-                    onPressed: () async {
-                      final user = FirebaseAuth.instance.currentUser;
-                      if (user != null) {
-                        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-                          'name': _usernameController.text,
-                          // If a new profile image is picked, upload to storage and update the profile_pic field.
-                        });
-                      }
-
-                      Navigator.pop(context, _usernameController.text);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Profile updated successfully!')),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'Save',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
     );

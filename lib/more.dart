@@ -2,7 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:nutricare/bmi_tracker.dart';
+import 'package:nutricare/bmi_features/bmi_tracker.dart';
 import 'package:nutricare/health_record.dart';
 import 'package:nutricare/user_profile.dart';
 
@@ -25,26 +25,27 @@ class _MoreScreenState extends State<MoreScreen> {
   }
 
   Future<void> _fetchUserName() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-        if (userData.exists && userData.data() != null) {
-          setState(() {
-            _username = userData['name'] ?? 'Guest';
-            _profilePicUrl = userData['profile_pic']; // Fetch and store the profile picture URL
-            _isLoading = false;
-          });
-        }
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (userData.exists && userData.data() != null) {
+        setState(() {
+          _username = userData['name'] ?? 'Guest'; // Use 'Guest' as default if 'name' is null
+          _profilePicUrl = userData.data()?.containsKey('profile_pic') == true ? userData['profile_pic'] : null; // Set profilePicUrl if it exists
+          _isLoading = false;
+        });
       }
-    } catch (e) {
-      setState(() {
-        _username = 'Guest';
-        _profilePicUrl = null;
-        _isLoading = false;
-      });
     }
+  } catch (e) {
+    setState(() {
+      _username = 'Guest';
+      _profilePicUrl = null;
+      _isLoading = false;
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +70,7 @@ class _MoreScreenState extends State<MoreScreen> {
                   children: [
                     // User Profile Box
                     Container(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(30.0),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(15),
@@ -86,13 +87,13 @@ class _MoreScreenState extends State<MoreScreen> {
                         children: [
                           // User Icon
                           CircleAvatar(
-                            radius: 36,
+                            radius: 40,
                             backgroundImage: _profilePicUrl != null
                                 ? NetworkImage(_profilePicUrl!)
-                                : const AssetImage('assets/default_profile.png') as ImageProvider,
+                                : const AssetImage('images/user_profile/default_profile.png') as ImageProvider,
                             backgroundColor: Colors.grey[200],
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 56),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,10 +102,10 @@ class _MoreScreenState extends State<MoreScreen> {
                                   _username,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 18,
+                                    fontSize: 20,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 5),
                                 ElevatedButton(
                                   onPressed: () async {
                                     final updatedProfileData = await Navigator.push(
@@ -126,7 +127,7 @@ class _MoreScreenState extends State<MoreScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color.fromARGB(255, 90, 113, 243),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(5),
+                                      borderRadius: BorderRadius.circular(30),
                                     ),
                                   ),
                                   child: const Text(
@@ -140,7 +141,7 @@ class _MoreScreenState extends State<MoreScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 30), // Space between sections
+                    const SizedBox(height: 15), // Space between sections
 
                     // My Health Data Section
                     const Text(
@@ -206,7 +207,7 @@ class _MoreScreenState extends State<MoreScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 30), // Space between sections
+                    const SizedBox(height: 15), // Space between sections
 
                     // BMI Tracker Section
                     const Text(

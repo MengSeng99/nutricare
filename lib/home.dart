@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 // import 'package:nutricare/diets.dart';
 import 'package:nutricare/food_recipe.dart';
 import 'virtual_consultation.dart';
-import 'booking_appointment.dart';
-import 'bmi_tracker.dart';
+import 'specialist_lists.dart';
+import 'bmi_features/bmi_tracker.dart';
 import 'health_record.dart';
 
 class HomeScreen extends StatelessWidget {

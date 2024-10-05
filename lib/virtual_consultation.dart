@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'booking_appointment.dart';
+import 'specialist_lists.dart';
 
 class VirtualConsultationScreen extends StatelessWidget {
   const VirtualConsultationScreen({super.key});
