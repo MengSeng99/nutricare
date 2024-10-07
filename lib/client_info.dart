@@ -21,11 +21,112 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
   String? phoneNumber;
 
   @override
+  void initState() {
+    super.initState();
+    // Show the dialog when the screen loads.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showInfoDialog();
+    });
+  }
+
+  void _showInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                    Image.asset(
+                      'images/health-record-3.png',
+                      height: 150,
+                      width: 150,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "Your personal details are important for us",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    _buildDialogSubtitle(
+                      title: "Get Verified",
+                      description:
+                          "Your personal details will be verified by our Specialist during consultation.",
+                    ),
+                    const SizedBox(height: 10),
+                    _buildDialogSubtitle(
+                      title: "Maintain accurate Medical records",
+                      description:
+                          "We collect your personal details to ensure that you get accurate medical certificates and seamless service, matching with your identity proof.",
+                    ),
+                    const SizedBox(height: 30),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 40),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text(
+                        "Got it",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDialogSubtitle({required String title, required String description}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          description,
+          style: const TextStyle(fontSize: 14, color: Colors.grey),
+        ),
+      ],
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Client Information", 
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text("Your Information",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color.fromARGB(255, 90, 113, 243),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
