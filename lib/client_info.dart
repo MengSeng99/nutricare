@@ -19,11 +19,12 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
   DateTime? dateOfBirth;
   String? gender;
   String? phoneNumber;
+  String? reasonForAppointment;
+  String? customReason;
 
   @override
   void initState() {
     super.initState();
-    // Show the dialog when the screen loads.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInfoDialog();
     });
@@ -153,6 +154,12 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
                 _buildGenderField(),
                 const SizedBox(height: 16),
                 _buildPhoneNumberField(),
+                const SizedBox(height: 16),
+                _buildReasonForAppointmentField(),
+                if (reasonForAppointment == "Other") ...[
+                  const SizedBox(height: 16),
+                  _buildCustomReasonField(),
+                ],
                 const SizedBox(height: 30),
                 _buildSubmitButton(),
               ],
@@ -280,6 +287,52 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
     );
   }
 
+  Widget _buildReasonForAppointmentField() {
+    return DropdownButtonFormField<String>(
+      decoration: InputDecoration(
+        labelText: "Reason for Appointment",
+        prefixIcon: const Icon(Icons.question_answer),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+      ),
+      items: <String>['General Consultation', 'Nutrition Advice', 'Follow-up', 'Other']
+          .map((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          reasonForAppointment = value;
+          if (value != "Other") customReason = null;
+        });
+      },
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please select a reason for your appointment';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildCustomReasonField() {
+    return TextFormField(
+      decoration: InputDecoration(
+        labelText: "Custom Reason",
+        prefixIcon: const Icon(Icons.edit),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please specify your reason';
+        }
+        return null;
+      },
+      onSaved: (value) => customReason = value,
+    );
+  }
+
   Widget _buildSubmitButton() {
     return Center(
       child: ElevatedButton(
@@ -289,7 +342,7 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                    'Information submitted: NRIC: $nric, Name: $fullName, DOB: ${dateOfBirth.toString()}, Gender: $gender, Phone: $phoneNumber'),
+                    'Information submitted: NRIC: $nric, Name: $fullName, DOB: ${dateOfBirth.toString()}, Gender: $gender, Phone: $phoneNumber, Reason: ${customReason ?? reasonForAppointment}'),
               ),
             );
           }

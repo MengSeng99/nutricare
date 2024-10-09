@@ -6,32 +6,32 @@ class DietsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   automaticallyImplyLeading: false, // Remove the back arrow button
-      //   title: const Text(
-      //     'Diet Tracker',
-      //     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-      //   ),
-      //   backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-      //   elevation: 0,
-      //   iconTheme: const IconThemeData(color: Colors.white),
-      // ),
+      appBar: AppBar(
+        automaticallyImplyLeading: false, // Remove the back arrow button
+        title: const Text(
+          'Diet Tracker',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header section
-            const Text(
-              'Track Your Diet Routine',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Log your meals and monitor your daily calorie intake to achieve your nutrition goals.',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
+            // // Header section
+            // const Text(
+            //   'Track Your Diet Routine',
+            //   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            // ),
+            // const SizedBox(height: 10),
+            // const Text(
+            //   'Log your meals and monitor your daily calorie intake to achieve your nutrition goals.',
+            //   style: TextStyle(fontSize: 16, color: Colors.grey),
+            // ),
+            // const SizedBox(height: 20),
 
             // List of tracked meals for the day
             Expanded(
@@ -57,7 +57,7 @@ class DietsScreen extends StatelessWidget {
                     _showAddMealDialog(context);
                   },
                   icon: const Icon(Icons.add, color: Colors.white),
-                  label: const Text('Add Meal'),
+                  label: const Text('Add Meal', style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 90, 113, 243),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -69,7 +69,7 @@ class DietsScreen extends StatelessWidget {
                     _showSetReminderDialog(context);
                   },
                   icon: const Icon(Icons.alarm, color: Colors.white),
-                  label: const Text('Set Reminder'),
+                  label: const Text('Set Reminder', style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 90, 113, 243),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
