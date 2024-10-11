@@ -114,13 +114,13 @@ class HomeScreen extends StatelessWidget {
                     width: 65,
                     height: 65,
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 90, 113, 243), // Blue background
+                      color: const Color.fromARGB(255, 255, 255, 255), // Blue background
                       borderRadius: BorderRadius.circular(15), // Rounded corners for a modern look
                       border: Border.all(color: Colors.grey[300]!), // Light grey border
                     ),
                     child: Icon(
                       _services[index]['icon'],
-                      color: Colors.white, // White icon color
+                      color: const Color.fromARGB(255, 90, 113, 243), // White icon color
                       size: 36,
                     ),
                   ),
@@ -229,25 +229,31 @@ class HomeScreen extends StatelessWidget {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Text(
                 'Loading...',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
               );
             } else if (snapshot.hasError) {
               return const Text(
                 'Error',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color.fromARGB(255, 243, 90, 90), fontWeight: FontWeight.bold),
               );
             } else {
               return Text(
                 snapshot.data ?? 'Hello',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
               );
             }
           },
         ),
-        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
         automaticallyImplyLeading: false,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0.5,
+            color: Color.fromARGB(255, 220, 220, 241),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(

@@ -51,15 +51,15 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
           children: [
             // Recipe Image
             Container(
-              height: 250.0,
+              height: 300.0,
               decoration: const BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage('images/recipe_image.jpg'),
                   fit: BoxFit.cover,
                 ),
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(20.0),
-                  bottomRight: Radius.circular(20.0),
+                  bottomLeft: Radius.circular(10.0),
+                  bottomRight: Radius.circular(10.0),
                 ),
               ),
             ),

@@ -317,11 +317,28 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search $placeholder',
                           prefixIcon: const Icon(Icons.search),
+                          fillColor: const Color.fromARGB(255, 250, 250, 250).withOpacity(0.5), // Set background color to white with 80% opacity
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(20.0),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 221, 222, 226), 
+                              width: 1.0, 
+                            ),
                           ),
-                          filled: true,
-                          fillColor: Colors.white, // White background for search field
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20.0),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 221, 222, 226), 
+                              width: 1.5, 
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20.0),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 90, 113, 243), 
+                              width: 2.0, 
+                            ),
+                          ),
                         ),
                       ),
                     ),

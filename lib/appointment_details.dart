@@ -10,13 +10,13 @@ class AppointmentDetailsScreen extends StatelessWidget {
   final String imageUrl = 'https://hips.hearstapps.com/hmg-prod/images/portrait-of-a-happy-young-doctor-in-his-clinic-royalty-free-image-1661432441.jpg';
 
   const AppointmentDetailsScreen({
-    Key? key,
+    super.key,
     required this.date,
     required this.time,
     required this.nutritionistName,
     required this.status,
     required this.description,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

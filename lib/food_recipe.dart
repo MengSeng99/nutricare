@@ -45,10 +45,31 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                 decoration: InputDecoration(
                   hintText: "Search any recipe",
                   prefixIcon: const Icon(Icons.search),
+                  filled: true, // Enable background color
+                  fillColor: const Color.fromARGB(255, 250, 250, 250).withOpacity(0.5), // Set background color to white with 80% opacity
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20.0),
+                    borderSide: const BorderSide(
+                      color: Color.fromARGB(255, 221, 222, 226), 
+                      width: 1.0, 
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                    borderSide: const BorderSide(
+                      color: Color.fromARGB(255, 221, 222, 226), 
+                      width: 1.5, 
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                    borderSide: const BorderSide(
+                      color: Color.fromARGB(255, 90, 113, 243), 
+                      width: 2.0, 
+                    ),
                   ),
                 ),
+                style: const TextStyle(color: Color.fromARGB(255, 74, 60, 137)),
               ),
             ),
             // Category Chips
@@ -88,7 +109,7 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                 childAspectRatio: 0.8,
               ),
               padding: const EdgeInsets.all(16.0),
-              itemCount: 4, // Number of recipes
+              itemCount: 6, // Number of recipes
               itemBuilder: (context, index) {
                 return _buildRecipeCard(context, index);
               },
@@ -141,15 +162,15 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
         );
       },
       child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(10.0),
-                  topRight: Radius.circular(10.0),
+                  topLeft: Radius.circular(5.0),
+                  topRight: Radius.circular(5.0),
                 ),
                 child: Image.asset(
                   // 'images/recipe_${index + 1}.jpg', // Placeholder image for each recipe

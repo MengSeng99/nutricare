@@ -4,6 +4,8 @@ class ChatScreen extends StatelessWidget {
   final String specialistName = "Dr. John Doe"; // Example specialist name
   final String specialistImageUrl = 'https://hips.hearstapps.com/hmg-prod/images/portrait-of-a-happy-young-doctor-in-his-clinic-royalty-free-image-1661432441.jpg';
 
+  const ChatScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,7 +61,7 @@ class ChatBubble extends StatelessWidget {
   final bool isSentByUser;
   final String message;
 
-  const ChatBubble({required this.isSentByUser, required this.message});
+  const ChatBubble({super.key, required this.isSentByUser, required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +89,7 @@ class ChatBubble extends StatelessWidget {
 }
 
 class ChatInputField extends StatelessWidget {
-  const ChatInputField({Key? key}) : super(key: key);
+  const ChatInputField({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -96,18 +98,18 @@ class ChatInputField extends StatelessWidget {
       color: Colors.white,
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.camera_alt, color: Color(0xFF5A71F3)),
-            onPressed: () {
-              // Handle camera functionality
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.mic, color: Color(0xFF5A71F3)),
-            onPressed: () {
-              // Handle audio functionality
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.camera_alt, color: Color(0xFF5A71F3)),
+          //   onPressed: () {
+          //     // Handle camera functionality
+          //   },
+          // ),
+          // IconButton(
+          //   icon: const Icon(Icons.mic, color: Color(0xFF5A71F3)),
+          //   onPressed: () {
+          //     // Handle audio functionality
+          //   },
+          // ),
           IconButton(
             icon: const Icon(Icons.attach_file, color: Color(0xFF5A71F3)),
             onPressed: () {
@@ -119,7 +121,7 @@ class ChatInputField extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: "Type your message...",
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(30),
                 ),
               ),
             ),

@@ -6,15 +6,22 @@ class DietsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Remove the back arrow button
+        automaticallyImplyLeading: false,
         title: const Text(
           'Diet Tracker',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0.5,
+            color: Color.fromARGB(255, 220, 220, 241),
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
