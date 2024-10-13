@@ -219,24 +219,28 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
                   ),
                 ],
               ),
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => BookingScreen()), // Navigate to BookingScreen
-                  );
-                },
-                icon: const Icon(Icons.calendar_today, color: Colors.white),
-                label: const Text(
-                  'Check Availability',
-                  style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 90, 113, 243), // Blue color
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  textStyle: const TextStyle(fontSize: 16, color: Colors.white),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    // Navigate to Booking Screen and pass the specialist's name
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BookingScreen(specialistName: specialist.name), // Pass specialist's name
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Book Appointment',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

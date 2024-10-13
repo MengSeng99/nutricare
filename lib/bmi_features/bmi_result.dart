@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+import 'bmi_tracker.dart'; // Import the BmiTrackerScreen
 
 class BmiResultScreen extends StatelessWidget {
   final double bmi;
@@ -60,11 +63,11 @@ class BmiResultScreen extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        backgroundColor: const Color.fromARGB(255, 90, 113, 243), // AppBar color
+        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context); // Back navigation
+            Navigator.pop(context);
           },
         ),
       ),
@@ -72,7 +75,7 @@ class BmiResultScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Container(
-            width: MediaQuery.of(context).size.width * 0.85, // Make container wider
+            width: MediaQuery.of(context).size.width * 0.85,
             padding: const EdgeInsets.all(20.0),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -82,7 +85,7 @@ class BmiResultScreen extends StatelessWidget {
                   color: Colors.grey.withOpacity(0.3),
                   spreadRadius: 3,
                   blurRadius: 7,
-                  offset: const Offset(0, 3), // Shadow position
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -100,7 +103,6 @@ class BmiResultScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Display the calculated BMI value
                 Text(
                   bmi.toStringAsFixed(1),
                   style: TextStyle(
@@ -110,7 +112,6 @@ class BmiResultScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Display additional details like gender, height, weight, and age
                 Text(
                   '${isMale ? "Male" : "Female"} | ${height.toStringAsFixed(1)}CM | ${weight.toStringAsFixed(1)}KG | ${age}yr old',
                   style: const TextStyle(
@@ -119,7 +120,6 @@ class BmiResultScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Display the BMI category and description
                 Text(
                   'You are $bmiCategory',
                   style: TextStyle(
@@ -129,7 +129,6 @@ class BmiResultScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Display the ideal weight range only if the BMI is not in the "Normal weight" category
                 if (bmiCategory != 'Normal weight')
                   RichText(
                     text: TextSpan(
@@ -147,7 +146,6 @@ class BmiResultScreen extends StatelessWidget {
                     ),
                   ),
                 const SizedBox(height: 20),
-                // Display the date and time of calculation
                 Text(
                   '- $formattedDate | $formattedTime -',
                   style: const TextStyle(
@@ -156,21 +154,52 @@ class BmiResultScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 30),
-                // Button to add the result to BMI Tracking
                 ElevatedButton(
-                  onPressed: () {
-                    // Print BMI details to the console when the button is clicked
-                    print(
-                      'BMI: ${bmi.toStringAsFixed(1)}\n'
-                      'Gender: ${isMale ? "Male" : "Female"}\n'
-                      'Height (CM): ${height.toStringAsFixed(1)}\n'
-                      'Weight (KG): ${weight.toStringAsFixed(1)}\n'
-                      'Age (Years): $age\n'
-                      'Classification: $bmiCategory\n'
-                      'Ideal Weight (KG): ${minWeight.toStringAsFixed(1)} - ${maxWeight.toStringAsFixed(1)}\n'
-                      'Date: $formattedDate\n'
-                      'Time: $formattedTime'
-                    );
+                  onPressed: () async {
+                    // Get the current user from Firebase Auth
+                    User? user = FirebaseAuth.instance.currentUser;
+
+                    if (user != null) {
+                      String userId = user.uid;
+
+                      try {
+                        // Create a reference to the user's document in Firestore
+                        DocumentReference userDocRef = FirebaseFirestore.instance
+                            .collection('bmi-tracker')
+                            .doc(userId);
+
+                        // Add a new BMI record inside the bmi-records collection
+                        await userDocRef.collection('bmi-records').add({
+                          'bmi': bmi.toStringAsFixed(1),
+                          'height': height.toStringAsFixed(1),
+                          'weight': weight.toStringAsFixed(1),
+                          'age': age,
+                          'gender': isMale ? "Male" : "Female",
+                          'bmiCategory': bmiCategory,
+                          'idealWeightRange': '${minWeight.toStringAsFixed(1)} - ${maxWeight.toStringAsFixed(1)} KG',
+                          'date': formattedDate,
+                          'time': formattedTime,
+                        });
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('BMI record added successfully!')),
+                        );
+
+                        // Navigate to the BmiTrackerScreen and switch to History tab
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const BmiTrackerScreen()),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to add BMI record: $e')),
+                        );
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No user is signed in')),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 90, 113, 243),
@@ -179,7 +208,7 @@ class BmiResultScreen extends StatelessWidget {
                     ),
                     padding: const EdgeInsets.symmetric(
                       vertical: 16.0,
-                      horizontal: 24.0, // Increase horizontal padding
+                      horizontal: 24.0,
                     ),
                   ),
                   child: const Text(

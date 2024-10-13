@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'payment.dart';
+
 class ClientInfoScreen extends StatefulWidget {
   final DateTime selectedDate;
   final String? selectedTimeSlot;
+  final String specialistName;
 
-  const ClientInfoScreen({super.key, required this.selectedDate, this.selectedTimeSlot});
+  const ClientInfoScreen({super.key, required this.selectedDate, this.selectedTimeSlot, String? selectedMode, required this.specialistName});
 
   @override
   _ClientInfoScreenState createState() => _ClientInfoScreenState();
@@ -116,7 +119,7 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
         const SizedBox(height: 5),
         Text(
           description,
-          style: const TextStyle(fontSize: 14, color: Colors.grey),
+          style: const TextStyle(fontSize: 14, color: Color.fromARGB(255, 113, 104, 132)),
         ),
       ],
     );
@@ -140,10 +143,10 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Please fill in your information:",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
+                // const Text(
+                //   "Please fill in your information:",
+                //   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                // ),
                 const SizedBox(height: 20),
                 _buildNRICField(),
                 const SizedBox(height: 16),
@@ -345,11 +348,23 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
                     'Information submitted: NRIC: $nric, Name: $fullName, DOB: ${dateOfBirth.toString()}, Gender: $gender, Phone: $phoneNumber, Reason: ${customReason ?? reasonForAppointment}'),
               ),
             );
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PaymentScreen(
+                  selectedDate: widget.selectedDate,
+                  selectedTimeSlot: widget.selectedTimeSlot,
+                  fullName: fullName, // Pass fullName
+                  reasonForAppointment: customReason ?? reasonForAppointment, // Pass reason
+                  specialistName: widget.specialistName
+                ),
+              ),
+            );
           }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 40),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
