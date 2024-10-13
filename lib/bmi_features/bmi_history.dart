@@ -12,7 +12,6 @@ class BmiHistoryScreen extends StatefulWidget {
 
 class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
   bool _isGraphVisible = true; // State to manage graph visibility
-  String? _selectedDate; // Variable to store the selected date for display
 
   // Function to determine the BMI category and color based on BMI value
   Color getBmiColor(double bmi) {
@@ -275,22 +274,37 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                         );
                       },
                       child: Card(
-                        elevation: 5,
+                        color: Colors.white, // Set card background to whitez
+                        elevation: 0,
                         margin: const EdgeInsets.symmetric(
                             vertical: 10, horizontal: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
+                          side: BorderSide(
+                              color: Colors.grey.shade400,
+                              width: 1.2), // Add grey border
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(16.0),
-                          title: Text(
-                            'BMI: ${record['bmi']}',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  bmiColor, // Color according to the BMI category
-                            ),
+                          title: Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween, // Align items
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'BMI: ${record['bmi']}',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        bmiColor, // Color according to the BMI category
+                                  ),
+                                ),
+                              ),
+                              Icon(Icons.expand_more,
+                                  color:
+                                      Colors.grey.shade400), // Static view icon
+                            ],
                           ),
                           subtitle: Text(
                             'Recorded on: $formattedDate',
