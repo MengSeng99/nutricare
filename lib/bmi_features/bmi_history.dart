@@ -73,12 +73,14 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
 
           // Prepare data for the chart
           List<FlSpot> chartData = [];
-          List<String> chartDates = []; // Store the dates corresponding to the chart data
+          List<String> chartDates =
+              []; // Store the dates corresponding to the chart data
           for (var record in records) {
             final recordData = record.data() as Map<String, dynamic>;
             final double bmi = double.parse(recordData['bmi'].toString());
             final String dateString = recordData['date'];
-            final DateTime date = DateTime.parse(dateString); // Assuming the date is in ISO format
+            final DateTime date = DateTime.parse(
+                dateString); // Assuming the date is in ISO format
             final double x = date.millisecondsSinceEpoch.toDouble();
             chartData.add(FlSpot(x, bmi));
             chartDates.add(dateString); // Store the corresponding date
@@ -92,24 +94,29 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      _isGraphVisible = !_isGraphVisible; // Toggle graph visibility
+                      _isGraphVisible =
+                          !_isGraphVisible; // Toggle graph visibility
                     });
                   },
                   child: Text(_isGraphVisible ? 'Hide Graph' : 'Show Graph'),
                 ),
               ),
               // Show graph only if _isGraphVisible is true
-              if (_isGraphVisible) _buildBmiChart(chartData, chartDates), // Add the chart at the top
+              if (_isGraphVisible)
+                _buildBmiChart(
+                    chartData, chartDates), // Add the chart at the top
               Expanded(
                 child: ListView.builder(
                   itemCount: records.length,
                   itemBuilder: (context, index) {
-                    final record = records[index].data() as Map<String, dynamic>;
+                    final record =
+                        records[index].data() as Map<String, dynamic>;
                     final double bmi = double.parse(record['bmi'].toString());
                     final Color bmiColor = getBmiColor(bmi);
                     final String formattedDate = record['date'];
                     final String formattedTime = record['time'];
-                    final String recordId = records[index].id; // Get the document ID for deletion
+                    final String recordId =
+                        records[index].id; // Get the document ID for deletion
 
                     return GestureDetector(
                       onTap: () {
@@ -135,7 +142,8 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                       style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.black, // Keeping the title neutral
+                                        color: Colors
+                                            .black, // Keeping the title neutral
                                       ),
                                     ),
                                     const SizedBox(height: 10),
@@ -147,26 +155,37 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                       style: TextStyle(
                                         fontSize: 30,
                                         fontWeight: FontWeight.bold,
-                                        color: bmiColor, // Color according to the BMI category
+                                        color:
+                                            bmiColor, // Color according to the BMI category
                                       ),
                                     ),
                                     const SizedBox(height: 10),
-                                    _buildDetailRow(Icons.height, 'Height', '${record['height']} CM'),
-                                    _buildDetailRow(Icons.fitness_center, 'Weight', '${record['weight']} KG'),
-                                    _buildDetailRow(Icons.calendar_today, 'Age', '${record['age']} years'),
-                                    _buildDetailRow(Icons.person, 'Gender', record['gender']),
-                                    _buildDetailRow(Icons.category, 'Category', record['bmiCategory']),
-                                    _buildDetailRow(Icons.assignment, 'Ideal Weight', record['idealWeightRange']),
+                                    _buildDetailRow(Icons.height, 'Height',
+                                        '${record['height']} CM'),
+                                    _buildDetailRow(Icons.fitness_center,
+                                        'Weight', '${record['weight']} KG'),
+                                    _buildDetailRow(Icons.calendar_today, 'Age',
+                                        '${record['age']} years'),
+                                    _buildDetailRow(Icons.person, 'Gender',
+                                        record['gender']),
+                                    _buildDetailRow(Icons.category, 'Category',
+                                        record['bmiCategory']),
+                                    _buildDetailRow(
+                                        Icons.assignment,
+                                        'Ideal Weight',
+                                        record['idealWeightRange']),
                                     const SizedBox(height: 10),
                                     Divider(color: Colors.grey.shade400),
                                     const SizedBox(height: 10),
                                     Text(
                                       'Recorded on: $formattedDate at $formattedTime',
-                                      style: const TextStyle(color: Colors.grey),
+                                      style:
+                                          const TextStyle(color: Colors.grey),
                                     ),
                                     const SizedBox(height: 20),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         ElevatedButton(
                                           onPressed: () {
@@ -175,49 +194,73 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                               context: context,
                                               builder: (context) {
                                                 return AlertDialog(
-                                                  title: const Text('Confirm Deletion'),
-                                                  content: const Text('Are you sure you want to delete this record?'),
+                                                  title: const Text(
+                                                      'Confirm Deletion'),
+                                                  content: const Text(
+                                                      'Are you sure you want to delete this record?'),
                                                   actions: [
                                                     TextButton(
                                                       onPressed: () {
-                                                        Navigator.of(context).pop(); // Close the confirmation dialog
+                                                        Navigator.of(context)
+                                                            .pop(); // Close the confirmation dialog
                                                       },
-                                                      child: const Text('Cancel'),
+                                                      child:
+                                                          const Text('Cancel'),
                                                     ),
                                                     TextButton(
                                                       onPressed: () async {
                                                         // Delete the record from Firestore
                                                         try {
-                                                          await FirebaseFirestore.instance
-                                                              .collection('bmi-tracker')
+                                                          await FirebaseFirestore
+                                                              .instance
+                                                              .collection(
+                                                                  'bmi-tracker')
                                                               .doc(userId)
-                                                              .collection('bmi-records')
+                                                              .collection(
+                                                                  'bmi-records')
                                                               .doc(recordId)
                                                               .delete();
 
-                                                          Navigator.of(context).pop(); // Close the confirmation dialog
-                                                          Navigator.of(context).pop(); // Close the details dialog
-                                                          ScaffoldMessenger.of(context).showSnackBar(
-                                                            const SnackBar(content: Text('Record deleted successfully!')),
+                                                          Navigator.of(context)
+                                                              .pop(); // Close the confirmation dialog
+                                                          Navigator.of(context)
+                                                              .pop(); // Close the details dialog
+                                                          ScaffoldMessenger.of(
+                                                                  context)
+                                                              .showSnackBar(
+                                                            const SnackBar(
+                                                                content: Text(
+                                                                    'Record deleted successfully!')),
                                                           );
                                                         } catch (e) {
-                                                          ScaffoldMessenger.of(context).showSnackBar(
-                                                            SnackBar(content: Text('Failed to delete record: $e')),
+                                                          ScaffoldMessenger.of(
+                                                                  context)
+                                                              .showSnackBar(
+                                                            SnackBar(
+                                                                content: Text(
+                                                                    'Failed to delete record: $e')),
                                                           );
                                                         }
                                                       },
-                                                      child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                                      child: const Text(
+                                                          'Delete',
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.red)),
                                                     ),
                                                   ],
                                                 );
                                               },
                                             );
                                           },
-                                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                          child: const Text('Delete',
+                                              style:
+                                                  TextStyle(color: Colors.red)),
                                         ),
                                         ElevatedButton(
                                           onPressed: () {
-                                            Navigator.of(context).pop(); // Close the dialog
+                                            Navigator.of(context)
+                                                .pop(); // Close the dialog
                                           },
                                           child: const Text('Close'),
                                         ),
@@ -233,7 +276,8 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                       },
                       child: Card(
                         elevation: 5,
-                        margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
                         ),
@@ -244,7 +288,8 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: bmiColor, // Color according to the BMI category
+                              color:
+                                  bmiColor, // Color according to the BMI category
                             ),
                           ),
                           subtitle: Text(
@@ -266,29 +311,35 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
   }
 
   // Updated Method to build a row for detail display in the dialog
-Widget _buildDetailRow(IconData icon, String title, String value) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0), // Vertical padding for spacing
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.center, // Align icons and text vertically
-      children: [
-        Icon(icon, color: Colors.blueGrey, size: 20), // Reduced icon size for better alignment
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            '$title', // Title on the left
-            style: const TextStyle(fontSize: 16), // Uniform text size for titles
+  Widget _buildDetailRow(IconData icon, String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          vertical: 8.0), // Vertical padding for spacing
+      child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.center, // Align icons and text vertically
+        children: [
+          Icon(icon,
+              color: Colors.blueGrey,
+              size: 20), // Reduced icon size for better alignment
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '$title', // Title on the left
+              style:
+                  const TextStyle(fontSize: 16), // Uniform text size for titles
+            ),
           ),
-        ),
-        Text(
-          value, // Value on the right
-          style: const TextStyle(fontSize: 16), // Uniform text size for values
-          textAlign: TextAlign.right, // Align text to the right
-        ),
-      ],
-    ),
-  );
-}
+          Text(
+            value, // Value on the right
+            style:
+                const TextStyle(fontSize: 16), // Uniform text size for values
+            textAlign: TextAlign.right, // Align text to the right
+          ),
+        ],
+      ),
+    );
+  }
 
   // Method to build a line chart for BMI history
   Widget _buildBmiChart(List<FlSpot> chartData, List<String> chartDates) {
@@ -296,7 +347,8 @@ Widget _buildDetailRow(IconData icon, String title, String value) {
       height: 250, // Reduced height of the chart
       padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 255, 255, 255), // Background color for the chart
+        color: const Color.fromARGB(
+            255, 255, 255, 255), // Background color for the chart
         borderRadius: BorderRadius.circular(15), // Rounded corners
         boxShadow: [
           BoxShadow(
@@ -317,14 +369,17 @@ Widget _buildDetailRow(IconData icon, String title, String value) {
                 getTitlesWidget: (value, meta) {
                   int index = chartData.indexWhere((spot) => spot.x == value);
                   if (index != -1) {
-                    DateTime date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                    DateTime date =
+                        DateTime.fromMillisecondsSinceEpoch(value.toInt());
                     // Display dates based on the number of records
-                    if (chartData.length <= 5 || index % (chartData.length ~/ 4) == 0) {
+                    if (chartData.length <= 5 ||
+                        index % (chartData.length ~/ 4) == 0) {
                       return SideTitleWidget(
                         axisSide: meta.axisSide,
                         child: Text(
                           '${date.month}/${date.day}', // Display date in MM/DD format
-                          style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.black54),
                         ),
                       );
                     }
@@ -342,7 +397,8 @@ Widget _buildDetailRow(IconData icon, String title, String value) {
                     axisSide: meta.axisSide,
                     child: Text(
                       value.toString(),
-                      style: const TextStyle(fontSize: 12, color: Colors.black54),
+                      style:
+                          const TextStyle(fontSize: 12, color: Colors.black54),
                     ),
                   );
                 },
@@ -355,9 +411,15 @@ Widget _buildDetailRow(IconData icon, String title, String value) {
               sideTitles: SideTitles(showTitles: false),
             ),
           ),
-          borderData: FlBorderData(show: true, border: Border.all(color: const Color(0xff37434d), width: 1)),
-          minX: chartData.isNotEmpty ? chartData.last.x : 0, // Ensure minX starts from the latest date
-          maxX: chartData.isNotEmpty ? chartData.first.x : DateTime.now().millisecondsSinceEpoch.toDouble(),
+          borderData: FlBorderData(
+              show: true,
+              border: Border.all(color: const Color(0xff37434d), width: 1)),
+          minX: chartData.isNotEmpty
+              ? chartData.last.x
+              : 0, // Ensure minX starts from the latest date
+          maxX: chartData.isNotEmpty
+              ? chartData.first.x
+              : DateTime.now().millisecondsSinceEpoch.toDouble(),
           minY: 10,
           maxY: 40,
           lineBarsData: [
@@ -367,7 +429,8 @@ Widget _buildDetailRow(IconData icon, String title, String value) {
               color: Colors.blueAccent,
               dotData: FlDotData(show: true), // Show markers
               belowBarData: BarAreaData(show: false),
-              aboveBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.2)),
+              aboveBarData:
+                  BarAreaData(show: true, color: Colors.blue.withOpacity(0.2)),
             ),
           ],
           lineTouchData: LineTouchData(
@@ -375,9 +438,11 @@ Widget _buildDetailRow(IconData icon, String title, String value) {
               // tooltipBgColor: Colors.blueAccent,
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
-                  final index = chartData.indexWhere((data) => data.x == spot.x);
+                  final index =
+                      chartData.indexWhere((data) => data.x == spot.x);
                   if (index != -1) {
-                    DateTime date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                    DateTime date =
+                        DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
                     return LineTooltipItem(
                       'Date: ${date.month}/${date.day}\nBMI: ${spot.y.toStringAsFixed(1)}',
                       const TextStyle(color: Colors.white),
@@ -387,7 +452,8 @@ Widget _buildDetailRow(IconData icon, String title, String value) {
                 }).toList();
               },
             ),
-            touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
+            touchCallback:
+                (FlTouchEvent event, LineTouchResponse? touchResponse) {
               // Handle touch response
             },
             handleBuiltInTouches: true,
