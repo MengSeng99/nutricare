@@ -6,7 +6,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import 'package:intl/intl.dart'; // To format the upload time
 import 'package:url_launcher/url_launcher.dart';
-import 'package:url_launcher/url_launcher_string.dart'; // To open the file URLs
 
 class HealthRecordScreen extends StatefulWidget {
   const HealthRecordScreen({super.key});
