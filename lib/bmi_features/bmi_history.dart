@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class BmiHistoryScreen extends StatefulWidget {
-  const BmiHistoryScreen({Key? key}) : super(key: key);
+  const BmiHistoryScreen({super.key});
 
   @override
   _BmiHistoryScreenState createState() => _BmiHistoryScreenState();
@@ -67,7 +67,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
           final records = snapshot.data?.docs;
 
           if (records == null || records.isEmpty) {
-            return const Center(child: Text('No BMI records found.'));
+            return const Center(child: Text('No BMI records found. Add it now from the Calculator!',style: TextStyle(fontSize: 20),));
           }
 
           // Prepare data for the chart
@@ -339,7 +339,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              '$title', // Title on the left
+              title, // Title on the left
               style:
                   const TextStyle(fontSize: 16), // Uniform text size for titles
             ),

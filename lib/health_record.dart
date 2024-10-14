@@ -17,6 +17,8 @@ class HealthRecordScreen extends StatefulWidget {
 
 class _HealthRecordScreenState extends State<HealthRecordScreen> {
   bool _isYourRecordsTab = true; // Track the active tab
+  bool _isLoading = false; // To track the loading state for fetching data
+  bool _isUploading = false; // To track the loading state for uploading
   List<Map<String, dynamic>> _uploadedRecords =
       []; // List to store uploaded records
   List<Map<String, dynamic>> _specialistReports =
@@ -29,8 +31,65 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
     _fetchSpecialistReports(); // Fetch specialist reports
   }
 
+  // Method to confirm and delete a record
+  Future<void> _confirmDeleteRecord(String fileId, String filePath) async {
+    bool? confirmed = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Delete'),
+          content: const Text('Are you sure you want to delete this record?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(false); // User cancels
+              },
+            ),
+            TextButton(
+              child: const Text('Delete',style: TextStyle(color: Colors.red),),
+              onPressed: () {
+                Navigator.of(context).pop(true); // User confirms
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      // Delete the file from Firebase Storage
+      Reference storageReference =
+          FirebaseStorage.instance.refFromURL(filePath);
+      await storageReference.delete();
+
+      // Delete the document from Firestore
+      String userId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown_user';
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('health-record')
+          .doc(userId)
+          .collection('records')
+          .where('fileId', isEqualTo: fileId)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        await querySnapshot.docs.first.reference.delete();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Health record deleted successfully!')),
+        );
+
+        // Refresh the uploaded records list after deletion
+        _fetchUploadedRecords();
+      }
+    }
+  }
+
   // Method to fetch uploaded records from Firestore
   Future<void> _fetchUploadedRecords() async {
+    setState(() {
+      _isLoading = true; // Start loading indicator
+    });
+
     String userId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown_user';
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('health-record')
@@ -47,11 +106,16 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
           'uploadTime': (doc['uploadTime'] as Timestamp).toDate(),
         };
       }).toList();
+      _isLoading = false; // Stop loading indicator
     });
   }
 
   // Method to fetch health reports uploaded by specialists from Firestore
   Future<void> _fetchSpecialistReports() async {
+    setState(() {
+      _isLoading = true; // Start loading indicator
+    });
+
     String userId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown_user';
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('health-report')
@@ -68,6 +132,7 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
           'uploadTime': (doc['uploadTime'] as Timestamp).toDate(),
         };
       }).toList();
+      _isLoading = false; // Stop loading indicator
     });
   }
 
@@ -166,37 +231,53 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
     );
   }
 
-  // Content for "Your Records" tab
-  Widget _buildYourRecordsTabContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Section for user's personal uploads
+// Content for "Your Records" tab
+Widget _buildYourRecordsTabContent() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      // Loading spinner while fetching records
+      if (_isLoading)
+        const Center(
+          child: CircularProgressIndicator(),
+        )
+      else if (_uploadedRecords.isEmpty && _specialistReports.isEmpty) ...[
+        // Show the image and the message when both records and reports are empty
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset(
+              'images/health-record-2.png', // Ensure this image path is correct
+              width: 150,
+              height: 150,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "You don't have any health records yet",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              "If you do the health screening with us, this is where you can check your personalised report later. Alternatively, you can upload your health docs here.",
+              style: TextStyle(fontSize: 15, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ] else ...[
+        // Show the user's personal uploads if available
         _buildSectionHeader('Your Uploads'),
         _uploadedRecords.isEmpty
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'images/health-record-2.png', // Ensure this image path is correct
-                    width: 150,
-                    height: 150,
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    "You don't have any health records yet",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "If you do the health screening with us, this is where you can check your personalised report later. Alternatively, you can upload your health docs here.",
-                    style: TextStyle(fontSize: 15, color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+            ? const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Text(
+                  'No records yet. Please go to the upload tab to add your health documents.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
               )
             : ListView.builder(
                 physics: const NeverScrollableScrollPhysics(),
@@ -222,20 +303,30 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
                         'Uploaded on $formattedTime',
                         style: const TextStyle(color: Colors.grey),
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.open_in_new, color: Colors.grey),
-                        onPressed: () async {
-                          final url = record['filePath'];
-                          Uri fileUri = Uri.parse(url);
-                          if (await canLaunchUrl(fileUri)) {
-                            await launchUrl(fileUri);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Could not open the file')),
-                            );
-                          }
-                        },
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.open_in_new, color: Colors.grey),
+                            onPressed: () async {
+                              final url = record['filePath'];
+                              Uri fileUri = Uri.parse(url);
+                              if (await canLaunchUrl(fileUri)) {
+                                await launchUrl(fileUri);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Could not open the file')),
+                                );
+                              }
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              _confirmDeleteRecord(record['fileId'], record['filePath']);
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -243,174 +334,170 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
               ),
         const SizedBox(height: 20),
 
-        // Section for specialist reports
-        _buildSectionHeader('Health Reports from Specialists'),
-        _specialistReports.isEmpty
-            ? const Text(
-                'No health reports from specialists yet.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
-              )
-            : ListView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: _specialistReports.length,
-                itemBuilder: (context, index) {
-                  final report = _specialistReports[index];
-                  final formattedTime = DateFormat('dd MMM yyyy, hh:mm a')
-                      .format(report['uploadTime']);
+        // Only show specialist reports section if available
+        if (_specialistReports.isNotEmpty) ...[
+          _buildSectionHeader('Health Reports from Specialists'),
+          ListView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: _specialistReports.length,
+            itemBuilder: (context, index) {
+              final report = _specialistReports[index];
+              final formattedTime = DateFormat('dd MMM yyyy, hh:mm a')
+                  .format(report['uploadTime']);
 
-                  return Card(
-                    elevation: 3,
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: ListTile(
-                      title: Text(
-                        report['reportId'],
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 90, 113, 243),
-                        ),
-                      ),
-                      subtitle: Text(
-                        'Uploaded on $formattedTime',
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.open_in_new, color: Colors.grey),
-                        onPressed: () async {
-                          final url = report['filePath'];
-                          if (await canLaunchUrlString(url)) {
-                            await launchUrlString(url);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Could not open the file')),
-                            );
-                          }
-                        },
-                      ),
+              return Card(
+                elevation: 3,
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                child: ListTile(
+                  title: Text(
+                    report['reportId'],
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 90, 113, 243),
                     ),
-                  );
-                },
-              ),
+                  ),
+                  subtitle: Text(
+                    'Uploaded on $formattedTime',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.open_in_new, color: Colors.grey),
+                    onPressed: () async {
+                      final url = report['filePath'];
+                      Uri reportUri = Uri.parse(url);
+                      if (await canLaunchUrl(reportUri)) {
+                        await launchUrl(reportUri);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Could not open the file')),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ],
-    );
-  }
+    ],
+  );
+}
 
   // Content for "Uploads" tab
   Widget _buildUploadsTabContent() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Image.asset(
           'images/health-record.png', // Ensure this image path is correct
-          width: 150,
-          height: 150,
+          width: 180,
+          height: 180,
         ),
         const SizedBox(height: 20),
         const Text(
-          "Upload and store your records at one place",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          'Store and access your health records anytime',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color.fromARGB(255, 90, 113, 243),
+          ),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
         const Text(
-          "Optimise your experience on our app by uploading your health records.",
-          style: TextStyle(fontSize: 15, color: Colors.grey),
+          'Securely upload your health records to manage them easily and access them anytime.',
+          style: TextStyle(fontSize: 14, color: Colors.grey),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 30),
-        ElevatedButton(
-          onPressed: _uploadFile,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+
+        // Show loading spinner while uploading a file
+        if (_isUploading)
+          const Center(
+            child: CircularProgressIndicator(),
+          )
+        else
+          ElevatedButton.icon(
+            onPressed: _uploadHealthRecord,
+            icon: const Icon(Icons.upload_file, color: Colors.white),
+            label: const Text('Upload Health Record',
+                style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
             ),
           ),
-          child: const Text(
-            'Upload Health Records',
-            style: TextStyle(fontSize: 18, color: Colors.white),
-          ),
-        ),
       ],
     );
   }
 
-  // Section header
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-          color: Color.fromARGB(255, 90, 113, 243),
-        ),
-      ),
-    );
-  }
+  // Method to upload a health record
+  Future<void> _uploadHealthRecord() async {
+    setState(() {
+      _isUploading = true; // Show uploading indicator
+    });
 
-  // File upload logic
-  Future<void> _uploadFile() async {
-    // Allow users to pick a file
+    String userId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown_user';
+
+    // Open file picker to allow users to select a file
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['doc', 'docx', 'pdf'],
+      allowedExtensions: ['pdf', 'doc', 'docx'],
     );
 
     if (result != null) {
-      PlatformFile file = result.files.first;
-      String userId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown_user';
+      File file = File(result.files.single.path!);
+      String fileName = result.files.single.name;
 
-      FirebaseStorage storage = FirebaseStorage.instance;
-      Reference ref = storage.ref().child('health-records/$userId/${file.name}');
-      
-      try {
-        // Show a snackbar indicating upload has started
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Uploading file...')),
-        );
+      // Upload the file to Firebase Storage
+      Reference storageReference = FirebaseStorage.instance
+          .ref()
+          .child('health-records/$userId/$fileName');
 
-        // Start the upload task
-        UploadTask uploadTask = ref.putFile(File(file.path!));
-        TaskSnapshot snapshot = await uploadTask;
+      UploadTask uploadTask = storageReference.putFile(file);
+      TaskSnapshot snapshot = await uploadTask;
+      String downloadUrl = await snapshot.ref.getDownloadURL();
 
-        // Get the download URL after the upload completes
-        String downloadUrl = await snapshot.ref.getDownloadURL();
-        String recordId = FirebaseFirestore.instance.collection('health-record').doc().id;
+      // Save file metadata to Firestore
+      await FirebaseFirestore.instance
+          .collection('health-record')
+          .doc(userId)
+          .collection('records')
+          .add({
+        'filePath': downloadUrl,
+        'fileId': fileName,
+        'uploadTime': Timestamp.now(),
+      });
 
-        // Save the file metadata to Firestore
-        await FirebaseFirestore.instance
-            .collection('health-record')
-            .doc(userId)
-            .collection('records')
-            .doc(recordId)
-            .set({
-          'filePath': downloadUrl,
-          'uploadTime': FieldValue.serverTimestamp(),
-          'fileId': file.name,
-        });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Health record uploaded successfully!')),
+      );
 
-        // Show a success snackbar
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('File uploaded successfully!')),
-        );
-
-        // Refresh the list of uploaded records
-        _fetchUploadedRecords(); 
-
-        // Switch to "Your Records" tab after successful upload
-        setState(() {
-          _isYourRecordsTab = true;
-        });
-      } catch (e) {
-        // Show an error snackbar if the upload fails
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload file: $e')),
-        );
-      }
+      // Refresh the uploaded records list
+      _fetchUploadedRecords();
     }
+
+    // Switch to "Your Records" tab after successful upload
+    setState(() {
+      _isYourRecordsTab = true;
+    });
+
+    setState(() {
+      _isUploading = false; // Hide uploading indicator
+    });
+  }
+
+  // Helper method to build section headers
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 16,
+        color: Color.fromARGB(255, 90, 113, 243),
+      ),
+    );
   }
 }

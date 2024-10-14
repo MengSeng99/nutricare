@@ -3,7 +3,7 @@ import 'bmi_calculator.dart';
 import 'bmi_history.dart';
 
 class BmiTrackerScreen extends StatefulWidget {
-  const BmiTrackerScreen({Key? key}) : super(key: key);
+  const BmiTrackerScreen({super.key});
 
   @override
   _BmiTrackerScreenState createState() => _BmiTrackerScreenState();

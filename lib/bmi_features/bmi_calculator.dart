@@ -106,7 +106,7 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 90, 113, 243),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(30),
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                 ),
@@ -135,7 +135,7 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
             color: isSelected ? const Color.fromARGB(255, 90, 113, 243) : Colors.grey,
             width: 1,
           ),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -166,7 +166,7 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
       padding: const EdgeInsets.all(10.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey, width: 1),
       ),
       child: Column(
@@ -251,7 +251,7 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
       padding: const EdgeInsets.all(10.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey, width: 1),
       ),
       child: Column(
@@ -319,7 +319,7 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
       padding: const EdgeInsets.all(10.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey, width: 1),
       ),
       child: Column(
@@ -350,7 +350,7 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
               });
             },
           ),
-          const Text('Years', style: TextStyle(fontSize: 16, color: Colors.grey)),
+          const Text('Years Old', style: TextStyle(fontSize: 16, color: Colors.grey)),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
