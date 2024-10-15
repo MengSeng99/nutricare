@@ -157,7 +157,7 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const FoodDetailsScreen(),
+             builder: (context) => FoodDetailsScreen(recipeId: 'YXMOVz72EuRjkYBBjEH8'),
           ),
         );
       },

@@ -116,7 +116,7 @@ class HomeScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color.fromARGB(255, 255, 255, 255), // Blue background
                       borderRadius: BorderRadius.circular(15), // Rounded corners for a modern look
-                      border: Border.all(color: Colors.grey[300]!), // Light grey border
+                      border: Border.all(color: Colors.grey[400]!), // Light grey border
                     ),
                     child: Icon(
                       _services[index]['icon'],
@@ -187,7 +187,7 @@ class HomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey[300]!), // Light grey border for a clean look
+        border: Border.all(color: Colors.grey[400]!), // Light grey border for a clean look
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,

@@ -247,8 +247,8 @@ Widget _buildYourRecordsTabContent() {
           children: [
             Image.asset(
               'images/health-record-2.png', // Ensure this image path is correct
-              width: 150,
-              height: 150,
+              width: 180,
+              height: 180,
             ),
             const SizedBox(height: 20),
             const Text(
@@ -396,18 +396,18 @@ Widget _buildYourRecordsTabContent() {
         ),
         const SizedBox(height: 20),
         const Text(
-          'Store and access your health records anytime',
+          'Store and access your health records',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 90, 113, 243),
+            color: Colors.black,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
         const Text(
           'Securely upload your health records to manage them easily and access them anytime.',
-          style: TextStyle(fontSize: 14, color: Colors.grey),
+          style: TextStyle(fontSize: 15, color: Colors.grey),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 30),

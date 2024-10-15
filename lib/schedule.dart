@@ -102,6 +102,7 @@ class UpcomingAppointmentsTab extends StatelessWidget {
       child: Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: Colors.grey.shade400, width: 1),
         ),
         color: Colors.white, // Set card background to white
         margin: const EdgeInsets.only(bottom: 16),

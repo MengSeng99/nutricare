@@ -67,8 +67,41 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
           final records = snapshot.data?.docs;
 
           if (records == null || records.isEmpty) {
-            return const Center(child: Text('No BMI records found. Add it now from the Calculator!',style: TextStyle(fontSize: 20),));
-          }
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 100,
+            color: Color.fromARGB(255, 90, 113, 243),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'No BMI records available yet!',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 8),
+          Text(
+            'You can add a new record using the Calculator.',
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.black54,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
           // Prepare data for the chart
           List<FlSpot> chartData = [];
@@ -141,8 +174,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                       style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors
-                                            .black, // Keeping the title neutral
+                                        color: Color.fromARGB(255, 0, 0, 0), // Keeping the title neutral
                                       ),
                                     ),
                                     const SizedBox(height: 10),
@@ -275,7 +307,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                       },
                       child: Card(
                         color: Colors.white, // Set card background to whitez
-                        elevation: 0,
+                        elevation: 2,
                         margin: const EdgeInsets.symmetric(
                             vertical: 10, horizontal: 15),
                         shape: RoundedRectangleBorder(
@@ -334,7 +366,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
             CrossAxisAlignment.center, // Align icons and text vertically
         children: [
           Icon(icon,
-              color: Colors.blueGrey,
+              color: const Color.fromARGB(255, 75, 152, 190),
               size: 20), // Reduced icon size for better alignment
           const SizedBox(width: 10),
           Expanded(
