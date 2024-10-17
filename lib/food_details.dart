@@ -47,11 +47,12 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
         .toList();
   }
 
-  Future<List<Map<String, dynamic>>> _getSteps() async {
+    Future<List<Map<String, dynamic>>> _getSteps() async {
     QuerySnapshot stepsSnapshot = await FirebaseFirestore.instance
         .collection('recipes')
         .doc(widget.recipeId)
         .collection('steps')
+        .orderBy('number', descending: false) // Order the steps by the number field
         .get();
 
     return stepsSnapshot.docs
@@ -104,23 +105,46 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
           return Stack(
             children: [
               // Image at the top
-              Positioned(
-                top: 0, // Fix the image at the top of the page
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: 300.0,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage(recipe['imageUrl']),
-                      fit: BoxFit.fitWidth,
-                    ),
-                    // borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20.0)),
+              // Inside the Positioned widget that shows the image at the top
+          Positioned(
+            top: 0, // Fix the image at the top of the page
+            left: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return Dialog(
+                      backgroundColor: Colors.transparent,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).pop(), // Close dialog on tap
+                        child: Container(
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: NetworkImage(recipe['imageUrl']),
+                              fit: BoxFit.contain, // Fit the image to the dialog box
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+              child: Container(
+                height: 300.0,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: NetworkImage(recipe['imageUrl']),
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
+            ),
+          ),
               DraggableScrollableSheet(
-                initialChildSize: 0.63,
+                initialChildSize: 0.67,
                 minChildSize: 0.63,
                 maxChildSize: 0.85,
                 builder: (context, scrollController) {

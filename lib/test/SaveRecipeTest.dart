@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RecipePage extends StatelessWidget {
+  const RecipePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,35 +26,37 @@ Future<void> saveSampleRecipeToFirestore() async {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   Map<String, dynamic> recipeData = {
-    'title': "Crepes with Orange and Honey",
-    'category': "Western",
-    'cookingTime': 35,
-    'servings': 3,
+    'title': "Mango Smoothie Bowl",
+    'category': "Breakfast",
+    'cookingTime': 10,
+    'servings': 1,
     'difficulty': "Easy",
-    'imageUrl': "https://firebasestorage.googleapis.com/v0/b/nutricare-2bb9e.appspot.com/o/recipe_images%2Fpinch-of-yum-workshop-19.jpg?alt=media&token=0ccc4038-1cfa-4fd4-9cc9-46e6ea483854",
-    'calories': 103,
+    'imageUrl': "https://www.nutritiousdeliciousness.com/wp-content/uploads/2023/08/Mango-Smoothie-Bowl1-1.jpg",
+    'calories': 250,
   };
 
   List<Map<String, dynamic>> ingredients = [
-    {'name': "2 Eggs"},
-    {'name': "1 Cup All-purpose flour"},
-    {'name': "1/2 Cup Whole milk"},
-    {'name': "1/2 Cup Water"},
-    {'name': "1/4 tsp Salt"},
-    {'name': "2 tbsp Butter (melted)"},
+    {'name': "1 Cup Frozen Mango"},
+    {'name': "1/2 Banana"},
+    {'name': "1/2 Cup Coconut Milk"},
+    {'name': "1 tbsp Chia Seeds"},
+    {'name': "1 tbsp Granola (for topping)"},
+    {'name': "1 tbsp Shredded Coconut (for topping)"},
+    {'name': "Fresh Berries (for topping)"},
   ];
 
   List<Map<String, dynamic>> steps = [
-    {'number': 1, 'description': "Whisk together the eggs, milk, water, and salt."},
-    {'number': 2, 'description': "Gradually add in the flour."},
-    {'number': 3, 'description': "Stir in melted butter."},
+    {'number': 1, 'description': "In a blender, combine frozen mango, banana, and coconut milk. Blend until smooth."},
+    {'number': 2, 'description': "Pour the smoothie into a bowl."},
+    {'number': 3, 'description': "Top with chia seeds, granola, shredded coconut, and fresh berries."},
+    {'number': 4, 'description': "Serve immediately and enjoy."},
   ];
 
   List<Map<String, dynamic>> nutritionalFacts = [
-    {'label': "Calories", 'value': 103},
+    {'label': "Calories", 'value': 250},
     {'label': "Proteins", 'value': 5},
-    {'label': "Carbohydrates", 'value': 10},
-    {'label': "Fats", 'value': 3},
+    {'label': "Carbohydrates", 'value': 45},
+    {'label': "Fats", 'value': 8},
   ];
 
   try {
