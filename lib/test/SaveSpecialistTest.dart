@@ -23,7 +23,7 @@ class Specialist {
 }
 
 class FirestoreTestPage extends StatelessWidget {
-  const FirestoreTestPage({Key? key}) : super(key: key);
+  const FirestoreTestPage({super.key});
 
   // Function to add a specialist to Firestore
   Future<void> addSpecialist(Specialist specialist) async {

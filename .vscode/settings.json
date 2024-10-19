@@ -1,4 +1,5 @@
 {
     "C_Cpp.errorSquiggles": "enabled",
-    "cmake.sourceDirectory": "D:/flutter/project/nutricare/linux"
+    "cmake.sourceDirectory": "D:/flutter/project/nutricare/linux",
+    "git.ignoreLimitWarning": true
 }

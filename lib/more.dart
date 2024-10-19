@@ -6,6 +6,8 @@ import 'package:nutricare/bmi_features/bmi_tracker.dart';
 import 'package:nutricare/health_record.dart';
 import 'package:nutricare/user_profile.dart';
 
+import 'settings/settings.dart';
+
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
 
@@ -59,6 +61,18 @@ class _MoreScreenState extends State<MoreScreen> {
         ),
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: Color.fromARGB(255, 90, 113, 243)),
+            onPressed: () {
+              // Navigate to the SettingsScreen
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(

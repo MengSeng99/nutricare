@@ -4,31 +4,33 @@ import 'specialist_details.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class Specialist {
-  final String id; // Add this to store the specialist ID
+  final String id;
   final String name;
   final String specialization;
   final String organization;
   final String profilePictureUrl;
   bool isFavorite;
+  final String gender;
 
   Specialist({
-    required this.id, // Include the id in the constructor
+    required this.id,
     required this.name,
     required this.specialization,
     required this.organization,
     required this.profilePictureUrl,
+    required this.gender,
     this.isFavorite = false,
   });
 
-  // Method to convert Firestore document to Specialist object
   factory Specialist.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Specialist(
-      id: doc.id, // Set the ID from the document
+      id: doc.id,
       name: data['name'] ?? '',
       specialization: data['specialization'] ?? '',
       organization: data['organization'] ?? '',
       profilePictureUrl: data['profile_picture_url'] ?? '',
+      gender: data['gender'] ?? '',
       isFavorite: data['isFavorite'] ?? false,
     );
   }
@@ -40,50 +42,59 @@ class BookingAppointmentScreen extends StatefulWidget {
   const BookingAppointmentScreen({super.key, required this.title});
 
   @override
-  _BookingAppointmentScreenState createState() => _BookingAppointmentScreenState();
+  _BookingAppointmentScreenState createState() =>
+      _BookingAppointmentScreenState();
 }
 
 class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
-  bool _showFilters = false;
-  final Set<String> _selectedProfessionalPreferences = {};
-  final Set<String> _selectedAvailability = {};
+  final CollectionReference _specialistsCollection =
+      FirebaseFirestore.instance.collection('specialists');
+  final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+  late List<String> _favoriteIds = [];
 
-  // Firestore reference for the specialists collection
-  final CollectionReference _specialistsCollection = FirebaseFirestore.instance.collection('specialists');
-  final String currentUserId = FirebaseAuth.instance.currentUser!.uid; // Current user ID
-  late List<String> _favoriteIds = []; // List to store favorite IDs
+  String _searchQuery = '';
+  final List<String> _selectedGenders = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchUserFavorites(); // Fetch user favorites on initialization
+    _fetchUserFavorites();
   }
 
-  // Fetching user's favorite specialists from Firestore
   Future<void> _fetchUserFavorites() async {
     final userFavoritesRef = FirebaseFirestore.instance
         .collection('users')
         .doc(currentUserId)
         .collection('favorite_specialist_lists');
-    
+
     QuerySnapshot snapshot = await userFavoritesRef.get();
     setState(() {
-      _favoriteIds = snapshot.docs.map((doc) => doc.id).toList(); // Store favorite IDs
+      _favoriteIds = snapshot.docs.map((doc) => doc.id).toList();
     });
   }
 
-  // Fetching specialists from Firestore
   Stream<List<Specialist>> _fetchSpecialists() {
     return _specialistsCollection.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         Specialist specialist = Specialist.fromFirestore(doc);
-        specialist.isFavorite = _favoriteIds.contains(specialist.id); // Check if specialist is a favorite
+        specialist.isFavorite = _favoriteIds.contains(specialist.id);
         return specialist;
+      }).toList();
+    }).map((specialists) {
+      return specialists.where((specialist) {
+        final matchesGender =
+            _selectedGenders.isEmpty || _selectedGenders.contains(specialist.gender);
+        final matchesSearch =
+            specialist.name.toLowerCase().contains(_searchQuery.toLowerCase());
+        final matchesTitle = widget.title == 'Dietitian'
+            ? specialist.specialization.toLowerCase() == 'dietitian'
+            : widget.title == 'Nutritionist' &&
+                specialist.specialization.toLowerCase() == 'nutritionist';
+        return matchesGender && matchesSearch && matchesTitle;
       }).toList();
     });
   }
 
-  // Update Firestore with favorite specialist
   Future<void> _updateFavoriteStatus(Specialist specialist) async {
     final userFavoritesRef = FirebaseFirestore.instance
         .collection('users')
@@ -91,35 +102,37 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
         .collection('favorite_specialist_lists');
 
     if (specialist.isFavorite) {
-      // Add to favorites
       await userFavoritesRef.doc(specialist.id).set({
         'name': specialist.name,
         'specialization': specialist.specialization,
         'organization': specialist.organization,
         'profile_picture_url': specialist.profilePictureUrl,
       });
-      // Feedback on addition
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Successfully added ${specialist.name} to favorites.'),
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Successfully added Dr. ${specialist.name} to favorites.')));
     } else {
-      // Remove from favorites
       await userFavoritesRef.doc(specialist.id).delete();
-      // Feedback on removal
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Successfully removed ${specialist.name} from favorites.'),
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Successfully removed Dr. ${specialist.name} from favorites.')));
     }
-    
-    // Refresh the favorite IDs after updating Firestore
+
     await _fetchUserFavorites();
   }
 
-  // Build the specialist list
+  void _navigateToSpecialistDetails(Specialist specialist) async {
+    // Navigate to details and wait for return
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SpecialistDetailsScreen(specialist: specialist),
+      ),
+    );
+
+    // After returning, re-fetch the favorites and update the list
+    await _fetchUserFavorites();
+    setState(() {});
+  }
+
   Widget _buildSpecialistList() {
     return StreamBuilder<List<Specialist>>(
       stream: _fetchSpecialists(),
@@ -166,18 +179,13 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                   ),
                   onPressed: () async {
                     setState(() {
-                      specialist.isFavorite = !specialist.isFavorite; // Toggle favorite status
+                      specialist.isFavorite = !specialist.isFavorite;
                     });
-                    await _updateFavoriteStatus(specialist); // Update Firestore
+                    await _updateFavoriteStatus(specialist);
                   },
                 ),
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SpecialistDetailsScreen(specialist: specialist),
-                    ),
-                  );
+                  _navigateToSpecialistDetails(specialist);
                 },
               ),
             );
@@ -189,80 +197,46 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String placeholder = widget.title; // Placeholder text based on title
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.title,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: Text(widget.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color.fromARGB(255, 90, 113, 243),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
               children: [
-                // Search Field with Filter Button to the right
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search $placeholder',
-                          prefixIcon: const Icon(Icons.search),
-                          fillColor: const Color.fromARGB(255, 250, 250, 250).withOpacity(0.5),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20.0),
-                            borderSide: const BorderSide(
-                              color: Color.fromARGB(255, 221, 222, 226),
-                              width: 1.0,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20.0),
-                            borderSide: const BorderSide(
-                              color: Color.fromARGB(255, 221, 222, 226),
-                              width: 1.5,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20.0),
-                            borderSide: const BorderSide(
-                              color: Color.fromARGB(255, 90, 113, 243),
-                              width: 2.0,
-                            ),
-                          ),
-                        ),
+                Expanded(
+                  child: TextField(
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search ${widget.title}',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                        borderSide: const BorderSide(color: Color.fromARGB(255, 221, 222, 222)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                        borderSide: const BorderSide(color: Colors.blue),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _showFilters = !_showFilters;
-                        });
-                      },
-                      icon: Icon(
-                        Icons.filter_list,
-                        color: _showFilters
-                            ? const Color.fromARGB(255, 90, 113, 243) // Blue color when filter is open
-                            : Colors.grey,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 20),
-                Expanded(child: _buildSpecialistList()), // Display the specialist list
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 16.0),
+            Expanded(child: _buildSpecialistList()),
+          ],
+        ),
       ),
     );
   }
