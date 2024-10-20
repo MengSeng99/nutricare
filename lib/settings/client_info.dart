@@ -79,6 +79,13 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
             style: TextStyle(
                 color: Color.fromARGB(255, 90, 113, 243),
                 fontWeight: FontWeight.bold)),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0.5,
+            color: Color.fromARGB(255, 220, 220, 241),
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme:
@@ -103,26 +110,27 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
                 _buildPhoneNumberField(),
                 const SizedBox(height: 30),
                 Center(
-                child: ElevatedButton(
-                  onPressed: _saveData,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(
-                        255, 90, 113, 243), // Blue background color
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 34, vertical: 14), // Appropriate padding
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(30), // 30 border radius
+                  child: ElevatedButton(
+                    onPressed: _saveData,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(
+                          255, 90, 113, 243), // Blue background color
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 34, vertical: 14), // Appropriate padding
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(30), // 30 border radius
+                      ),
+                    ),
+                    child: const Text(
+                      "Save",
+                      style: TextStyle(
+                        color: Colors.white, // White text color
+                        fontSize: 16, // Appropriate font size
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    "Save",
-                    style: TextStyle(
-                      color: Colors.white, // White text color
-                      fontSize: 16, // Appropriate font size
-                    ),
-                  ),
-                ),),
+                ),
               ],
             ),
           ),
@@ -136,7 +144,8 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
       controller: nricController,
       decoration: InputDecoration(
         labelText: "NRIC",
-        prefixIcon: const Icon(Icons.perm_identity),
+        prefixIcon: const Icon(Icons.perm_identity,
+            color: Color.fromARGB(255, 90, 113, 243)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
       ),
       keyboardType: TextInputType.number,
@@ -155,7 +164,8 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
       controller: fullNameController,
       decoration: InputDecoration(
         labelText: "Full Name",
-        prefixIcon: const Icon(Icons.person),
+        prefixIcon:
+            const Icon(Icons.person, color: Color.fromARGB(255, 90, 113, 243)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
       ),
       validator: (value) {
@@ -171,7 +181,8 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
     return TextFormField(
       decoration: InputDecoration(
         labelText: "Date of Birth (YYYY-MM-DD)",
-        prefixIcon: const Icon(Icons.calendar_today),
+        prefixIcon: const Icon(Icons.calendar_today,
+            color: Color.fromARGB(255, 90, 113, 243)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
       ),
       onTap: () async {
@@ -208,7 +219,8 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
       value: gender,
       decoration: InputDecoration(
         labelText: "Gender",
-        prefixIcon: const Icon(Icons.transgender),
+        prefixIcon: const Icon(Icons.transgender,
+            color: Color.fromARGB(255, 90, 113, 243)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
       ),
       items: <String>['Male', 'Female', 'Other', 'Prefer not to say']
@@ -238,7 +250,8 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
       decoration: InputDecoration(
         labelText: "Phone Number",
         prefixText: "+60 ",
-        prefixIcon: const Icon(Icons.phone),
+        prefixIcon:
+            const Icon(Icons.phone, color: Color.fromARGB(255, 90, 113, 243)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
       ),
       keyboardType: TextInputType.phone,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'specialist_lists.dart';
+import '../specialist/specialist_lists.dart';
 
 class VirtualConsultationScreen extends StatelessWidget {
   const VirtualConsultationScreen({super.key});
@@ -98,11 +98,18 @@ class VirtualConsultationScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'Virtual Consultation',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0.5,
+            color: Color.fromARGB(255, 220, 220, 241),
+          ),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: Container(
         color: Colors.white,

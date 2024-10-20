@@ -21,12 +21,19 @@ class _BmiTrackerScreenState extends State<BmiTrackerScreen> {
           'BMI Tracker',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Color.fromARGB(255, 90, 113, 243),
           ),
         ),
-        backgroundColor: const Color.fromARGB(255, 90, 113, 243), // AppBar color
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0,
+            color: Color.fromARGB(255, 220, 220, 241),
+          ),
+        ),
+        backgroundColor: Colors.white, // AppBar color
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 90, 113, 243)),
           onPressed: () {
             Navigator.pop(context); // Back navigation
           },

@@ -1,9 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:nutricare/payment.dart';
+import 'package:nutricare/booking_appointment/payment.dart';
 import 'package:table_calendar/table_calendar.dart';
-
-import 'settings/client_info.dart';
 
 class BookingScreen extends StatefulWidget {
   final String specialistName;
@@ -72,11 +70,18 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
       appBar: AppBar(
         title: const Text(
           "Booking Details",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0.5,
+            color: Color.fromARGB(255, 220, 220, 241),
+          ),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -226,7 +231,7 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
         Expanded(
           child: TabBar(
             controller: _tabController,
-            indicatorColor: const Color.fromARGB(255, 33, 82, 243),
+            indicatorColor: const Color.fromARGB(255, 90, 113, 243),
             labelColor: Colors.black,
             unselectedLabelColor: Colors.grey,
             onTap: (index) {
@@ -285,6 +290,7 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
                       selectedDate: _selectedDay,
                       selectedTimeSlot: selectedTimeSlot,
                       specialistName: widget.specialistName,
+                      specialistId: widget.specialistId,
                     ),
                   ),
                 );

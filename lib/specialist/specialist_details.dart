@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth for user ID
-import 'booking.dart';
+import '../booking_appointment/booking.dart';
 import 'specialist_lists.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -192,7 +192,7 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
                               isFavorite
                                   ? Icons.favorite
                                   : Icons.favorite_border,
-                              color: isFavorite ? Colors.blue : Colors.grey,
+                              color: isFavorite ? Color.fromARGB(255, 90, 113, 243) : Colors.grey,
                               size: 30,
                             ),
                             onPressed: () async {
@@ -210,7 +210,7 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
                               icon: Icons.work_outline,
                               label: 'Experience',
                               value: '${experienceYears.toStringAsFixed(1)} Years',
-                              iconColor: Colors.blue,
+                              iconColor: Color.fromARGB(255, 90, 113, 243),
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -432,7 +432,7 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
             padding: EdgeInsets.all(4.0),
             child: Icon(
               Icons.arrow_back, // Back icon
-              color: Colors.blue, // Blue color for the icon
+              color: Color.fromARGB(255, 90, 113, 243), // Blue color for the icon
             ),
           ),
         ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'login.dart';  // Import the login page
-import 'signup.dart';  // Import the signup page
+import '../authentication_process/login.dart';  // Import the login page
+import '../authentication_process/signup.dart';  // Import the signup page
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

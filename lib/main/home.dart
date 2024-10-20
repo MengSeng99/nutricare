@@ -2,11 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 // import 'package:nutricare/diets.dart';
-import 'package:nutricare/food_recipe.dart';
+
+import '../food_recipe/food_recipe.dart';
 import 'virtual_consultation.dart';
-import 'specialist_lists.dart';
-import 'bmi_features/bmi_tracker.dart';
-import 'health_record.dart';
+import '../specialist/specialist_lists.dart';
+import '../bmi_features/bmi_tracker.dart';
+import '../health_record/health_record.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

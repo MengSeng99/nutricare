@@ -3,10 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:nutricare/bmi_features/bmi_tracker.dart';
-import 'package:nutricare/health_record.dart';
-import 'package:nutricare/user_profile.dart';
+import 'package:nutricare/health_record/health_record.dart';
+import 'package:nutricare/user_profile_management/user_profile.dart';
 
-import 'settings/settings.dart';
+import '../settings/settings.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});

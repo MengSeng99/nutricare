@@ -3,8 +3,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:nutricare/change_password.dart';
-import 'login.dart';
+import 'package:nutricare/user_profile_management/change_password.dart';
+import '../authentication_process/login.dart';
 import 'edit_profile.dart'; // Import the EditProfileScreen
 
 class UserProfileScreen extends StatefulWidget {
@@ -67,15 +67,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       appBar: AppBar(
         title: const Text(
           "Your Profile",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0.5,
+            color: Color.fromARGB(255, 220, 220, 241),
+          ),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
         actions: [
           // Edit Profile Button
           IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
+            icon: const Icon(Icons.edit, color: Color.fromARGB(255, 90, 113, 243)),
             onPressed: () async {
               // Navigate to the EditProfileScreen and wait for the result
               final result = await Navigator.push(

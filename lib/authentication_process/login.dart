@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:nutricare/navigation_bar.dart';
+import 'package:nutricare/main/navigation_bar.dart';
 import 'signup.dart';
 import 'authentication.dart';
 import 'forgot_password.dart'; // Import the forgot password page

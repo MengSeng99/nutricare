@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home.dart'; // Import Home screen
-import 'diets.dart'; // Import Diets screen
-import 'schedule.dart'; // Import Activity screen
+import '../diet_tracker/diets.dart'; // Import Diets screen
+import '../scheduled_appointment/schedule.dart'; // Import Activity screen
 import 'more.dart'; // Import More screen
 
 class MainScreen extends StatefulWidget {

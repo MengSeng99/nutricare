@@ -82,8 +82,8 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
       }).toList();
     }).map((specialists) {
       return specialists.where((specialist) {
-        final matchesGender =
-            _selectedGenders.isEmpty || _selectedGenders.contains(specialist.gender);
+        final matchesGender = _selectedGenders.isEmpty ||
+            _selectedGenders.contains(specialist.gender);
         final matchesSearch =
             specialist.name.toLowerCase().contains(_searchQuery.toLowerCase());
         final matchesTitle = widget.title == 'Dietitian'
@@ -109,11 +109,13 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
         'profile_picture_url': specialist.profilePictureUrl,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Successfully added Dr. ${specialist.name} to favorites.')));
+          content:
+              Text('Successfully added Dr. ${specialist.name} to favorites.')));
     } else {
       await userFavoritesRef.doc(specialist.id).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Successfully removed Dr. ${specialist.name} from favorites.')));
+          content: Text(
+              'Successfully removed Dr. ${specialist.name} from favorites.')));
     }
 
     await _fetchUserFavorites();
@@ -153,10 +155,12 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
           itemBuilder: (context, index) {
             final specialist = specialists[index];
             return Card(
-              margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 2.0),
+              margin:
+                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 2.0),
               color: Colors.white,
               shape: RoundedRectangleBorder(
-                side: const BorderSide(color: Color.fromARGB(255, 218, 218, 218)),
+                side:
+                    const BorderSide(color: Color.fromARGB(255, 218, 218, 218)),
                 borderRadius: BorderRadius.circular(10.0),
               ),
               child: ListTile(
@@ -164,7 +168,8 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                 leading: CircleAvatar(
                   backgroundImage: NetworkImage(specialist.profilePictureUrl),
                 ),
-                title: Text("Dr. ${specialist.name}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text("Dr. ${specialist.name}",
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -174,7 +179,9 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                 ),
                 trailing: IconButton(
                   icon: Icon(
-                    specialist.isFavorite ? Icons.favorite : Icons.favorite_border,
+                    specialist.isFavorite
+                        ? Icons.favorite
+                        : Icons.favorite_border,
                     color: specialist.isFavorite ? Colors.blue : null,
                   ),
                   onPressed: () async {
@@ -198,11 +205,23 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+        title: Text(widget.title,
+            style: const TextStyle(
+                color: Color.fromARGB(255, 90, 113, 243),
+                fontWeight: FontWeight.bold)),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0.5,
+            color: Color.fromARGB(255, 220, 220, 241),
+          ),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme:
+            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -220,15 +239,33 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                     decoration: InputDecoration(
                       hintText: 'Search ${widget.title}',
                       prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: const Color.fromARGB(255, 250, 250, 250)
+                          .withOpacity(0.5),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20.0),
-                        borderSide: const BorderSide(color: Color.fromARGB(255, 221, 222, 222)),
+                        borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226),
+                          width: 1.0,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                        borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226),
+                          width: 1.5,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20.0),
-                        borderSide: const BorderSide(color: Colors.blue),
+                        borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 90, 113, 243),
+                          width: 2.0,
+                        ),
                       ),
                     ),
+                    style: const TextStyle(
+                        color: Color.fromARGB(255, 74, 60, 137)),
                   ),
                 ),
               ],
