@@ -1,147 +1,192 @@
 import 'package:flutter/material.dart';
-import 'chat.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class AppointmentDetailsScreen extends StatelessWidget {
-  final String date;
+  final String appointmentId;
+  final String? specialistAvatarUrl;
+  final DateTime date;
   final String time;
-  final String nutritionistName;
+  final String specialistName;
+  final String service;
   final String status;
-  final String description;
-  final String imageUrl = 'https://hips.hearstapps.com/hmg-prod/images/portrait-of-a-happy-young-doctor-in-his-clinic-royalty-free-image-1661432441.jpg';
 
   const AppointmentDetailsScreen({
-    super.key,
+    required this.appointmentId,
+    required this.specialistAvatarUrl,
     required this.date,
     required this.time,
-    required this.nutritionistName,
+    required this.specialistName,
+    required this.service,
     required this.status,
-    required this.description,
+    super.key,
   });
+
+  Future<Map<String, dynamic>?> _fetchAppointmentDetails() async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+    DocumentSnapshot snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('appointments')
+        .doc(appointmentId)
+        .get();
+
+    return snapshot.data() as Map<String, dynamic>?;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           "Appointment Details",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFF5A71F3),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0.5,
+            color: Color.fromARGB(255, 220, 220, 241),
+          ),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(15.0),
-                  child: Image.network(
-                    imageUrl,
-                    width: 150,
-                    height: 150,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: Text(
-                  nutritionistName,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF333333),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: status == "Confirmed"
-                        ? Colors.green
-                        : status == "Pending Confirmation"
-                            ? Colors.orange
-                            : Colors.grey,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
+      body: FutureBuilder<Map<String, dynamic>?>(
+        future: _fetchAppointmentDetails(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const Center(child: Text("No appointment details found"));
+          }
+
+          var appointmentDetails = snapshot.data!;
+          double amountPaid = appointmentDetails['amountPaid'] ?? 0.0;
+          String appointmentMode = appointmentDetails['appointmentMode'] ?? 'Unknown';
+          Timestamp createdAt = appointmentDetails['createdAt'] ?? Timestamp.now();
+          String paymentCardUsed = appointmentDetails['paymentCardUsed'] ?? 'N/A';
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(15.0),
+                      child: Image.network(
+                        specialistAvatarUrl ?? '',
+                        width: 150,
+                        height: 150,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildAppointmentInfo("Date", date),
-                    _buildAppointmentInfo("Time", time),
-                    _buildAppointmentInfo("Specialist", nutritionistName),
-                    _buildAppointmentInfo("Status", status),
-                    const SizedBox(height: 16),
-                    const Divider(color: Colors.grey),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Description",
+                  ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Text(
+                      specialistName,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF333333),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      status,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: _getStatusColor(status),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      description,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF6D6D6D),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildInfoCard(
+                    title: "Appointment Details",
+                    children: [
+                      _buildAppointmentInfo("Appointment ID", appointmentId),
+                      _buildAppointmentInfo("Status", status),
+                      _buildAppointmentInfo("Date", DateFormat('MMMM dd, yyyy').format(date)),
+                      _buildAppointmentInfo("Time", time),
+                      _buildAppointmentInfo("Service", service),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildInfoCard(
+                    title: "Payment Details",
+                    children: [
+                      _buildAppointmentInfo("Amount Paid", "\$$amountPaid"),
+                      _buildAppointmentInfo("Appointment Mode", appointmentMode),
+                      _buildAppointmentInfo("Payment Card Used", paymentCardUsed),
+                      _buildAppointmentInfo("Pay On", DateFormat('MMMM dd, yyyy, hh:mm a').format(createdAt.toDate())),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        // Navigate to chat screen (implement ChatScreen)
+                      },
+                      icon: const Icon(Icons.chat, color: Colors.white),
+                      label: const Text(
+                        "Chat with Specialist",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5A71F3),
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-              Center(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ChatScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.chat, color: Colors.white),
-                  label: const Text(
-                    "Chat with Specialist",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A71F3),
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 14, horizontal: 24),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: Colors.grey.shade400, width: 1),
+        ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...children, // Add the detail widgets
+          ],
         ),
       ),
     );
@@ -171,5 +216,18 @@ class AppointmentDetailsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Confirmed':
+        return Colors.green;
+      case 'Pending Confirmation':
+        return Colors.orange;
+      case 'Completed':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
   }
 }

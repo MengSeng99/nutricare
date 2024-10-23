@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'appointment_details.dart';
+import 'package:intl/intl.dart';
+
+import 'reschedule.dart'; // For date formatting
 
 class ScheduleScreen extends StatelessWidget {
   const ScheduleScreen({super.key});
@@ -14,7 +19,11 @@ class ScheduleScreen extends StatelessWidget {
           automaticallyImplyLeading: false,
           title: const Text(
             "Schedule",
-            style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold, fontSize: 22),
+            style: TextStyle(
+              color: Color.fromARGB(255, 90, 113, 243),
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+            ),
           ),
           backgroundColor: Colors.white,
           elevation: 0,
@@ -35,9 +44,10 @@ class ScheduleScreen extends StatelessWidget {
         ),
         body: const TabBarView(
           children: [
-            UpcomingAppointmentsTab(),
-            PastAppointmentsTab(),
-            CanceledAppointmentsTab(),
+            AppointmentsTab(
+                statusFilter: ['Confirmed', 'Pending Confirmation']),
+            AppointmentsTab(statusFilter: ['Completed']),
+            AppointmentsTab(statusFilter: ['Canceled']),
           ],
         ),
       ),
@@ -45,55 +55,117 @@ class ScheduleScreen extends StatelessWidget {
   }
 }
 
-class UpcomingAppointmentsTab extends StatelessWidget {
-  const UpcomingAppointmentsTab({super.key});
+// Generic Appointments Tab
+class AppointmentsTab extends StatelessWidget {
+  final List<String> statusFilter;
+  const AppointmentsTab({required this.statusFilter, super.key});
+
+  Stream<QuerySnapshot> _getAppointments() {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('appointments')
+        .where('appointmentStatus', whereIn: statusFilter)
+        .snapshots();
+  }
+
+  Future<String?> _getSpecialistAvatar(String specialistId) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('specialists')
+        .doc(specialistId)
+        .get();
+    return snapshot.data()?['profile_picture_url'] as String?;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        _buildAppointmentCard(
-          context,
-          date: "October 15, 2024",
-          time: "10:00 AM",
-          nutritionistName: "Dr. Sarah Johnson",
-          appointmentStatus: "Confirmed",
-          description: "Discuss weight loss goals and create a personalized meal plan.",
-          showButtons: true,
-        ),
-        _buildAppointmentCard(
-          context,
-          date: "October 20, 2024",
-          time: "2:00 PM",
-          nutritionistName: "Dr. Emily Davis",
-          appointmentStatus: "Pending Confirmation",
-          description: "Review current diet plan and discuss strategies for maintaining weight.",
-          showButtons: true,
-        ),
-      ],
+    return StreamBuilder<QuerySnapshot>(
+      stream: _getAppointments(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text("No appointments available"));
+        }
+
+        return ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: snapshot.data!.docs.map((doc) {
+            var data = doc.data() as Map<String, dynamic>;
+            String specialistId = data['specialistId'];
+
+            return FutureBuilder<String?>(
+              future: _getSpecialistAvatar(specialistId),
+              builder: (context, avatarSnapshot) {
+                if (avatarSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                return AppointmentCard(
+                  date: (data['selectedDate'] as Timestamp).toDate(),
+                  time: data['selectedTimeSlot'] ?? 'N/A',
+                  specialistName: data['specialistName'],
+                  appointmentStatus: data['appointmentStatus'],
+                  service: data['serviceName'],
+                  showButtons: statusFilter.contains('Confirmed'),
+                  appointmentId: (data['appointmentId']).toString(),
+                  appointmentMode: data['appointmentMode'],
+                  specialistId: data['specialistId'],
+                  specialistAvatarUrl: avatarSnapshot.data,
+                );
+              },
+            );
+          }).toList(),
+        );
+      },
     );
   }
+}
 
-  Widget _buildAppointmentCard(
-    BuildContext context, {
-    required String date,
-    required String time,
-    required String nutritionistName,
-    required String appointmentStatus,
-    required String description,
-    required bool showButtons,
-  }) {
+class AppointmentCard extends StatelessWidget {
+  final String appointmentId;
+  final DateTime date;
+  final String time;
+  final String specialistName;
+  final String appointmentStatus;
+  final String appointmentMode;
+  final String service;
+  final bool showButtons;
+  final String specialistId;
+  final String? specialistAvatarUrl;
+
+  const AppointmentCard({
+    required this.appointmentId,
+    required this.date,
+    required this.time,
+    required this.specialistName,
+    required this.appointmentStatus,
+    required this.appointmentMode,
+    required this.service,
+    required this.showButtons,
+    required this.specialistId,
+    this.specialistAvatarUrl,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => AppointmentDetailsScreen(
+              appointmentId: appointmentId, // Pass appointmentId
+              specialistAvatarUrl:
+                  specialistAvatarUrl, // Pass specialistAvatarUrl
               date: date,
               time: time,
-              nutritionistName: nutritionistName,
-              description: description,
+              specialistName: specialistName,
+              service: service,
               status: appointmentStatus,
             ),
           ),
@@ -104,7 +176,6 @@ class UpcomingAppointmentsTab extends StatelessWidget {
           borderRadius: BorderRadius.circular(15),
           side: BorderSide(color: Colors.grey.shade400, width: 1),
         ),
-        color: Colors.white, // Set card background to white
         margin: const EdgeInsets.only(bottom: 16),
         elevation: 2,
         child: Padding(
@@ -113,19 +184,23 @@ class UpcomingAppointmentsTab extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CircleAvatar(
+                    backgroundImage: specialistAvatarUrl != null
+                        ? NetworkImage(specialistAvatarUrl!)
+                        : null,
                     backgroundColor: Colors.blueAccent,
                     radius: 30,
-                    child: Text(
-                      nutritionistName.split(" ").first[0],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: specialistAvatarUrl == null
+                        ? Text(
+                            specialistName[0],
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -133,11 +208,9 @@ class UpcomingAppointmentsTab extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          nutritionistName,
+                          specialistName,
                           style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Row(
@@ -145,21 +218,13 @@ class UpcomingAppointmentsTab extends StatelessWidget {
                             Icon(
                               Icons.circle,
                               size: 10,
-                              color: appointmentStatus == "Confirmed"
-                                  ? Colors.green
-                                  : appointmentStatus == "Pending Confirmation"
-                                      ? Colors.orange
-                                      : Colors.grey,
+                              color: _getStatusColor(appointmentStatus),
                             ),
                             const SizedBox(width: 8),
                             Text(
                               appointmentStatus,
                               style: TextStyle(
-                                color: appointmentStatus == "Confirmed"
-                                    ? Colors.green
-                                    : appointmentStatus == "Pending Confirmation"
-                                        ? Colors.orange
-                                        : Colors.grey,
+                                color: _getStatusColor(appointmentStatus),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -167,7 +232,15 @@ class UpcomingAppointmentsTab extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "$date | $time",
+                          '$appointmentMode Appointment',
+                          style: TextStyle(
+                            color: Color.fromARGB(255, 79, 53, 150),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "${DateFormat('MMMM dd, yyyy').format(date)} | $time",
                           style: const TextStyle(
                             fontSize: 16,
                             color: Color(0xFF6D6D6D),
@@ -180,144 +253,171 @@ class UpcomingAppointmentsTab extends StatelessWidget {
               ),
               const Divider(height: 24, color: Colors.grey),
               Text(
-                description,
+                service,
                 style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF6D6D6D),
                 ),
               ),
-              if (showButtons) ...[
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        // Implement the cancel appointment functionality here
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 232, 235, 247), // Grey background
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text(
-                        "Cancel",
-                        style: TextStyle(color: Color.fromARGB(255, 59, 59, 59), fontSize: 16), // Black text
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Implement the reschedule functionality here
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 90, 113, 243), // Blue background
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text(
-                        "Reschedule",
-                        style: TextStyle(color: Colors.white, fontSize: 16), // White text
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              const SizedBox(height: 10),
+              if (appointmentStatus == "Confirmed" ||
+                  appointmentStatus == "Pending Confirmation")
+                _buildActionButtons(context),
             ],
           ),
         ),
       ),
     );
   }
-}
 
-// For Completed and Canceled tabs
-class PastAppointmentsTab extends StatelessWidget {
-  const PastAppointmentsTab({super.key});
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Confirmed':
+        return Colors.green;
+      case 'Pending Confirmation':
+        return Colors.orange;
+      case 'Canceled':
+        return Colors.red;
+      case 'Completed':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
+  // Action Buttons for Cancel and Reschedule
+  Widget _buildActionButtons(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        _buildAppointmentCard(
-          context,
-          date: "September 25, 2024",
-          time: "3:00 PM",
-          nutritionistName: "Dr. Michael Lee",
-          appointmentStatus: "Completed",
-          description:
-              "Reviewed progress and discussed changes to diet for weight management.",
-          showButtons: false, // Hide buttons for completed appointments
+        ElevatedButton(
+          onPressed: () {
+            _showCancelConfirmationDialog(context);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 232, 235, 247),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: const Text(
+            "Cancel",
+            style:
+                TextStyle(color: Color.fromARGB(255, 59, 59, 59), fontSize: 16),
+          ),
+        ),
+        const SizedBox(width: 12),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RescheduleScreen(
+                  appointmentId: appointmentId,
+                  originalDate: date,
+                  appointmentMode: appointmentMode,
+                  specialistId: specialistId,
+                ),
+              ),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: const Text(
+            "Reschedule",
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildAppointmentCard(
-    BuildContext context, {
-    required String date,
-    required String time,
-    required String nutritionistName,
-    required String appointmentStatus,
-    required String description,
-    required bool showButtons,
-  }) {
-    return UpcomingAppointmentsTab()._buildAppointmentCard(
-      context,
-      date: date,
-      time: time,
-      nutritionistName: nutritionistName,
-      appointmentStatus: appointmentStatus,
-      description: description,
-      showButtons: showButtons,
+  // Show confirmation dialog for cancellation
+  void _showCancelConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text(
+            "Confirm Cancellation",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+          ),
+          content: const Text(
+            "Are you sure you want to cancel this appointment? "
+            "The payment will be refunded within 14 working days.",
+            style: TextStyle(fontSize: 16.0),
+          ),
+          actions: [
+            ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss the dialog
+              },
+              child: const Text(
+                "No",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss the dialog
+                _cancelAppointment(context);
+              },
+              child: const Text("Yes, Cancel",style: TextStyle(color: Colors.white),),
+            ),
+          ],
+        );
+      },
     );
   }
-}
 
-class CanceledAppointmentsTab extends StatelessWidget {
-  const CanceledAppointmentsTab({super.key});
+  // Cancel the appointment by updating its status in Firestore
+  void _cancelAppointment(BuildContext context) async {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
 
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        _buildAppointmentCard(
-          context,
-          date: "October 10, 2024",
-          time: "4:00 PM",
-          nutritionistName: "Dr. John Doe",
-          appointmentStatus: "Canceled",
-          description:
-              "Initial consultation was canceled due to scheduling conflicts.",
-          showButtons: false, // Hide buttons for canceled appointments
-        ),
-      ],
-    );
-  }
+    // Reference the specific appointment to cancel
+    final appointmentRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('appointments')
+        .doc(appointmentId); // Use the appointmentId
 
-  Widget _buildAppointmentCard(
-    BuildContext context, {
-    required String date,
-    required String time,
-    required String nutritionistName,
-    required String appointmentStatus,
-    required String description,
-    required bool showButtons,
-  }) {
-    return UpcomingAppointmentsTab()._buildAppointmentCard(
-      context,
-      date: date,
-      time: time,
-      nutritionistName: nutritionistName,
-      appointmentStatus: appointmentStatus,
-      description: description,
-      showButtons: showButtons,
-    );
+    try {
+      // Update the appointment status to "Canceled"
+      await appointmentRef.update({
+        'appointmentStatus': 'Canceled',
+      });
+
+      // Show a success message or perform additional actions
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment canceled successfully.'),
+        backgroundColor: Colors.green,),
+      );
+    } catch (e) {
+      // Handle any errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to cancel appointment: $e')),
+      );
+    }
   }
 }

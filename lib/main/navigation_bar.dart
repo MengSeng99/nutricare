@@ -5,20 +5,28 @@ import '../scheduled_appointment/schedule.dart'; // Import Activity screen
 import 'more.dart'; // Import More screen
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final int initialIndex; // Add this parameter to pass the index
+
+  const MainScreen({super.key, this.initialIndex = 0}); // Default is 0 (Home)
 
   @override
   _MainScreenState createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex; // Initialize with passed index
+  }
 
   // List of screens for each navigation item
   static const List<Widget> _screens = <Widget>[
     HomeScreen(),   // Home screen
     DietsScreen(),  // Diets screen
-    ScheduleScreen(), // Activity screen
+    ScheduleScreen(), // Schedule screen
     MoreScreen(),   // More screen
   ];
 
@@ -37,19 +45,19 @@ class _MainScreenState extends State<MainScreen> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home', // Add text label "Home"
+            label: 'Home',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.food_bank),
-            label: 'Diets', // Add text label "Diets"
+            label: 'Diets',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_month),
-            label: 'Schedule', // Add text label "Activity"
+            label: 'Schedule',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.more_horiz),
-            label: 'More', // Add text label "More"
+            label: 'More',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -57,7 +65,6 @@ class _MainScreenState extends State<MainScreen> {
         unselectedItemColor: Colors.grey,
         backgroundColor: Colors.white,
         onTap: _onItemTapped,
-        //showUnselectedLabels: true, // Show labels for unselected items
       ),
     );
   }

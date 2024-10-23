@@ -36,17 +36,46 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Confirm Delete'),
-          content: const Text('Are you sure you want to delete this record?'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text(
+            'Confirm Delete',
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(255, 90, 113, 243)),
+          ),
+          content: const Text(
+            'Are you sure you want to delete this record?',
+            style: TextStyle(
+              fontSize: 16,
+            ),
+          ),
           actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    const Color.fromARGB(255, 90, 113, 243), // Blue background
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              child: const Text('Cancel',style: TextStyle(color: Colors.white),),
               onPressed: () {
                 Navigator.of(context).pop(false); // User cancels
               },
             ),
-            TextButton(
-              child: const Text('Delete',style: TextStyle(color: Colors.red),),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, // Blue background
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: Colors.white),
+              ),
               onPressed: () {
                 Navigator.of(context).pop(true); // User confirms
               },
@@ -74,7 +103,8 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
       if (querySnapshot.docs.isNotEmpty) {
         await querySnapshot.docs.first.reference.delete();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Health record deleted successfully!')),
+          const SnackBar(content: Text('Health record deleted successfully!'),
+          backgroundColor: Colors.green,),
         );
 
         // Refresh the uploaded records list after deletion
@@ -156,7 +186,8 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
         ),
         backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 90, 113, 243)),
+          icon: const Icon(Icons.arrow_back,
+              color: Color.fromARGB(255, 90, 113, 243)),
           onPressed: () {
             Navigator.pop(context); // Back navigation
           },
@@ -239,158 +270,163 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
   }
 
 // Content for "Your Records" tab
-Widget _buildYourRecordsTabContent() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      // Loading spinner while fetching records
-      if (_isLoading)
-        const Center(
-          child: CircularProgressIndicator(),
-        )
-      else if (_uploadedRecords.isEmpty && _specialistReports.isEmpty) ...[
-        // Show the image and the message when both records and reports are empty
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Image.asset(
-              'images/health-record-2.png', // Ensure this image path is correct
-              width: 180,
-              height: 180,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              "You don't have any health records yet",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+  Widget _buildYourRecordsTabContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Loading spinner while fetching records
+        if (_isLoading)
+          const Center(
+            child: CircularProgressIndicator(),
+          )
+        else if (_uploadedRecords.isEmpty && _specialistReports.isEmpty) ...[
+          // Show the image and the message when both records and reports are empty
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Image.asset(
+                'images/health-record-2.png', // Ensure this image path is correct
+                width: 180,
+                height: 180,
               ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "If you do the health screening with us, this is where you can check your personalised report later. Alternatively, you can upload your health docs here.",
-              style: TextStyle(fontSize: 15, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ] else ...[
-        // Show the user's personal uploads if available
-        _buildSectionHeader('Your Uploads'),
-        _uploadedRecords.isEmpty
-            ? const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Text(
-                  'No records yet. Please go to the upload tab to add your health documents.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+              const SizedBox(height: 20),
+              const Text(
+                "You don't have any health records yet",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
-              )
-            : ListView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: _uploadedRecords.length,
-                itemBuilder: (context, index) {
-                  final record = _uploadedRecords[index];
-                  final formattedTime = DateFormat('dd MMM yyyy, hh:mm a')
-                      .format(record['uploadTime']);
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "If you do the health screening with us, this is where you can check your personalised report later. Alternatively, you can upload your health docs here.",
+                style: TextStyle(fontSize: 15, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ] else ...[
+          // Show the user's personal uploads if available
+          _buildSectionHeader('Your Uploads'),
+          _uploadedRecords.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    'No records yet. Please go to the upload tab to add your health documents.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                )
+              : ListView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: _uploadedRecords.length,
+                  itemBuilder: (context, index) {
+                    final record = _uploadedRecords[index];
+                    final formattedTime = DateFormat('dd MMM yyyy, hh:mm a')
+                        .format(record['uploadTime']);
 
-                  return Card(
-                    elevation: 3,
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: ListTile(
-                      title: Text(
-                        record['fileId'],
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 90, 113, 243),
+                    return Card(
+                      elevation: 3,
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: ListTile(
+                        title: Text(
+                          record['fileId'],
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(255, 90, 113, 243),
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Uploaded on $formattedTime',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.open_in_new,
+                                  color: Colors.grey),
+                              onPressed: () async {
+                                final url = record['filePath'];
+                                Uri fileUri = Uri.parse(url);
+                                if (await canLaunchUrl(fileUri)) {
+                                  await launchUrl(fileUri);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content:
+                                            Text('Could not open the file')),
+                                  );
+                                }
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                _confirmDeleteRecord(
+                                    record['fileId'], record['filePath']);
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                      subtitle: Text(
-                        'Uploaded on $formattedTime',
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.open_in_new, color: Colors.grey),
-                            onPressed: () async {
-                              final url = record['filePath'];
-                              Uri fileUri = Uri.parse(url);
-                              if (await canLaunchUrl(fileUri)) {
-                                await launchUrl(fileUri);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Could not open the file')),
-                                );
-                              }
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              _confirmDeleteRecord(record['fileId'], record['filePath']);
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-        const SizedBox(height: 20),
-
-        // Only show specialist reports section if available
-        if (_specialistReports.isNotEmpty) ...[
-          _buildSectionHeader('Health Reports from Specialists'),
-          ListView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: _specialistReports.length,
-            itemBuilder: (context, index) {
-              final report = _specialistReports[index];
-              final formattedTime = DateFormat('dd MMM yyyy, hh:mm a')
-                  .format(report['uploadTime']);
-
-              return Card(
-                elevation: 3,
-                margin: const EdgeInsets.symmetric(vertical: 8.0),
-                child: ListTile(
-                  title: Text(
-                    report['reportId'],
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 90, 113, 243),
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Uploaded on $formattedTime',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.open_in_new, color: Colors.grey),
-                    onPressed: () async {
-                      final url = report['filePath'];
-                      Uri reportUri = Uri.parse(url);
-                      if (await canLaunchUrl(reportUri)) {
-                        await launchUrl(reportUri);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Could not open the file')),
-                        );
-                      }
-                    },
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
+          const SizedBox(height: 20),
+
+          // Only show specialist reports section if available
+          if (_specialistReports.isNotEmpty) ...[
+            _buildSectionHeader('Health Reports from Specialists'),
+            ListView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: _specialistReports.length,
+              itemBuilder: (context, index) {
+                final report = _specialistReports[index];
+                final formattedTime = DateFormat('dd MMM yyyy, hh:mm a')
+                    .format(report['uploadTime']);
+
+                return Card(
+                  elevation: 3,
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: ListTile(
+                    title: Text(
+                      report['reportId'],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 90, 113, 243),
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Uploaded on $formattedTime',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.open_in_new, color: Colors.grey),
+                      onPressed: () async {
+                        final url = report['filePath'];
+                        Uri reportUri = Uri.parse(url);
+                        if (await canLaunchUrl(reportUri)) {
+                          await launchUrl(reportUri);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Could not open the file')),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ],
       ],
-    ],
-  );
-}
+    );
+  }
 
   // Content for "Uploads" tab
   Widget _buildUploadsTabContent() {
@@ -479,7 +515,8 @@ Widget _buildYourRecordsTabContent() {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Health record uploaded successfully!')),
+        const SnackBar(content: Text('Health record uploaded successfully!'),
+        backgroundColor: Colors.green,),
       );
 
       // Refresh the uploaded records list

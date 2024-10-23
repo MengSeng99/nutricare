@@ -192,6 +192,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               MaterialPageRoute(builder: (context) => const LoginPage()),
                               (Route<dynamic> route) => false,
                             );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Account logged out successfully.'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
                           });
                         },
                       ),

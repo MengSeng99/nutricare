@@ -113,7 +113,7 @@ class ChangePasswordScreen extends StatelessWidget {
                     ),
                     title: const Text(
                       "Confirm Password Reset",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(fontWeight: FontWeight.bold,color: Color.fromARGB(255, 90, 113, 243)),
                     ),
                     content: const Text(
                       "Are you sure you want to reset your password? You will receive a password reset link at your registered email address.",

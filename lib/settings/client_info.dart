@@ -305,6 +305,13 @@ class _ClientInfoScreenState extends State<ClientInfoScreen> {
           });
         }
         Navigator.pop(context); // Navigate back after saving
+          // Show a snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Personal Details updated successfully.'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     }
   }

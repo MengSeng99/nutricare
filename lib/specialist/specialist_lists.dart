@@ -51,7 +51,7 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
       FirebaseFirestore.instance.collection('specialists');
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   late List<String> _favoriteIds = [];
-
+  TextEditingController searchController = TextEditingController();
   String _searchQuery = '';
   final List<String> _selectedGenders = [];
 
@@ -231,6 +231,7 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
               children: [
                 Expanded(
                   child: TextField(
+                    controller: searchController,
                     onChanged: (value) {
                       setState(() {
                         _searchQuery = value;
@@ -263,6 +264,17 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                           width: 2.0,
                         ),
                       ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              searchController.clear(); // Clear the search field
+                              _searchQuery = ""; // Clear the search query
+                            });
+                          },
+                        )
+                      : null,
                     ),
                     style: const TextStyle(
                         color: Color.fromARGB(255, 74, 60, 137)),

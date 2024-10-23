@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+import 'package:flutter_launcher_icons/xml_templates.dart';
 import 'bmi_tracker.dart'; // Import the BmiTrackerScreen
 
 class BmiResultScreen extends StatelessWidget {
@@ -182,7 +183,8 @@ class BmiResultScreen extends StatelessWidget {
                         });
 
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('BMI record added successfully!')),
+                          SnackBar(content: Text('BMI record added successfully!'),
+                          backgroundColor: Colors.green,),
                         );
 
                         // Navigate to the BmiTrackerScreen and switch to History tab

@@ -20,7 +20,7 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
 
   List<String> availableTimeSlots = [];
   String? selectedTimeSlot;
-  String _selectedMode = 'physical'; // Default appointment mode
+  String _selectedMode = 'Physical'; // Default appointment mode
 
   @override
   void initState() {
@@ -128,8 +128,8 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
         ],
       ),
       child: TableCalendar(
-        firstDay: DateTime.utc(2020, 1, 1),
-        lastDay: DateTime.utc(2030, 12, 31),
+        firstDay: DateTime.now(),
+        lastDay: DateTime.now().add(const Duration(days: 30)),
         focusedDay: _focusedDay,
         selectedDayPredicate: (day) {
           return isSameDay(_selectedDay, day);
@@ -236,7 +236,7 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
             unselectedLabelColor: Colors.grey,
             onTap: (index) {
               setState(() {
-                _selectedMode = index == 0 ? 'physical' : 'online';
+                _selectedMode = index == 0 ? 'Physical' : 'Online';
                 _fetchAvailableTimeSlots(); // Fetch time slots based on the selected mode
               });
             },
@@ -291,6 +291,7 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
                       selectedTimeSlot: selectedTimeSlot,
                       specialistName: widget.specialistName,
                       specialistId: widget.specialistId,
+                      appointmentMode: _selectedMode,
                     ),
                   ),
                 );

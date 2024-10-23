@@ -176,7 +176,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                       style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
-                                        color: Color.fromARGB(255, 0, 0, 0), // Keeping the title neutral
+                                        color: Color.fromARGB(255, 90, 113, 243), // Keeping the title neutral
                                       ),
                                     ),
                                     const SizedBox(height: 10),
@@ -221,26 +221,47 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                                        backgroundColor: Colors.red, // Blue background
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(30),
+                                                        ),
+                                                      ),
                                           onPressed: () {
                                             // Confirm deletion
                                             showDialog(
                                               context: context,
                                               builder: (context) {
                                                 return AlertDialog(
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(15),
+                                                  ),
                                                   title: const Text(
-                                                      'Confirm Deletion'),
+                                                      'Confirm Deletion',style: TextStyle(fontWeight: FontWeight.bold,color: Color.fromARGB(255, 90, 113, 243)),),
                                                   content: const Text(
-                                                      'Are you sure you want to delete this record?'),
+                                                      'Are you sure you want to delete this record?',style: TextStyle(fontSize: 16),),
                                                   actions: [
-                                                    TextButton(
+                                                    ElevatedButton(
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: const Color.fromARGB(255, 90, 113, 243), // Blue background
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(30),
+                                                        ),
+                                                      ),
                                                       onPressed: () {
                                                         Navigator.of(context)
                                                             .pop(); // Close the confirmation dialog
                                                       },
                                                       child:
-                                                          const Text('Cancel'),
+                                                          const Text('Cancel',style: TextStyle(color: Colors.white),),
                                                     ),
-                                                    TextButton(
+                                                    ElevatedButton(
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: Colors.red, // Blue background
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(30),
+                                                        ),
+                                                      ),
                                                       onPressed: () async {
                                                         // Delete the record from Firestore
                                                         try {
@@ -263,7 +284,8 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                                               .showSnackBar(
                                                             const SnackBar(
                                                                 content: Text(
-                                                                    'Record deleted successfully!')),
+                                                                    'Record deleted successfully!'),
+                                                                    backgroundColor: Colors.green,),
                                                           );
                                                         } catch (e) {
                                                           ScaffoldMessenger.of(
@@ -279,7 +301,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                                           'Delete',
                                                           style: TextStyle(
                                                               color:
-                                                                  Colors.red)),
+                                                                  Colors.white)),
                                                     ),
                                                   ],
                                                 );
@@ -288,14 +310,20 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                           },
                                           child: const Text('Delete',
                                               style:
-                                                  TextStyle(color: Colors.red)),
+                                                  TextStyle(color: Colors.white)),
                                         ),
                                         ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                                        backgroundColor: const Color.fromARGB(255, 90, 113, 243), // Blue background
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(30),
+                                                        ),
+                                                      ),
                                           onPressed: () {
                                             Navigator.of(context)
                                                 .pop(); // Close the dialog
                                           },
-                                          child: const Text('Close'),
+                                          child: const Text('Close',style: TextStyle(color: Colors.white),),
                                         ),
                                       ],
                                     ),
@@ -368,7 +396,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
             CrossAxisAlignment.center, // Align icons and text vertically
         children: [
           Icon(icon,
-              color: const Color.fromARGB(255, 75, 152, 190),
+              color: const Color.fromARGB(255, 90, 113, 243),
               size: 20), // Reduced icon size for better alignment
           const SizedBox(width: 10),
           Expanded(

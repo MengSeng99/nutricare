@@ -179,6 +179,7 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
                                       style: const TextStyle(
                                         fontSize: 16,
                                         color: Color.fromARGB(255, 90, 113, 243),
+                                        fontWeight: FontWeight.bold,
                                         decoration: TextDecoration.underline, // Underline to indicate a link
                                       ),
                                     ),
