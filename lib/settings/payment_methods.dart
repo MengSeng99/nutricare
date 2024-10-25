@@ -50,7 +50,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         actions: [
           IconButton(
             icon:
-                const Icon(Icons.add, color: Color.fromARGB(255, 90, 113, 243)),
+                const Icon(Icons.add_card_rounded, color: Color.fromARGB(255, 90, 113, 243)),
             onPressed: () => _addCardDialog.showAddCardDialog(context),
           ),
         ],
@@ -127,18 +127,18 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                       ),
                                     ),
                                     actions: <Widget>[
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color.fromARGB(
-                                              255, 90, 113, 243),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30),
-                                          ),
-                                        ),
+                                      TextButton(
+                                        // style: ElevatedButton.styleFrom(
+                                        //   backgroundColor: const Color.fromARGB(
+                                        //       255, 90, 113, 243),
+                                        //   shape: RoundedRectangleBorder(
+                                        //     borderRadius:
+                                        //         BorderRadius.circular(30),
+                                        //   ),
+                                        // ),
                                         child: const Text(
                                           'Cancel',
-                                          style: TextStyle(color: Colors.white),
+                                          // style: TextStyle(color: Colors.white),
                                         ),
                                         onPressed: () {
                                           Navigator.of(context)

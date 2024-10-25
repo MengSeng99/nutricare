@@ -43,11 +43,11 @@ class HomeScreen extends StatelessWidget {
 
   // List of services with icons and descriptions
   final List<Map<String, dynamic>> _services = const [
-    {'icon': Icons.fastfood, 'label': 'Food Recipe'},
+    {'icon': Icons.fastfood_rounded, 'label': 'Food Recipe'},
     // {'icon': Icons.restaurant_menu, 'label': 'Meal Tracking'},
-    {'icon': Icons.calendar_today, 'label': 'Book an Appointment'},
-    {'icon': Icons.monitor_weight_outlined, 'label': 'BMI Tracker'},
-    {'icon': Icons.book, 'label': 'Health Records'},
+    {'icon': Icons.calendar_today_rounded, 'label': 'Book an Appointment'},
+    {'icon': Icons.monitor_weight_rounded, 'label': 'BMI Tracker'},
+    {'icon': Icons.book_rounded, 'label': 'Health Records'},
   ];
 
   // List of consultation options with images and descriptions

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
-import 'package:flutter_launcher_icons/xml_templates.dart';
 import 'bmi_tracker.dart'; // Import the BmiTrackerScreen
 
 class BmiResultScreen extends StatelessWidget {
@@ -58,15 +57,18 @@ class BmiResultScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'BMI Result',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+          "Your BMI Result",
+          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
+        ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0.5,
+            color: Color.fromARGB(255, 220, 220, 241),
           ),
         ),
-        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 90, 113, 243)),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -98,7 +100,7 @@ class BmiResultScreen extends StatelessWidget {
                 const Text(
                   'Your BMI',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey,
                   ),
@@ -116,7 +118,7 @@ class BmiResultScreen extends StatelessWidget {
                 Text(
                   '${isMale ? "Male" : "Female"} | ${height.toStringAsFixed(1)}CM | ${weight.toStringAsFixed(1)}KG | ${age}yr old',
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     color: Colors.grey,
                   ),
                 ),
@@ -133,7 +135,7 @@ class BmiResultScreen extends StatelessWidget {
                 if (bmiCategory != 'Normal weight')
                   RichText(
                     text: TextSpan(
-                      style: const TextStyle(fontSize: 16, color: Colors.black),
+                      style: const TextStyle(fontSize: 18, color: Colors.black),
                       children: [
                         const TextSpan(text: 'Your ideal weight is '),
                         TextSpan(

@@ -126,7 +126,7 @@ class AppointmentDetailsScreen extends StatelessWidget {
                   _buildInfoCard(
                     title: "Payment Details",
                     children: [
-                      _buildAppointmentInfo("Amount Paid", "\$$amountPaid"),
+                      _buildAppointmentInfo("Amount Paid", "RM $amountPaid"),
                       _buildAppointmentInfo("Appointment Mode", appointmentMode),
                       _buildAppointmentInfo("Payment Card Used", paymentCardUsed),
                       _buildAppointmentInfo("Pay On", DateFormat('MMMM dd, yyyy, hh:mm a').format(createdAt.toDate())),

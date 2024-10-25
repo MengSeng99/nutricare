@@ -1,9 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class FoodDetailsScreen extends StatefulWidget {
-  final String recipeId; // Pass the recipe ID when navigating to this page
-  const FoodDetailsScreen({super.key, required this.recipeId});
+  final String recipeId;
+  final bool isBookmarked;
+
+  const FoodDetailsScreen({
+    super.key,
+    required this.recipeId,
+    required this.isBookmarked,
+  });
 
   @override
   _FoodDetailsScreenState createState() => _FoodDetailsScreenState();
@@ -11,7 +18,6 @@ class FoodDetailsScreen extends StatefulWidget {
 
 class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   bool isBookmarked = false;
-
   bool showIngredients = false;
   bool showSteps = false;
   bool showNutritionalFacts = false;
@@ -21,9 +27,52 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   List<Map<String, dynamic>>? steps;
   List<Map<String, dynamic>>? nutritionalFacts;
 
+  @override
+  void initState() {
+    super.initState();
+    isBookmarked = widget.isBookmarked; // Initialize the bookmark status
+  }
+
+  // Method to toggle favorite status of a recipe
+  Future<void> _toggleFavoriteStatus(String recipeId) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return; // Ensure the user is authenticated
+
+    final favRecipesRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorite_recipes_lists')
+        .doc(recipeId);
+
+    // First check if the document exists
+    DocumentSnapshot docSnapshot = await favRecipesRef.get();
+
+    if (docSnapshot.exists) {
+      // If it exists, remove (unbookmark) the recipe
+      await favRecipesRef.delete().then((_) {
+        setState(() {
+          isBookmarked = false; // Update the local state to reflect the change
+        });
+      }).catchError((error) {
+        // Error handling: you can log it or show a message
+        print("Failed to remove bookmark: $error");
+      });
+    } else {
+      // If it does not exist, add the recipe to Firestore
+      await favRecipesRef.set({'isBookmarked': true}).then((_) {
+        setState(() {
+          isBookmarked = true; // Update the local state to reflect the change
+        });
+      }).catchError((error) {
+        // Error handling: you can log it or show a message
+        print("Failed to add bookmark: $error");
+      });
+    }
+  }
+
+  // Fetch basic recipe data
   Future<Map<String, dynamic>> _getRecipeData() async {
     try {
-      // Fetch basic recipe data
       DocumentSnapshot recipeSnapshot = await FirebaseFirestore.instance
           .collection('recipes')
           .doc(widget.recipeId)
@@ -47,12 +96,12 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
         .toList();
   }
 
-    Future<List<Map<String, dynamic>>> _getSteps() async {
+  Future<List<Map<String, dynamic>>> _getSteps() async {
     QuerySnapshot stepsSnapshot = await FirebaseFirestore.instance
         .collection('recipes')
         .doc(widget.recipeId)
         .collection('steps')
-        .orderBy('number', descending: false) // Order the steps by the number field
+        .orderBy('number', descending: false) // Order the steps by number
         .get();
 
     return stepsSnapshot.docs
@@ -105,44 +154,85 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
           return Stack(
             children: [
               // Image at the top
-              // Inside the Positioned widget that shows the image at the top
-          Positioned(
-            top: 0, // Fix the image at the top of the page
-            left: 0,
-            right: 0,
-            child: GestureDetector(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return Dialog(
-                      backgroundColor: Colors.transparent,
-                      child: GestureDetector(
-                        onTap: () => Navigator.of(context).pop(), // Close dialog on tap
-                        child: Container(
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: NetworkImage(recipe['imageUrl']),
-                              fit: BoxFit.contain, // Fit the image to the dialog box
+              Positioned(
+                top: 0, // Fix the image at the top of the page
+                left: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return Dialog(
+                          backgroundColor: Colors.transparent,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.circular(30), // Rounded corners
+                              image: DecorationImage(
+                                image: NetworkImage(recipe['imageUrl']),
+                                fit: BoxFit.contain, // Adjust as needed
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                  30), // Ensure the image respects the border radius
+                              child: Stack(
+                                children: [
+                                  // Image background can be set here if needed
+                                  // Adding a GestureDetector to detect taps
+                                  GestureDetector(
+                                    onTap: () => Navigator.of(context)
+                                        .pop(), // Closing on tap
+                                    child: Container(
+                                      child: Image.network(
+                                        recipe['imageUrl'],
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  ),
+                                  // Close button
+                                  Positioned(
+                                      top: 16,
+                                      right: 16,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: const Color.fromARGB(255, 34, 42, 92)
+                                              .withOpacity(
+                                                  0.4),
+                                          borderRadius: BorderRadius.circular(
+                                              30), 
+                                        ),
+                                        child: IconButton(
+                                          icon: Icon(
+                                            Icons.close,
+                                            color: Colors.white,
+                                            size: 30,
+                                          ),
+                                          onPressed: () => Navigator.of(context)
+                                              .pop(), // Close on press
+                                        ),
+                                      )),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-              child: Container(
-                height: 300.0,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(recipe['imageUrl']),
-                    fit: BoxFit.cover,
+                  child: Container(
+                    height: 300.0,
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: NetworkImage(recipe['imageUrl']),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
+
               DraggableScrollableSheet(
                 initialChildSize: 0.67,
                 minChildSize: 0.63,
@@ -323,7 +413,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                 top: 40.0,
                 left: 16.0,
                 child: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
+                  onTap: () => Navigator.of(context).pop(isBookmarked),
                   child: Container(
                     padding: const EdgeInsets.all(10.0),
                     decoration: BoxDecoration(
@@ -339,15 +429,20 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                 top: 40.0,
                 right: 16.0,
                 child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      isBookmarked = !isBookmarked;
-                    });
+                  onTap: () async {
+                    await _toggleFavoriteStatus(
+                        widget.recipeId); // Call toggle method
+                    setState(
+                        () {}); // This will force a refresh after the async call.
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(isBookmarked
-                            ? 'Added to Bookmarks'
-                            : 'Removed from Bookmarks'),
+                        content: Text(
+                          isBookmarked
+                              ? 'Added to Bookmarks'
+                              : 'Removed from Bookmarks',
+                        ),
+                        backgroundColor: Colors.green,
                         duration: const Duration(seconds: 1),
                       ),
                     );
@@ -360,7 +455,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                     ),
                     child: Icon(
                       isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                      color: Color(0xFF5A71F3),
+                      color: const Color(0xFF5A71F3),
                     ),
                   ),
                 ),

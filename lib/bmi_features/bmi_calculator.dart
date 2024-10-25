@@ -127,29 +127,30 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
+        padding: const EdgeInsets.all(10.0),
         width: 170,
         height: 140,
         decoration: BoxDecoration(
           color: isSelected ? const Color.fromARGB(255, 240, 240, 255) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? const Color.fromARGB(255, 90, 113, 243) : Colors.grey,
             width: 1,
           ),
-          borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: isSelected ? 70 : 60, // Scale icon if selected
+              size: isSelected ? 70 : 60, // Increase icon size if selected
               color: isSelected ? (gender == 'Female' ? Colors.pink : Colors.blue) : Colors.grey,
             ),
             const SizedBox(height: 5),
             Text(
               gender,
               style: TextStyle(
-                fontSize: isSelected ? 20 : 18, // Scale text if selected
+                fontSize: isSelected ? 20 : 18, // Increase font size if selected
                 fontWeight: FontWeight.bold,
                 color: isSelected ? (gender == 'Female' ? Colors.pink : Colors.blue) : Colors.grey,
               ),
@@ -159,7 +160,6 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
       ),
     );
   }
-
   // Helper method to create the height input box with a slider and text field
   Widget _buildHeightInputBox() {
     return Container(

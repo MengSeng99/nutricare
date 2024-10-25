@@ -178,6 +178,7 @@ class AppointmentCard extends StatelessWidget {
         ),
         margin: const EdgeInsets.only(bottom: 16),
         elevation: 2,
+        color: Colors.white, 
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -354,7 +355,7 @@ class AppointmentCard extends StatelessWidget {
           content: const Text(
             "Are you sure you want to cancel this appointment? "
             "The payment will be refunded within 14 working days.",
-            style: TextStyle(fontSize: 16.0),
+            style: TextStyle(fontSize: 14.0),
           ),
           actions: [
             ElevatedButton(

@@ -73,7 +73,7 @@ class AddCardDialog {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
           title: const Text("Add Payment Method",
-              style: TextStyle(fontWeight: FontWeight.bold)),
+              style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243))),
           content: SingleChildScrollView(
             child: Column(
               children: [
@@ -190,7 +190,7 @@ class AddCardDialog {
                 Navigator.of(context).pop();
                 _clearTextFields(); // Clear text fields on cancel
               },
-              child: const Text("Cancel", style: TextStyle(color: Colors.red)),
+              child: const Text("Cancel"),
             ),
             ElevatedButton(
               onPressed: () {

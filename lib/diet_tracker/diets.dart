@@ -1,20 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'calories_calculator.dart';
+import 'meal_selection.dart'; // Import your CaloriesCalculatorScreen
 
-class DietsScreen extends StatelessWidget {
+class DietsScreen extends StatefulWidget {
   const DietsScreen({super.key});
+
+  @override
+  _DietsScreenState createState() => _DietsScreenState();
+}
+
+class _DietsScreenState extends State<DietsScreen> {
+  DateTime _selectedDate = DateTime.now();
+  int dailyCalorieGoal = -1; // Initialize with a value that indicates no goal
+  int consumedCalories = 0;  // Will be retrieved from Firestore
+  int totalCarbs = 0;        // Will be retrieved from Firestore
+  int totalProtein = 0;      // Will be retrieved from Firestore
+  int totalFat = 0;          // Will be retrieved from Firestore
+  final FirebaseAuth _auth = FirebaseAuth.instance; // Firebase Auth instance
+
+  // A list to hold the meal data
+  List<Meal> meals = []; 
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDietData();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         title: const Text(
           'Diet Tracker',
           style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calculate_outlined, color: Color.fromARGB(255, 90, 113, 243)),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CaloriesCalculatorScreen()),
+              );
+              if (result != null) {
+                setState(() {
+                  dailyCalorieGoal = result; // Update the caloric goal
+                });
+              }
+            },
+          ),
+        ],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(
@@ -28,61 +69,150 @@ class DietsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // // Header section
-            // const Text(
-            //   'Track Your Diet Routine',
-            //   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            // ),
-            // const SizedBox(height: 10),
-            // const Text(
-            //   'Log your meals and monitor your daily calorie intake to achieve your nutrition goals.',
-            //   style: TextStyle(fontSize: 16, color: Colors.grey),
-            // ),
-            // const SizedBox(height: 20),
+            Center(
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      Color.fromARGB(255, 241, 242, 248).withOpacity(0.6),
+                      Colors.white,
+                    ],
+                    center: Alignment(-0.5, -0.5),
+                    radius: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10.0,
+                      spreadRadius: 5.0,
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 140,
+                      height: 140,
+                      child: CircularProgressIndicator(
+                        value: consumedCalories / (dailyCalorieGoal <= 0 ? 1 : dailyCalorieGoal), // Avoid division by zero
+                        backgroundColor: Colors.grey[300],
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color.fromARGB(255, 90, 113, 243)),
+                        strokeWidth: 14,
+                      ),
+                    ),
+                    Positioned(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '$consumedCalories',
+                            style: const TextStyle(
+                              fontSize: 35,
+                              fontWeight: FontWeight.bold,
+                              color: Color.fromARGB(255, 90, 113, 243),
+                            ),
+                          ),
+                          const Text(
+                            'kcal',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 10,
+                      child: Text(
+                        '/ ${dailyCalorieGoal >= 0 ? dailyCalorieGoal : "Null"}', // Display 'Null' if no goal
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
 
-            // List of tracked meals for the day
-            Expanded(
-              child: ListView(
+            // Nutrient Breakdown Card
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+                side: BorderSide(color: Colors.grey.shade400, width: 1),
+              ),
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _NutrientCard(label: 'Carbs', value: '$totalCarbs g'),
+                    _NutrientCard(label: 'Protein', value: '$totalProtein g'),
+                    _NutrientCard(label: 'Fat', value: '$totalFat g'),
+                  ],
+                ),
+              ),
+            ),
+
+            // Date Navigator
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _buildMealCard('Breakfast', '8:00 AM', 'Oatmeal with fruits', 250),
-                  _buildMealCard('Lunch', '12:30 PM', 'Grilled chicken salad', 400),
-                  _buildMealCard('Dinner', '7:00 PM', 'Steamed fish with vegetables', 350),
-                  _buildMealCard('Snack', '4:00 PM', 'Greek yogurt with honey', 150),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_left, color: Color.fromARGB(255, 90, 113, 243)),
+                    onPressed: () {
+                      setState(() {
+                        _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+                        _loadDietData(); // Load data for the new date
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: const Icon(Icons.date_range, color: Color.fromARGB(255, 90, 113, 243)),
+                    onPressed: () => _selectDate(context),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${_selectedDate.toLocal()}'.split(' ')[0],
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+                  ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_right, color: Color.fromARGB(255, 90, 113, 243)),
+                    onPressed: _selectedDate.isBefore(DateTime.now()) 
+                        ? () {
+                            setState(() {
+                              _selectedDate = _selectedDate.add(const Duration(days: 1));
+                              _loadDietData(); // Load data for the new date
+                            });
+                          } 
+                        : null,
+                  ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
-
-            // Buttons to add a new meal or set a reminder
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Navigate to a screen or show a dialog for adding a new meal
-                    _showAddMealDialog(context);
-                  },
-                  icon: const Icon(Icons.add, color: Colors.white),
-                  label: const Text('Add Meal', style: TextStyle(color: Colors.white)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Handle meal reminder setting
-                    _showSetReminderDialog(context);
-                  },
-                  icon: const Icon(Icons.alarm, color: Colors.white),
-                  label: const Text('Set Reminder', style: TextStyle(color: Colors.white)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  ),
-                ),
-              ],
+            // List of tracked meals for the day
+            Expanded(
+              child: ListView.builder(
+                itemCount: meals.length,
+                itemBuilder: (context, index) {
+                  Meal meal = meals[index];
+                  return _buildMealCard(meal.mealType, meal.name, meal.calories);
+                },
+              ),
             ),
           ],
         ),
@@ -90,17 +220,107 @@ class DietsScreen extends StatelessWidget {
     );
   }
 
+ Future<void> _loadDietData() async {
+  User? user = _auth.currentUser; // Get current user
+  if (user == null) {
+    return; // Handle user not logged in
+  }
+
+  String userId = user.uid; // Use current user's ID
+  String dateKey = '${_selectedDate.year}${_selectedDate.month.toString().padLeft(2, '0')}${_selectedDate.day.toString().padLeft(2, '0')}';
+
+  DocumentSnapshot dietSnapshot = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(userId)
+      .collection('dietHistory')
+      .doc(dateKey)
+      .get();
+  
+  DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(userId)
+      .get();
+
+  // Variables to hold new state data
+  int newConsumedCalories = 0;
+  int newTotalCarbs = 0;
+  int newTotalProtein = 0;
+  int newTotalFat = 0;
+  List<Meal> newMeals = [];
+
+  if (userSnapshot.exists) {
+    dailyCalorieGoal = userSnapshot['calorieGoal'] ?? -1; // Set daily calorie goal
+  }
+
+  if (dietSnapshot.exists) {
+    newConsumedCalories = dietSnapshot['totalKcal'] ?? 0;
+    newTotalCarbs = dietSnapshot['totalCarbs'] ?? 0;
+    newTotalProtein = dietSnapshot['totalProtein'] ?? 0;
+    newTotalFat = dietSnapshot['totalFat'] ?? 0;
+
+    // Load meal details
+    List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+    for (String mealType in mealTypes) {
+      DocumentSnapshot mealDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('dietHistory')
+          .doc(dateKey)
+          .collection('dietTracker')
+          .doc(mealType)
+          .get();
+
+      // Adding meal information to the meals list
+      if (mealDoc.exists) {
+        var mealData = mealDoc.data() as Map<String, dynamic>;
+        newMeals.add(Meal(
+          mealType: mealType,
+          name: mealData['name'] ?? 'Unnamed Meal', // Fallback for name if not found
+          calories: mealData['Calories'] ?? 0, // Fallback for calories if not found
+        ));
+      } else {
+        newMeals.add(Meal(
+          mealType: mealType,
+          name: 'Unnamed Meal', // Fallback for name if not found
+          calories: 0, // Fallback for calories if not found
+        ));
+      }
+    }
+  } else {
+    newConsumedCalories = 0;
+    newTotalCarbs = 0;
+    newTotalProtein = 0;
+    newTotalFat = 0;
+    newMeals = List.generate(4, (index) => Meal(
+      mealType: ['Breakfast', 'Lunch', 'Dinner', 'Snack'][index],
+      name: 'No Meal Logged Yet',
+      calories: 0,
+    )); // Show empty meals cards if no snapshot
+  }
+
+  // Call setState to update the UI now that we have all data
+  setState(() {
+    consumedCalories = newConsumedCalories;
+    totalCarbs = newTotalCarbs;
+    totalProtein = newTotalProtein;
+    totalFat = newTotalFat;
+    meals = newMeals; // Update the meals list
+  });
+}
+
   // Function to build individual meal cards
-  Widget _buildMealCard(String mealType, String time, String description, int calories) {
-    String imagePath = 'images/food_category/${mealType.toLowerCase()}.png';
+  Widget _buildMealCard(String mealType, String description, int calories) {
+    String imagePath = 'images/food_category/${mealType.toLowerCase()}.png'; // Image based on meal type
     return Card(
       elevation: 3,
+      color: Colors.white,
       margin: const EdgeInsets.symmetric(vertical: 10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: Colors.grey.shade400, width: 1),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.all(16.0),
+        contentPadding: const EdgeInsets.only(left: 16, right: 16, top: 2, bottom: 2),
         leading: CircleAvatar(
           backgroundColor: Colors.transparent,
           child: Image.asset(imagePath, fit: BoxFit.cover),
@@ -112,100 +332,74 @@ class DietsScreen extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 5),
-            Text(time, style: const TextStyle(fontSize: 16)),
+            const Divider(),
             const SizedBox(height: 5),
             Text(description, style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 5),
-            Text('Calories: $calories', style: const TextStyle(color: Colors.grey)),
+            Text('$calories kcal', style: const TextStyle(color: Colors.grey)),
           ],
         ),
         trailing: IconButton(
-          icon: const Icon(Icons.edit, color: Color.fromARGB(255, 90, 113, 243)),
+          icon: const Icon(Icons.add_circle_outline_rounded, color: Color.fromARGB(255, 90, 113, 243)),
+          iconSize: 40,
           onPressed: () {
-            // Handle meal edit
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MealSelectionScreen(mealType: mealType),
+              ),
+            );
           },
         ),
       ),
     );
   }
 
-  // Function to show a dialog for adding a new meal
-  void _showAddMealDialog(BuildContext context) {
-    showDialog(
+  // Function to select a date using the DatePicker dialog
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add New Meal'),
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(labelText: 'Meal Type (e.g., Breakfast)'),
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Time (e.g., 8:00 AM)'),
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Description (e.g., Oatmeal with fruits)'),
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Calories (e.g., 250)'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Handle adding a new meal to the diet tracker
-                Navigator.pop(context);
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
     );
-  }
 
-  // Function to show a dialog for setting meal reminders
-  void _showSetReminderDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Set Meal Reminder')
-          ,
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(labelText: 'Meal Type (e.g., Breakfast)'),
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Time (e.g., 8:00 AM)'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Handle setting a meal reminder
-                Navigator.pop(context);
-              },
-              child: const Text('Set Reminder'),
-            ),
-          ],
-        );
-      },
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _loadDietData(); // Load data for the new date
+      });
+    }
+  }
+}
+
+// Meal model class
+class Meal {
+  final String mealType; // Type of the meal: Breakfast, Lunch, Dinner, Snack
+  final String name; // Name of the meal
+  final int calories; // Total calories in the meal
+
+  Meal({required this.mealType, required this.name, required this.calories});
+}
+
+// NutrientCard widget
+class _NutrientCard extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _NutrientCard({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 5),
+        Text(label, style: const TextStyle(fontSize: 14)),
+      ],
     );
   }
 }
