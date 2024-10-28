@@ -14,14 +14,14 @@ class DietsScreen extends StatefulWidget {
 class _DietsScreenState extends State<DietsScreen> {
   DateTime _selectedDate = DateTime.now();
   int dailyCalorieGoal = -1; // Initialize with a value that indicates no goal
-  int consumedCalories = 0;  // Will be retrieved from Firestore
-  int totalCarbs = 0;        // Will be retrieved from Firestore
-  int totalProtein = 0;      // Will be retrieved from Firestore
-  int totalFat = 0;          // Will be retrieved from Firestore
+  int consumedCalories = 0; // Will be retrieved from Firestore
+  int totalCarbs = 0; // Will be retrieved from Firestore
+  int totalProtein = 0; // Will be retrieved from Firestore
+  int totalFat = 0; // Will be retrieved from Firestore
   final FirebaseAuth _auth = FirebaseAuth.instance; // Firebase Auth instance
 
   // A list to hold the meal data
-  List<Meal> meals = []; 
+  List<Meal> meals = [];
 
   @override
   void initState() {
@@ -34,19 +34,24 @@ class _DietsScreenState extends State<DietsScreen> {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           'Diet Tracker',
-          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: Color.fromARGB(255, 90, 113, 243),
+              fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.calculate_outlined, color: Color.fromARGB(255, 90, 113, 243)),
+            icon: const Icon(Icons.calculate_outlined,
+                color: Color.fromARGB(255, 90, 113, 243)),
             onPressed: () async {
               final result = await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => CaloriesCalculatorScreen()),
+                MaterialPageRoute(
+                    builder: (context) => CaloriesCalculatorScreen()),
               );
               if (result != null) {
                 setState(() {
@@ -71,8 +76,8 @@ class _DietsScreenState extends State<DietsScreen> {
           children: [
             Center(
               child: Container(
-                width: 140,
-                height: 140,
+                width: MediaQuery.of(context).size.width * 0.4,
+                height: MediaQuery.of(context).size.width * 0.4,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
@@ -95,12 +100,16 @@ class _DietsScreenState extends State<DietsScreen> {
                   alignment: Alignment.center,
                   children: [
                     SizedBox(
-                      width: 140,
-                      height: 140,
+                      width: MediaQuery.of(context).size.width * 0.4,
+                      height: MediaQuery.of(context).size.width * 0.4,
                       child: CircularProgressIndicator(
-                        value: consumedCalories / (dailyCalorieGoal <= 0 ? 1 : dailyCalorieGoal), // Avoid division by zero
+                        value: consumedCalories /
+                            (dailyCalorieGoal <= 0
+                                ? 1
+                                : dailyCalorieGoal), // Avoid division by zero
                         backgroundColor: Colors.grey[300],
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color.fromARGB(255, 90, 113, 243)),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            Color.fromARGB(255, 90, 113, 243)),
                         strokeWidth: 14,
                       ),
                     ),
@@ -170,34 +179,42 @@ class _DietsScreenState extends State<DietsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_left, color: Color.fromARGB(255, 90, 113, 243)),
+                    icon: const Icon(Icons.arrow_left,
+                        color: Color.fromARGB(255, 90, 113, 243)),
                     onPressed: () {
                       setState(() {
-                        _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+                        _selectedDate =
+                            _selectedDate.subtract(const Duration(days: 1));
                         _loadDietData(); // Load data for the new date
                       });
                     },
                   ),
                   const SizedBox(width: 10),
                   IconButton(
-                    icon: const Icon(Icons.date_range, color: Color.fromARGB(255, 90, 113, 243)),
+                    icon: const Icon(Icons.date_range,
+                        color: Color.fromARGB(255, 90, 113, 243)),
                     onPressed: () => _selectDate(context),
                   ),
                   const SizedBox(width: 10),
                   Text(
                     '${_selectedDate.toLocal()}'.split(' ')[0],
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 90, 113, 243)),
                   ),
                   const SizedBox(width: 10),
                   IconButton(
-                    icon: const Icon(Icons.arrow_right, color: Color.fromARGB(255, 90, 113, 243)),
-                    onPressed: _selectedDate.isBefore(DateTime.now()) 
+                    icon: const Icon(Icons.arrow_right,
+                        color: Color.fromARGB(255, 90, 113, 243)),
+                    onPressed: _selectedDate.isBefore(DateTime.now())
                         ? () {
                             setState(() {
-                              _selectedDate = _selectedDate.add(const Duration(days: 1));
+                              _selectedDate =
+                                  _selectedDate.add(const Duration(days: 1));
                               _loadDietData(); // Load data for the new date
                             });
-                          } 
+                          }
                         : null,
                   ),
                 ],
@@ -210,7 +227,8 @@ class _DietsScreenState extends State<DietsScreen> {
                 itemCount: meals.length,
                 itemBuilder: (context, index) {
                   Meal meal = meals[index];
-                  return _buildMealCard(meal.mealType, meal.name, meal.calories);
+                  return _buildMealCard(meal.mealType, meal.name, meal.calories,
+                      meal.protein, meal.carbs, meal.fat);
                 },
               ),
             ),
@@ -220,97 +238,125 @@ class _DietsScreenState extends State<DietsScreen> {
     );
   }
 
- Future<void> _loadDietData() async {
-  User? user = _auth.currentUser; // Get current user
-  if (user == null) {
-    return; // Handle user not logged in
-  }
+  Future<void> _loadDietData() async {
+    User? user = _auth.currentUser; // Get current user
+    if (user == null) {
+      print("User is not logged in");
+      return; // Handle user not logged in
+    }
 
-  String userId = user.uid; // Use current user's ID
-  String dateKey = '${_selectedDate.year}${_selectedDate.month.toString().padLeft(2, '0')}${_selectedDate.day.toString().padLeft(2, '0')}';
+    String userId = user.uid; // Use current user's ID
+    String dateKey =
+        '${_selectedDate.year}${_selectedDate.month.toString().padLeft(2, '0')}${_selectedDate.day.toString().padLeft(2, '0')}';
 
-  DocumentSnapshot dietSnapshot = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(userId)
-      .collection('dietHistory')
-      .doc(dateKey)
-      .get();
-  
-  DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(userId)
-      .get();
+    // Debug: Show what dateKey is being generated
+    print("Loaded diet data for user: $userId on date: $dateKey");
 
-  // Variables to hold new state data
-  int newConsumedCalories = 0;
-  int newTotalCarbs = 0;
-  int newTotalProtein = 0;
-  int newTotalFat = 0;
-  List<Meal> newMeals = [];
+    // Fetch user's diet history document
+    DocumentSnapshot dietSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('dietHistory')
+        .doc(dateKey)
+        .get();
 
-  if (userSnapshot.exists) {
-    dailyCalorieGoal = userSnapshot['calorieGoal'] ?? -1; // Set daily calorie goal
-  }
+    // Debug: Check if the document exists
+    if (!dietSnapshot.exists) {
+      print(
+          "No diet entries found for date: $dateKey. Creating default meals.");
+    } else {
+      print("Found diet entries for date: $dateKey.");
+    }
 
-  if (dietSnapshot.exists) {
-    newConsumedCalories = dietSnapshot['totalKcal'] ?? 0;
-    newTotalCarbs = dietSnapshot['totalCarbs'] ?? 0;
-    newTotalProtein = dietSnapshot['totalProtein'] ?? 0;
-    newTotalFat = dietSnapshot['totalFat'] ?? 0;
+    // Load user's profile document to get daily calorie goal
+    DocumentSnapshot userSnapshot =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
-    // Load meal details
-    List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-    for (String mealType in mealTypes) {
-      DocumentSnapshot mealDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('dietHistory')
-          .doc(dateKey)
-          .collection('dietTracker')
-          .doc(mealType)
-          .get();
+    // Variables to hold new meals and initial totals
+    List<Meal> newMeals = [];
+    int newConsumedCalories = 0;
+    int newTotalCarbs = 0;
+    int newTotalProtein = 0;
+    int newTotalFat = 0;
 
-      // Adding meal information to the meals list
-      if (mealDoc.exists) {
-        var mealData = mealDoc.data() as Map<String, dynamic>;
-        newMeals.add(Meal(
-          mealType: mealType,
-          name: mealData['name'] ?? 'Unnamed Meal', // Fallback for name if not found
-          calories: mealData['Calories'] ?? 0, // Fallback for calories if not found
-        ));
-      } else {
-        newMeals.add(Meal(
-          mealType: mealType,
-          name: 'Unnamed Meal', // Fallback for name if not found
-          calories: 0, // Fallback for calories if not found
-        ));
+    // Debugging for user snapshot
+    if (userSnapshot.exists) {
+      dailyCalorieGoal =
+          userSnapshot['calorieGoal'] ?? -1; // Set daily calorie goal
+      print("Daily calorie goal: $dailyCalorieGoal");
+    } else {
+      print("User snapshot does not exist");
+    }
+
+    // If no diet document exists for the selected date
+    if (!dietSnapshot.exists) {
+      // Default meals if nothing exists
+      newMeals = List.generate(
+        4,
+        (index) => Meal(
+          mealType: ['Breakfast', 'Lunch', 'Dinner', 'Snack'][index],
+          name: 'No Meal Logged Yet',
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+        ),
+      );
+    } else {
+      // Load meal details if diet document exists
+      List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+      for (String mealType in mealTypes) {
+        // Access the specific meal type from the diet document directly
+        var dietData = dietSnapshot.data() as Map<String, dynamic>?;
+        var mealData = dietData?[mealType] as Map<String, dynamic>?;
+
+        print("Fetching meal details for: $mealType");
+        if (mealData != null) {
+          Meal meal = Meal(
+            mealType: mealType,
+            name: mealData['name'] ?? 'Unnamed Meal',
+            calories: mealData['Calories'] ?? 0,
+            protein: mealData['Proteins'] ?? 0,
+            carbs: mealData['Carbohydrates'] ?? 0,
+            fat: mealData['Fats'] ?? 0,
+          );
+
+          print("Found meal: ${meal.name}, Calories: ${meal.calories}");
+          newMeals.add(meal);
+
+          // Accumulate totals
+          newConsumedCalories += meal.calories;
+          newTotalProtein += meal.protein;
+          newTotalCarbs += meal.carbs;
+          newTotalFat += meal.fat;
+        } else {
+          print("$mealType meal data does not exist");
+          newMeals.add(Meal(
+            mealType: mealType,
+            name: 'Unnamed Meal',
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+          ));
+        }
       }
     }
-  } else {
-    newConsumedCalories = 0;
-    newTotalCarbs = 0;
-    newTotalProtein = 0;
-    newTotalFat = 0;
-    newMeals = List.generate(4, (index) => Meal(
-      mealType: ['Breakfast', 'Lunch', 'Dinner', 'Snack'][index],
-      name: 'No Meal Logged Yet',
-      calories: 0,
-    )); // Show empty meals cards if no snapshot
+
+    // Call setState to update the UI
+    setState(() {
+      consumedCalories = newConsumedCalories;
+      totalCarbs = newTotalCarbs;
+      totalProtein = newTotalProtein;
+      totalFat = newTotalFat;
+      meals = newMeals; // Update the meals list
+    });
   }
 
-  // Call setState to update the UI now that we have all data
-  setState(() {
-    consumedCalories = newConsumedCalories;
-    totalCarbs = newTotalCarbs;
-    totalProtein = newTotalProtein;
-    totalFat = newTotalFat;
-    meals = newMeals; // Update the meals list
-  });
-}
-
-  // Function to build individual meal cards
-  Widget _buildMealCard(String mealType, String description, int calories) {
-    String imagePath = 'images/food_category/${mealType.toLowerCase()}.png'; // Image based on meal type
+  Widget _buildMealCard(String mealType, String description, int calories,
+      int protein, int carbs, int fat) {
+    String imagePath =
+        'images/food_category/${mealType.toLowerCase()}.png'; // Image based on meal type
     return Card(
       elevation: 3,
       color: Colors.white,
@@ -320,7 +366,8 @@ class _DietsScreenState extends State<DietsScreen> {
         side: BorderSide(color: Colors.grey.shade400, width: 1),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.only(left: 16, right: 16, top: 2, bottom: 2),
+        contentPadding:
+            const EdgeInsets.only(left: 16, right: 16, top: 2, bottom: 2),
         leading: CircleAvatar(
           backgroundColor: Colors.transparent,
           child: Image.asset(imagePath, fit: BoxFit.cover),
@@ -337,18 +384,30 @@ class _DietsScreenState extends State<DietsScreen> {
             Text(description, style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 5),
             Text('$calories kcal', style: const TextStyle(color: Colors.grey)),
+            Text('Protein: $protein g',
+                style: const TextStyle(color: Colors.grey)),
+            Text('Carbs: $carbs g', style: const TextStyle(color: Colors.grey)),
+            Text('Fat: $fat g', style: const TextStyle(color: Colors.grey)),
           ],
         ),
         trailing: IconButton(
-          icon: const Icon(Icons.add_circle_outline_rounded, color: Color.fromARGB(255, 90, 113, 243)),
+          icon: const Icon(Icons.add_circle_outline_rounded,
+              color: Color.fromARGB(255, 90, 113, 243)),
           iconSize: 40,
           onPressed: () {
-            Navigator.push(
+            Navigator.push<bool>(
               context,
               MaterialPageRoute(
-                builder: (context) => MealSelectionScreen(mealType: mealType),
+                builder: (context) => MealSelectionScreen(
+                  mealType: mealType,
+                  selectedDate: _selectedDate, // Pass the selected date here
+                ),
               ),
-            );
+            ).then((shouldRefresh) {
+              if (shouldRefresh == true) {
+                _loadDietData(); // Refresh the diet data when coming back
+              }
+            });
           },
         ),
       ),
@@ -373,13 +432,22 @@ class _DietsScreenState extends State<DietsScreen> {
   }
 }
 
-// Meal model class
 class Meal {
   final String mealType; // Type of the meal: Breakfast, Lunch, Dinner, Snack
   final String name; // Name of the meal
   final int calories; // Total calories in the meal
+  final int protein; // Total protein in the meal
+  final int carbs; // Total carbohydrates in the meal
+  final int fat; // Total fat in the meal
 
-  Meal({required this.mealType, required this.name, required this.calories});
+  Meal({
+    required this.mealType,
+    required this.name,
+    required this.calories,
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+  });
 }
 
 // NutrientCard widget
@@ -395,7 +463,10 @@ class _NutrientCard extends StatelessWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(fontSize: 16, color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              fontSize: 16,
+              color: Color.fromARGB(255, 90, 113, 243),
+              fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 5),
         Text(label, style: const TextStyle(fontSize: 14)),

@@ -94,16 +94,16 @@ class _MoreScreenState extends State<MoreScreen> {
                       padding: const EdgeInsets.all(30.0),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(40),
-                        // border: Border.all(color: Colors.grey[400]!), 
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: Colors.grey[400]!), 
+                        // boxShadow: [
+                        //   BoxShadow(
+                        //     color: Color.fromARGB(255, 90, 113, 243).withOpacity(0.5),
+                        //     spreadRadius: 2,
+                        //     blurRadius: 5,
+                        //     offset: const Offset(0, 2),
+                        //   ),
+                        // ],
                       ),
                       child: Row(
                         children: [

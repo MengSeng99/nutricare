@@ -187,7 +187,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                     child: Container(
                                       child: Image.network(
                                         recipe['imageUrl'],
-                                        fit: BoxFit.contain,
+                                        fit: BoxFit.fitWidth,
                                       ),
                                     ),
                                   ),
@@ -222,7 +222,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                     );
                   },
                   child: Container(
-                    height: 300.0,
+                    height: MediaQuery.of(context).size.height * 0.5,
                     decoration: BoxDecoration(
                       image: DecorationImage(
                         image: NetworkImage(recipe['imageUrl']),
@@ -235,7 +235,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
 
               DraggableScrollableSheet(
                 initialChildSize: 0.67,
-                minChildSize: 0.63,
+                minChildSize: 0.5,
                 maxChildSize: 0.85,
                 builder: (context, scrollController) {
                   return Container(
@@ -496,7 +496,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
 
   Widget _buildInfoCard(String title, IconData icon) {
     return Card(
-      margin: const EdgeInsets.only(right: 12.0),
+      margin: const EdgeInsets.all( 12.0),
       elevation: 0, // Remove shadow
       shape: RoundedRectangleBorder(
         side: BorderSide(

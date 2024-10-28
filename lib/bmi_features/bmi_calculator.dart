@@ -15,7 +15,6 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
   int _age = 25;
   bool _isMaleSelected = true; // Gender selection
 
-  // Controllers for height, weight, and age input fields
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
@@ -23,113 +22,112 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
   @override
   void initState() {
     super.initState();
-    _weightController.text = _weight.toStringAsFixed(2); // Initialize weight controller
-    _ageController.text = _age.toString(); // Initialize age controller
-    _heightController.text = _height.toStringAsFixed(1); // Initialize height controller
+    _weightController.text = _weight.toStringAsFixed(2);
+    _ageController.text = _age.toString();
+    _heightController.text = _height.toStringAsFixed(1);
   }
 
   @override
   void dispose() {
-    // Dispose controllers to free resources
     _weightController.dispose();
     _ageController.dispose();
     _heightController.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 0),
-              // Gender Selection Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildGenderButton('Male', Icons.male, _isMaleSelected, () {
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.white,
+    body: SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Gender Selection Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded( // Wrap in Expanded to allow flexible sizing
+                  child: _buildGenderButton('Male', Icons.male, _isMaleSelected, () {
                     setState(() {
                       _isMaleSelected = true;
                     });
                   }),
-                  const SizedBox(width: 20), // Adjust this value to control space
-                  _buildGenderButton('Female', Icons.female, !_isMaleSelected, () {
+                ),
+                const SizedBox(width: 20),
+                Expanded( // Wrap in Expanded to allow flexible sizing
+                  child: _buildGenderButton('Female', Icons.female, !_isMaleSelected, () {
                     setState(() {
                       _isMaleSelected = false;
                     });
                   }),
-                ],
-              ),
-              const SizedBox(height: 10),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
 
-              // Height Input Box with Slider
-              _buildHeightInputBox(),
-              const SizedBox(height: 10),
+            // Height Input Box with Slider
+            _buildHeightInputBox(),
+            const SizedBox(height: 10),
 
-              // Weight and Age Input Sections
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Expanded(child: _buildWeightInputBox()), // Updated weight box
-                  const SizedBox(width: 16), // Add space between the two boxes
-                  Expanded(child: _buildAgeInputBox()),
-                ],
-              ),
-              const SizedBox(height: 10),
+            // Weight and Age Input Sections
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Expanded(child: _buildWeightInputBox()),
+                const SizedBox(width: 16),
+                Expanded(child: _buildAgeInputBox()),
+              ],
+            ),
+            const SizedBox(height: 10),
 
-              // Calculate Button
-              ElevatedButton(
-                onPressed: () {
-                  // Calculate BMI
-                  double heightInMeters = _height / 100;
-                  double bmi = _weight / (heightInMeters * heightInMeters);
-                  
-                  // Navigate to BmiResultScreen with calculated values
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BmiResultScreen(
-                        bmi: bmi,
-                        height: _height,
-                        weight: _weight,
-                        age: _age,
-                        isMale: _isMaleSelected,
-                      ),
+            // Calculate Button
+            ElevatedButton(
+              onPressed: () {
+                double heightInMeters = _height / 100;
+                double bmi = _weight / (heightInMeters * heightInMeters);
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BmiResultScreen(
+                      bmi: bmi,
+                      height: _height,
+                      weight: _weight,
+                      age: _age,
+                      isMale: _isMaleSelected,
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
                 ),
-                child: const Text(
-                  'Calculate',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
               ),
-            ],
-          ),
+              child: const Text(
+                'Calculate',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+            ),
+          ],
         ),
       ),
-    );
-  }
-
+    ),
+  );
+}
   // Helper method to create gender selection buttons
   Widget _buildGenderButton(String gender, IconData icon, bool isSelected, VoidCallback onPressed) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
         padding: const EdgeInsets.all(10.0),
-        width: 170,
-        height: 140,
+        // width: 170,
+        height: 130,
         decoration: BoxDecoration(
           color: isSelected ? const Color.fromARGB(255, 240, 240, 255) : Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -141,16 +139,20 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: isSelected ? 70 : 60, // Increase icon size if selected
-              color: isSelected ? (gender == 'Female' ? Colors.pink : Colors.blue) : Colors.grey,
+            // Icon scaling instead of changing size
+            Transform.scale(
+              scale: isSelected ? 1.2 : 1.0,
+              child: Icon(
+                icon,
+                size: 60, // Fixed size for icon
+                color: isSelected ? (gender == 'Female' ? Colors.pink : Colors.blue) : Colors.grey,
+              ),
             ),
             const SizedBox(height: 5),
             Text(
               gender,
               style: TextStyle(
-                fontSize: isSelected ? 20 : 18, // Increase font size if selected
+                fontSize: 18, 
                 fontWeight: FontWeight.bold,
                 color: isSelected ? (gender == 'Female' ? Colors.pink : Colors.blue) : Colors.grey,
               ),
@@ -160,6 +162,7 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
       ),
     );
   }
+  
   // Helper method to create the height input box with a slider and text field
   Widget _buildHeightInputBox() {
     return Container(

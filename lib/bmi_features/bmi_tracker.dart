@@ -2,92 +2,44 @@ import 'package:flutter/material.dart';
 import 'bmi_calculator.dart';
 import 'bmi_history.dart';
 
-class BmiTrackerScreen extends StatefulWidget {
+class BmiTrackerScreen extends StatelessWidget {
   const BmiTrackerScreen({super.key});
 
   @override
-  _BmiTrackerScreenState createState() => _BmiTrackerScreenState();
-}
-
-class _BmiTrackerScreenState extends State<BmiTrackerScreen> {
-  bool _isCalculatorTab = false;
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          'BMI Tracker',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 90, 113, 243),
+    return DefaultTabController(
+      length: 2, // Number of tabs
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text(
+            'BMI Tracker',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243),
+            ),
           ),
-        ),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(
-            height: 0,
-            color: Color.fromARGB(255, 220, 220, 241),
-          ),
-        ),
-        backgroundColor: Colors.white, // AppBar color
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 90, 113, 243)),
-          onPressed: () {
-            Navigator.pop(context); // Back navigation
-          },
-        ),
-      ),
-      body: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildTabButton('Calculator', isSelected: _isCalculatorTab, onTap: () {
-                setState(() {
-                  _isCalculatorTab = true;
-                });
-              }),
-              _buildTabButton('History', isSelected: !_isCalculatorTab, onTap: () {
-                setState(() {
-                  _isCalculatorTab = false;
-                });
-              }),
+          bottom: const TabBar(
+            indicatorColor: Color.fromARGB(255, 90, 113, 243),
+            labelColor: Color.fromARGB(255, 90, 113, 243),
+            unselectedLabelColor: Colors.grey,
+            tabs: [
+              Tab(text: 'Calculator'),
+              Tab(text: 'History'),
             ],
           ),
-          Expanded(
-            child: _isCalculatorTab
-                ? const BmiCalculatorScreen() // Show Calculator
-                : const BmiHistoryScreen(),   // Show History
+          backgroundColor: Colors.white, // AppBar color
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 90, 113, 243)),
+            onPressed: () {
+              Navigator.pop(context); // Back navigation
+            },
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabButton(String text, {required bool isSelected, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
-        child: Column(
+        ),
+        body: const TabBarView(
           children: [
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? const Color.fromARGB(255, 90, 113, 243) : Colors.grey,
-              ),
-            ),
-            if (isSelected)
-              Container(
-                margin: const EdgeInsets.only(top: 0.0),
-                height: 2.0,
-                width: text.length * 8.0,
-                color: const Color.fromARGB(255, 90, 113, 243),
-              ),
+            BmiCalculatorScreen(), // Show Calculator
+            BmiHistoryScreen(),     // Show History
           ],
         ),
       ),

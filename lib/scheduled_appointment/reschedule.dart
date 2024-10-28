@@ -140,7 +140,7 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
             // Calendar for selecting date
             _buildSectionTitle("Select Reschedule Date"),
             _buildSectionSubtitle(
-              "At least 2 days before the original appointment. Original date highlighted.",
+              "Reschedule date only allowed for at least 2 days before the original appointment.",
             ),
             const SizedBox(height: 12),
             _buildCalendar(now, endDate, twoDaysBeforeOriginal),
@@ -241,44 +241,44 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
     );
   }
 
-  // Calendar widget
-  Widget _buildCalendar(
-      DateTime startDate, DateTime endDate, DateTime twoDaysBeforeOriginal) {
-    DateTime initialDate = DateTime.now().isBefore(twoDaysBeforeOriginal)
-        ? twoDaysBeforeOriginal // If today is not allowed, use twoDaysBeforeOriginal as initial date
-        : DateTime.now();
+ Widget _buildCalendar(
+    DateTime startDate, DateTime endDate, DateTime twoDaysBeforeOriginal) {
+  // Ensure the initial date is valid based on the selectable predicate
+  DateTime initialDate = DateTime.now().isAfter(twoDaysBeforeOriginal)
+      ? DateTime.now()
+      : twoDaysBeforeOriginal;
 
-    return CalendarDatePicker(
-      initialDate: initialDate,
-      firstDate: startDate,
-      lastDate: endDate,
-      currentDate: DateTime.now(),
-      onDateChanged: (newSelectedDate) {
-        if (newSelectedDate.isBefore(twoDaysBeforeOriginal)) {
-          // Show warning if the picked date is less than 2 days before the appointment
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  "You must reschedule at least 2 days before the appointment."),
-            ),
-          );
-          return;
-        }
+  return CalendarDatePicker(
+    initialDate: initialDate,
+    firstDate: startDate,
+    lastDate: endDate,
+    selectableDayPredicate: (date) {
+      // Allow dates after or on twoDaysBeforeOriginal
+      return date.isAfter(twoDaysBeforeOriginal) || date == twoDaysBeforeOriginal;
+    },
+    onDateChanged: (newSelectedDate) {
+      if (newSelectedDate.isBefore(twoDaysBeforeOriginal)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                "You must reschedule at least 2 days before the appointment."),
+          ),
+        );
+        return;
+      }
 
-        setState(() {
-          _selectedDate = newSelectedDate;
-          isLoadingSlots = true;
-          availableTimeSlots.clear(); // Clear old time slots
-        });
+      setState(() {
+        _selectedDate = newSelectedDate;
+        isLoadingSlots = true;
+        availableTimeSlots.clear();
+      });
 
-        _fetchAvailableTimeSlots(); // Fetch time slots when a new date is selected
-      },
-      selectableDayPredicate: (date) {
-        return date.isAfter(twoDaysBeforeOriginal) ||
-            date == twoDaysBeforeOriginal;
-      },
-    );
-  }
+      _fetchAvailableTimeSlots();
+    },
+  );
+}
+
+
 
   // Time slot selection widget
   Widget _buildTimeSlotSelector() {

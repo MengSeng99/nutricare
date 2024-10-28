@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:nutricare/scheduled_appointment/chat_list.dart';
 import 'appointment_details.dart';
 import 'package:intl/intl.dart';
-
 import 'reschedule.dart'; // For date formatting
 
 class ScheduleScreen extends StatelessWidget {
@@ -41,11 +41,24 @@ class ScheduleScreen extends StatelessWidget {
               ],
             ),
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color.fromARGB(255, 90, 113, 243)),
+              onPressed: () {
+                // Navigate to chat screen or perform desired action here
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatListScreen(), // Replace with your chat screen
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         body: const TabBarView(
           children: [
-            AppointmentsTab(
-                statusFilter: ['Confirmed', 'Pending Confirmation']),
+            AppointmentsTab(statusFilter: ['Confirmed', 'Pending Confirmation']),
             AppointmentsTab(statusFilter: ['Completed']),
             AppointmentsTab(statusFilter: ['Canceled']),
           ],
@@ -151,7 +164,7 @@ class AppointmentCard extends StatelessWidget {
     super.key,
   });
 
-  @override
+   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
@@ -159,9 +172,8 @@ class AppointmentCard extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) => AppointmentDetailsScreen(
-              appointmentId: appointmentId, // Pass appointmentId
-              specialistAvatarUrl:
-                  specialistAvatarUrl, // Pass specialistAvatarUrl
+              appointmentId: appointmentId,
+              specialistAvatarUrl: specialistAvatarUrl,
               date: date,
               time: time,
               specialistName: specialistName,
@@ -178,12 +190,25 @@ class AppointmentCard extends StatelessWidget {
         ),
         margin: const EdgeInsets.only(bottom: 16),
         elevation: 2,
-        color: Colors.white, 
+        color: Colors.white,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Appointment ID Display
+              Align(
+                alignment: Alignment.topRight,
+                child: Text(
+                  "Appointment ID: $appointmentId",
+                  style: const TextStyle(
+                    color: Color.fromARGB(255, 90, 113, 243), // Blue color
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14, // Adjust size as needed
+                  ),
+                ),
+              ),
+              const SizedBox(height: 0), // Space between ID and specialist info
               Row(
                 children: [
                   CircleAvatar(

@@ -57,8 +57,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 children: [
                   Image.asset(
                     _splashData[index]['image']!,
-                    width: 250,
-                    height: 250,
+                    width: MediaQuery.of(context).size.width * 0.6,
+                    height: MediaQuery.of(context).size.width * 0.6,
                   ),
                   const SizedBox(height: 20),
                   Padding(
@@ -66,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     child: Text(
                       _splashData[index]['description']!,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
                         color: Color.fromARGB(255, 90, 113, 243),
                       ),
@@ -83,8 +83,8 @@ class _SplashScreenState extends State<SplashScreen> {
             // right: 20,
             child: Image.asset(
               'images/Logo-rounded.png',
-              width: 100,
-              height: 100,
+              width: MediaQuery.of(context).size.width * 0.2,
+              height: MediaQuery.of(context).size.width * 0.2,
             ),
           ),
           // Dots indicator

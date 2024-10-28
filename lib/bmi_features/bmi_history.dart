@@ -69,41 +69,41 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
           final records = snapshot.data?.docs;
 
           if (records == null || records.isEmpty) {
-  return Center(
-    child: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.info_outline,
-            size: 100,
-            color: Color.fromARGB(255, 90, 113, 243),
-          ),
-          SizedBox(height: 16),
-          Text(
-            'No BMI records available yet!',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 8),
-          Text(
-            'You can add a new record using the Calculator.',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.black54,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    ),
-  );
-}
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 100,
+                      color: Color.fromARGB(255, 90, 113, 243),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No BMI records available yet!',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'You can add a new record using the Calculator.',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.black54,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
 
           // Prepare data for the chart
           List<FlSpot> chartData = [];
@@ -123,6 +123,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
           return Column(
             children: [
               // Button to toggle graph visibility
+              // Button to toggle graph visibility
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: ElevatedButton(
@@ -132,7 +133,32 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                           !_isGraphVisible; // Toggle graph visibility
                     });
                   },
-                  child: Text(_isGraphVisible ? 'Hide Graph' : 'Show Graph'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(
+                        255, 90, 113, 243), // Background color
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(30), // Rounded corners
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min, // To fit the content
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _isGraphVisible
+                            ? Icons.disabled_by_default_outlined
+                            : Icons.insert_chart_outlined,
+                        color: Colors.white, // Icon color
+                      ),
+                      const SizedBox(width: 8), // Spacing between icon and text
+                      Text(
+                        _isGraphVisible ? 'Hide Graph' : 'Show Graph',
+                        style:
+                            const TextStyle(color: Colors.white), // Text color
+                      ),
+                    ],
+                  ),
                 ),
               ),
               // Show graph only if _isGraphVisible is true
@@ -176,7 +202,8 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                       style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
-                                        color: Color.fromARGB(255, 90, 113, 243), // Keeping the title neutral
+                                        color: Color.fromARGB(255, 90, 113,
+                                            243), // Keeping the title neutral
                                       ),
                                     ),
                                     const SizedBox(height: 10),
@@ -222,11 +249,13 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                       children: [
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(
-                                                        backgroundColor: Colors.red, // Blue background
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius: BorderRadius.circular(30),
-                                                        ),
-                                                      ),
+                                            backgroundColor:
+                                                Colors.red, // Blue background
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
+                                            ),
+                                          ),
                                           onPressed: () {
                                             // Confirm deletion
                                             showDialog(
@@ -234,32 +263,61 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                               builder: (context) {
                                                 return AlertDialog(
                                                   shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(15),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            15),
                                                   ),
                                                   title: const Text(
-                                                      'Confirm Deletion',style: TextStyle(fontWeight: FontWeight.bold,color: Color.fromARGB(255, 90, 113, 243)),),
+                                                    'Confirm Deletion',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Color.fromARGB(
+                                                            255, 90, 113, 243)),
+                                                  ),
                                                   content: const Text(
-                                                      'Are you sure you want to delete this record?',style: TextStyle(fontSize: 16),),
+                                                    'Are you sure you want to delete this record?',
+                                                    style:
+                                                        TextStyle(fontSize: 16),
+                                                  ),
                                                   actions: [
                                                     ElevatedButton(
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor: const Color.fromARGB(255, 90, 113, 243), // Blue background
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius: BorderRadius.circular(30),
+                                                      style: ElevatedButton
+                                                          .styleFrom(
+                                                        backgroundColor: const Color
+                                                            .fromARGB(
+                                                            255,
+                                                            90,
+                                                            113,
+                                                            243), // Blue background
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(30),
                                                         ),
                                                       ),
                                                       onPressed: () {
                                                         Navigator.of(context)
                                                             .pop(); // Close the confirmation dialog
                                                       },
-                                                      child:
-                                                          const Text('Cancel',style: TextStyle(color: Colors.white),),
+                                                      child: const Text(
+                                                        'Cancel',
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white),
+                                                      ),
                                                     ),
                                                     ElevatedButton(
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor: Colors.red, // Blue background
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius: BorderRadius.circular(30),
+                                                      style: ElevatedButton
+                                                          .styleFrom(
+                                                        backgroundColor: Colors
+                                                            .red, // Blue background
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(30),
                                                         ),
                                                       ),
                                                       onPressed: () async {
@@ -283,9 +341,11 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                                                   context)
                                                               .showSnackBar(
                                                             const SnackBar(
-                                                                content: Text(
-                                                                    'Record deleted successfully!'),
-                                                                    backgroundColor: Colors.green,),
+                                                              content: Text(
+                                                                  'Record deleted successfully!'),
+                                                              backgroundColor:
+                                                                  Colors.green,
+                                                            ),
                                                           );
                                                         } catch (e) {
                                                           ScaffoldMessenger.of(
@@ -300,8 +360,8 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                                       child: const Text(
                                                           'Delete',
                                                           style: TextStyle(
-                                                              color:
-                                                                  Colors.white)),
+                                                              color: Colors
+                                                                  .white)),
                                                     ),
                                                   ],
                                                 );
@@ -309,21 +369,31 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                             );
                                           },
                                           child: const Text('Delete',
-                                              style:
-                                                  TextStyle(color: Colors.white)),
+                                              style: TextStyle(
+                                                  color: Colors.white)),
                                         ),
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(
-                                                        backgroundColor: const Color.fromARGB(255, 90, 113, 243), // Blue background
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius: BorderRadius.circular(30),
-                                                        ),
-                                                      ),
+                                            backgroundColor:
+                                                const Color.fromARGB(
+                                                    255,
+                                                    90,
+                                                    113,
+                                                    243), // Blue background
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
+                                            ),
+                                          ),
                                           onPressed: () {
                                             Navigator.of(context)
                                                 .pop(); // Close the dialog
                                           },
-                                          child: const Text('Close',style: TextStyle(color: Colors.white),),
+                                          child: const Text(
+                                            'Close',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
                                         ),
                                       ],
                                     ),

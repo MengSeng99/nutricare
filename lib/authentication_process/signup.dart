@@ -42,8 +42,8 @@ class _SignupPageState extends State<SignupPage> {
                   const SizedBox(height: 40),
                   Image.asset(
                     'images/recovery.png',
-                    width: 200,
-                    height: 200,
+                    width: MediaQuery.of(context).size.width * 0.5,
+                    height: MediaQuery.of(context).size.width * 0.5,
                   ),
                   const SizedBox(height: 20),
                   const Padding(
@@ -53,7 +53,7 @@ class _SignupPageState extends State<SignupPage> {
                         Text(
                           'Join NutriCare Today!',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Color.fromARGB(255, 90, 113, 243),
                           ),
@@ -215,7 +215,7 @@ class _SignupPageState extends State<SignupPage> {
                         padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                         child: const Text(
                           'Sign Up',
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          style: TextStyle(color: Colors.white, fontSize: 20),
                         ),
                       ),
                     ),
@@ -239,8 +239,8 @@ class _SignupPageState extends State<SignupPage> {
             right: 20,
             child: Image.asset(
               'images/Logo-rounded.png',
-              width: 100,
-              height: 100,
+              width: MediaQuery.of(context).size.width * 0.2,
+              height: MediaQuery.of(context).size.width * 0.2,
             ),
           ),
         ],

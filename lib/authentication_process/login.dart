@@ -41,8 +41,8 @@ class _LoginPageState extends State<LoginPage> {
                 borderRadius: BorderRadius.circular(5),
                 child: Image.asset(
                   'images/Logo-1x1.jpeg',
-                  width: 250,
-                  height: 250,
+                  width: MediaQuery.of(context).size.width * 0.5,
+                  height: MediaQuery.of(context).size.width * 0.5,
                 ),
               ),
               const SizedBox(height: 20),
@@ -53,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
                     Text(
                       'Welcome Back to NutriCare!',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Color.fromARGB(255, 90, 113, 243),
                       ),
@@ -128,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
                   },
                   child: const Text(
                     'Forgot Password?',
-                    style: TextStyle(color: Colors.blueAccent),
+                    style: TextStyle(color: Colors.blueAccent, fontSize: 16),
                   ),
                 ),
               ),
@@ -168,7 +168,7 @@ class _LoginPageState extends State<LoginPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                     child: const Text(
                       'Login',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: TextStyle(color: Colors.white, fontSize: 20),
                     ),
                   ),
                 ),
@@ -181,7 +181,8 @@ class _LoginPageState extends State<LoginPage> {
                     MaterialPageRoute(builder: (context) => const SignupPage()),
                   );
                 },
-                child: const Text('Don\'t have an account? Sign Up'),
+                child: const Text('Don\'t have an account? Sign Up',
+                style: TextStyle(color: Colors.blueAccent, fontSize: 16),),
               ),
             ],
           ),

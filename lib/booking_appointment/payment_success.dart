@@ -54,25 +54,26 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          "Payment Success",
-          style: TextStyle(
-            color: Color.fromARGB(255, 90, 113, 243),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(
-            height: 0.5,
-            color: Color.fromARGB(255, 220, 220, 241),
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
-      ),
+      // appBar: AppBar(
+      //   automaticallyImplyLeading: false,
+      //   title: const Text(
+      //     "Payment Success",
+      //     style: TextStyle(
+      //       color: Color.fromARGB(255, 90, 113, 243),
+      //       fontWeight: FontWeight.bold,
+      //     ),
+      //   ),
+      //   bottom: const PreferredSize(
+      //     preferredSize: Size.fromHeight(1),
+      //     child: Divider(
+      //       height: 0.5,
+      //       color: Color.fromARGB(255, 220, 220, 241),
+      //     ),
+      //   ),
+      //   backgroundColor: Colors.white,
+      //   elevation: 0,
+      //   iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+      // ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -84,8 +85,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                 Center(
                   child: Column(
                     children: [
-                      const Icon(Icons.check_circle_outline,
-                          color: Colors.green, size: 100),
+                      Icon(Icons.check_circle_outline,
+                          color: Colors.green, size: MediaQuery.of(context).size.height * 0.18),
                       const SizedBox(height: 10),
                       Text(
                         "Payment Successful!",

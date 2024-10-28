@@ -122,7 +122,7 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
               // Activity Level Dropdown
               Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(7),
                   border: Border.all(color: Colors.grey),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -261,7 +261,7 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(7),
         border: Border.all(color: Colors.grey, width: 1),
       ),
       child: Column(
