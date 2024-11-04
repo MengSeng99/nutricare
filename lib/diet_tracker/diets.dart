@@ -29,6 +29,181 @@ class _DietsScreenState extends State<DietsScreen> {
     _loadDietData();
   }
 
+  Future<void> _loadDietData() async {
+    User? user = _auth.currentUser; // Get current user
+    if (user == null) {
+      print("User is not logged in");
+      return; // Handle user not logged in
+    }
+
+    String userId = user.uid; // Use current user's ID
+    String dateKey =
+        '${_selectedDate.year}${_selectedDate.month.toString().padLeft(2, '0')}${_selectedDate.day.toString().padLeft(2, '0')}';
+
+    // Fetch user's diet history document
+    DocumentSnapshot dietSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('dietHistory')
+        .doc(dateKey)
+        .get();
+
+    // Load user's profile document to get daily calorie goal
+    DocumentSnapshot userSnapshot =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+    // Variables to hold new meals and initial totals
+    List<Meal> newMeals = [];
+    int newConsumedCalories = 0;
+    int newTotalCarbs = 0;
+    int newTotalProtein = 0;
+    int newTotalFat = 0;
+
+    // Initialize dailyCalorieGoal to 0
+    dailyCalorieGoal = 0; // Default to 0
+
+    // Check if user document exists and handle accordingly
+    if (userSnapshot.exists) {
+      // Check if the calorieGoal field exists
+      if (userSnapshot.data() != null &&
+          (userSnapshot.data() as Map<String, dynamic>)
+              .containsKey('calorieGoal')) {
+        dailyCalorieGoal = userSnapshot['calorieGoal'] ?? 0; // Set to 0 if null
+        print("Daily calorie goal: $dailyCalorieGoal");
+      } else {
+        print("Field 'calorieGoal' does not exist. Defaulting to 0.");
+        dailyCalorieGoal = 0; // Explicitly set to 0
+      }
+    } else {
+      print("User snapshot does not exist");
+      dailyCalorieGoal = 0; // Set to 0 if user does not exist
+    }
+
+    // If no diet document exists for the selected date
+    if (!dietSnapshot.exists) {
+      // Default meals if nothing exists
+      newMeals = List.generate(
+        4,
+        (index) => Meal(
+          mealType: ['Breakfast', 'Lunch', 'Dinner', 'Snack'][index],
+          name: 'No Meal Logged Yet',
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+        ),
+      );
+    } else {
+      // Load meal details if diet document exists
+      List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+      for (String mealType in mealTypes) {
+        var dietData = dietSnapshot.data() as Map<String, dynamic>?;
+        var mealData = dietData?[mealType] as Map<String, dynamic>?;
+
+        if (mealData != null) {
+          Meal meal = Meal(
+            mealType: mealType,
+            name: mealData['name'] ?? 'Unnamed Meal',
+            calories: mealData['Calories'] ?? 0,
+            protein: mealData['Proteins'] ?? 0,
+            carbs: mealData['Carbohydrates'] ?? 0,
+            fat: mealData['Fats'] ?? 0,
+          );
+
+          newMeals.add(meal);
+
+          // Accumulate totals
+          newConsumedCalories += meal.calories;
+          newTotalProtein += meal.protein;
+          newTotalCarbs += meal.carbs;
+          newTotalFat += meal.fat;
+        } else {
+          newMeals.add(Meal(
+            mealType: mealType,
+            name: 'Unnamed Meal',
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+          ));
+        }
+      }
+    }
+
+    // Call setState to update the UI
+    setState(() {
+      consumedCalories = newConsumedCalories;
+      totalCarbs = newTotalCarbs;
+      totalProtein = newTotalProtein;
+      totalFat = newTotalFat;
+      meals = newMeals; // Update the meals list
+    });
+
+    // Show dialog if dailyCalorieGoal is 0
+    if (dailyCalorieGoal == 0) {
+      _showCalorieGoalDialog();
+    }
+  }
+
+  void _showCalorieGoalDialog() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
+        ),
+        elevation: 4.0,
+        backgroundColor: Colors.white,
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            // Main dialog content
+            Padding(
+              padding: const EdgeInsets.only(top: 30, right: 30, left: 16, bottom: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Set Your Calorie Goal',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 90, 113, 243),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'You haven\'t set a daily calorie goal. '
+                    'Please tap the calculator icon in the top right corner to set it.',
+                    style: TextStyle(fontSize: 16, color: Colors.black),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color.fromARGB(255, 90, 113, 243),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            child: const Text('Okay',
+                style: TextStyle(color: Colors.white)),
+            onPressed: () {
+              Navigator.of(context).pop(); // Just close the dialog
+            },
+          ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -138,7 +313,7 @@ class _DietsScreenState extends State<DietsScreen> {
                     Positioned(
                       bottom: 10,
                       child: Text(
-                        '/ ${dailyCalorieGoal >= 0 ? dailyCalorieGoal : "Null"}', // Display 'Null' if no goal
+                        '/ ${dailyCalorieGoal > 0 ? dailyCalorieGoal : "0"}', // Set to 0 if no goal
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -236,121 +411,6 @@ class _DietsScreenState extends State<DietsScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _loadDietData() async {
-    User? user = _auth.currentUser; // Get current user
-    if (user == null) {
-      print("User is not logged in");
-      return; // Handle user not logged in
-    }
-
-    String userId = user.uid; // Use current user's ID
-    String dateKey =
-        '${_selectedDate.year}${_selectedDate.month.toString().padLeft(2, '0')}${_selectedDate.day.toString().padLeft(2, '0')}';
-
-    // Debug: Show what dateKey is being generated
-    print("Loaded diet data for user: $userId on date: $dateKey");
-
-    // Fetch user's diet history document
-    DocumentSnapshot dietSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('dietHistory')
-        .doc(dateKey)
-        .get();
-
-    // Debug: Check if the document exists
-    if (!dietSnapshot.exists) {
-      print(
-          "No diet entries found for date: $dateKey. Creating default meals.");
-    } else {
-      print("Found diet entries for date: $dateKey.");
-    }
-
-    // Load user's profile document to get daily calorie goal
-    DocumentSnapshot userSnapshot =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
-
-    // Variables to hold new meals and initial totals
-    List<Meal> newMeals = [];
-    int newConsumedCalories = 0;
-    int newTotalCarbs = 0;
-    int newTotalProtein = 0;
-    int newTotalFat = 0;
-
-    // Debugging for user snapshot
-    if (userSnapshot.exists) {
-      dailyCalorieGoal =
-          userSnapshot['calorieGoal'] ?? -1; // Set daily calorie goal
-      print("Daily calorie goal: $dailyCalorieGoal");
-    } else {
-      print("User snapshot does not exist");
-    }
-
-    // If no diet document exists for the selected date
-    if (!dietSnapshot.exists) {
-      // Default meals if nothing exists
-      newMeals = List.generate(
-        4,
-        (index) => Meal(
-          mealType: ['Breakfast', 'Lunch', 'Dinner', 'Snack'][index],
-          name: 'No Meal Logged Yet',
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-        ),
-      );
-    } else {
-      // Load meal details if diet document exists
-      List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-      for (String mealType in mealTypes) {
-        // Access the specific meal type from the diet document directly
-        var dietData = dietSnapshot.data() as Map<String, dynamic>?;
-        var mealData = dietData?[mealType] as Map<String, dynamic>?;
-
-        print("Fetching meal details for: $mealType");
-        if (mealData != null) {
-          Meal meal = Meal(
-            mealType: mealType,
-            name: mealData['name'] ?? 'Unnamed Meal',
-            calories: mealData['Calories'] ?? 0,
-            protein: mealData['Proteins'] ?? 0,
-            carbs: mealData['Carbohydrates'] ?? 0,
-            fat: mealData['Fats'] ?? 0,
-          );
-
-          print("Found meal: ${meal.name}, Calories: ${meal.calories}");
-          newMeals.add(meal);
-
-          // Accumulate totals
-          newConsumedCalories += meal.calories;
-          newTotalProtein += meal.protein;
-          newTotalCarbs += meal.carbs;
-          newTotalFat += meal.fat;
-        } else {
-          print("$mealType meal data does not exist");
-          newMeals.add(Meal(
-            mealType: mealType,
-            name: 'Unnamed Meal',
-            calories: 0,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
-          ));
-        }
-      }
-    }
-
-    // Call setState to update the UI
-    setState(() {
-      consumedCalories = newConsumedCalories;
-      totalCarbs = newTotalCarbs;
-      totalProtein = newTotalProtein;
-      totalFat = newTotalFat;
-      meals = newMeals; // Update the meals list
-    });
   }
 
   Widget _buildMealCard(String mealType, String description, int calories,

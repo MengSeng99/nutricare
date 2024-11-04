@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:nutricare/authentication_process/login.dart';
 import 'client_info.dart'; // Import the ClientInfoScreen
 import 'help.dart';
 import 'language.dart';
 import 'payment_methods.dart'; // Import the HelpScreen
+import 'package:firebase_auth/firebase_auth.dart'; // Assuming you're using Firebase Auth
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -51,6 +53,10 @@ class SettingsScreen extends StatelessWidget {
               // Navigate to HelpScreen
               Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpScreen()));
             }),
+            const SizedBox(height: 60),
+            const Divider(height: 1, color: Colors.grey),
+            const SizedBox(height: 20),
+            _buildLogoutOption(context), // Add the logout option
           ],
         ),
       ),
@@ -84,6 +90,43 @@ class SettingsScreen extends StatelessWidget {
               child: Text(
                 title,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget to build the logout option
+  Widget _buildLogoutOption(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        // Handle logout functionality here, for example using Firebase Auth:
+        try {
+          await FirebaseAuth.instance.signOut();
+          // Navigate to login or home screen after logging out
+          Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LoginPage()));
+        } catch (e) {
+          // Handle error
+          print("Error logging out: $e");
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.red),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.logout, color: Colors.red, size: 30), // Log Out Icon
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'Log Out',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red), // Red text
               ),
             ),
           ],

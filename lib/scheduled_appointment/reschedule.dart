@@ -1,18 +1,23 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class RescheduleScreen extends StatefulWidget {
   final String appointmentId;
   final String specialistId;
   final String appointmentMode;
   final DateTime originalDate;
+  final String specialistName;
+  final Function onRefresh;
 
   const RescheduleScreen({
     required this.appointmentId,
     required this.specialistId,
     required this.appointmentMode,
     required this.originalDate,
+    required this.specialistName,
+    required this.onRefresh,
     super.key,
   });
 
@@ -30,8 +35,7 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedMode = widget
-        .appointmentMode; // Set the initial mode to the original appointment mode
+    _selectedMode = widget.appointmentMode; // Set the initial mode
   }
 
   Future<void> _fetchAvailableTimeSlots() async {
@@ -51,8 +55,7 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
       if (data != null && data['date_slots'] != null) {
         final dateSlots = Map<String, dynamic>.from(data['date_slots']);
         setState(() {
-          availableTimeSlots =
-              List<String>.from(dateSlots[selectedDateString] ?? []);
+          availableTimeSlots = List<String>.from(dateSlots[selectedDateString] ?? []);
           isLoadingSlots = false;
         });
       }
@@ -65,67 +68,145 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
   }
 
   Future<void> _rescheduleAppointment() async {
-    if (_selectedDate == null || _selectedTimeSlot == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select a date and a time slot."),
-        ),
-      );
-      return;
-    }
+  if (_selectedDate == null || _selectedTimeSlot == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Please select a date and a time slot."),
+      ),
+    );
+    return;
+  }
 
-    // Update Firestore
-    final userId = FirebaseAuth.instance.currentUser!.uid;
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('appointments')
-        .doc(widget.appointmentId)
-        .update({
+  // Get the details collection reference
+  final detailsCollectionRef = FirebaseFirestore.instance
+      .collection('appointments')
+      .doc(widget.appointmentId)
+      .collection('details');
+
+  // Fetch the details document (assuming you want to update the first document in the collection)
+  final detailsSnapshot = await detailsCollectionRef.get();
+
+  // Check if there are any documents in the details collection
+  if (detailsSnapshot.docs.isNotEmpty) {
+    // Update the first document in the details collection
+    DocumentReference detailDocRef = detailsSnapshot.docs.first.reference;
+
+    await detailDocRef.update({
       'appointmentMode': _selectedMode,
       'selectedDate': _selectedDate,
       'selectedTimeSlot': _selectedTimeSlot,
-      'appointmentStatus':
-          'Pending Confirmation', // Always set to Pending Confirmation
+      'appointmentStatus': 'Confirmed',
     });
+
+    // Call onRefresh after successful reschedule
+    widget.onRefresh();  // Add this line here
+
+    // Check for chat and send a message about the reschedule
+    await _checkForChatAndCreateMessage();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Appointment successfully reschedule to $_selectedMode Appointment, on $_selectedDate | $_selectedTimeSlot.'),
+        content: Text('Appointment successfully rescheduled to $_selectedMode Appointment on ${DateFormat('yyyy-MM-dd').format(_selectedDate!)} at $_selectedTimeSlot.'),
         backgroundColor: Colors.green,
       ),
     );
 
     Navigator.pop(context); // Go back after reschedule
+  } else {
+    // Handle case when there are no detail documents
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("No appointment details found."),
+      ),
+    );
+  }
+}
+
+  Future<void> _checkForChatAndCreateMessage() async {
+    String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
+    try {
+      // Get the reference to the chats collection
+      QuerySnapshot chatSnapshot = await FirebaseFirestore.instance.collection('chats').get();
+      bool chatFound = false;
+      String? chatId;
+
+      // Iterate through each document in the chats collection
+      for (var chat in chatSnapshot.docs) {
+        List<dynamic> users = chat['users'] ?? [];
+
+        // Check if both the currentUserId and specialistId are in the users array
+        if (users.contains(currentUserId) && users.contains(widget.specialistId)) {
+          chatFound = true;
+          chatId = chat.id;
+
+          // Send message with appointment details
+          await _sendRescheduleMessage(chatId);
+          return; // Exit the function after sending the message
+        }
+      }
+
+      // If no chat session is found, create a new chat
+      if (!chatFound) {
+        // Create a new chat document
+        DocumentReference newChatDoc = await FirebaseFirestore.instance.collection('chats').add({
+          'users': [currentUserId, widget.specialistId],
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        // Send message with appointment details
+        await _sendRescheduleMessage(newChatDoc.id);
+      }
+    } catch (e) {
+      print('Error checking chat session and creating message: $e');
+    }
+  }
+
+  Future<void> _sendRescheduleMessage(String chatId) async {
+    // Prepare the success message for reschedule confirmation
+    String messageText = '''
+Your appointment has been successfully rescheduled!
+
+New Appointment Details:
+- Appointment ID: ${widget.appointmentId}
+- Specialist: Dr. ${widget.specialistName}
+- Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate!)}
+- Time: $_selectedTimeSlot
+- Mode: $_selectedMode
+- Status: Pending Confirmation
+
+Please review the details above and let us know if you spot any errors.
+''';
+
+    // Send the message to Firestore
+    await FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').add({
+      'text': messageText,
+      'senderId': widget.specialistId, // Set the sender ID to specialist ID
+      'isImage': false,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     DateTime now = DateTime.now();
-    DateTime twoDaysBeforeOriginal =
-        widget.originalDate.subtract(const Duration(days: 2));
-    DateTime endDate =
-        now.add(const Duration(days: 30)); // End date is 30 days from now
+    DateTime twoDaysBeforeOriginal = widget.originalDate.subtract(const Duration(days: 2));
+    DateTime endDate = now.add(const Duration(days: 30)); // End date is 30 days from now
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           "Reschedule Appointment",
-          style: TextStyle(
-              color: Color.fromARGB(255, 90, 113, 243),
-              fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
         ),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(
-            height: 0.5,
-            color: Color.fromARGB(255, 220, 220, 241),
-          ),
+          child: Divider(height: 0.5, color: Color.fromARGB(255, 220, 220, 241)),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme:
-            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -164,8 +245,7 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
               child: ElevatedButton(
                 onPressed: _rescheduleAppointment,
                 style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
@@ -173,10 +253,7 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
                 ),
                 child: const Text(
                   "Reschedule Appointment",
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
             ),
@@ -208,24 +285,14 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color.fromARGB(255, 90, 113, 243)
-              : Colors.grey[200],
+          color: isSelected ? const Color.fromARGB(255, 90, 113, 243) : Colors.grey[200],
           borderRadius: BorderRadius.circular(20),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 1,
-                      blurRadius: 10)
-                ]
-              : [],
+          boxShadow: isSelected ? [BoxShadow(color: Colors.grey.withOpacity(0.5), spreadRadius: 1, blurRadius: 10)] : [],
         ),
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 10),
         child: Column(
           children: [
-            Icon(icon,
-                color: isSelected ? Colors.white : Colors.black54, size: 30),
+            Icon(icon, color: isSelected ? Colors.white : Colors.black54, size: 30),
             const SizedBox(height: 10),
             Text(
               mode,
@@ -241,46 +308,37 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
     );
   }
 
- Widget _buildCalendar(
-    DateTime startDate, DateTime endDate, DateTime twoDaysBeforeOriginal) {
-  // Ensure the initial date is valid based on the selectable predicate
-  DateTime initialDate = DateTime.now().isAfter(twoDaysBeforeOriginal)
-      ? DateTime.now()
-      : twoDaysBeforeOriginal;
+  Widget _buildCalendar(DateTime startDate, DateTime endDate, DateTime twoDaysBeforeOriginal) {
+    DateTime initialDate = DateTime.now().isAfter(twoDaysBeforeOriginal) ? DateTime.now() : twoDaysBeforeOriginal;
 
-  return CalendarDatePicker(
-    initialDate: initialDate,
-    firstDate: startDate,
-    lastDate: endDate,
-    selectableDayPredicate: (date) {
-      // Allow dates after or on twoDaysBeforeOriginal
-      return date.isAfter(twoDaysBeforeOriginal) || date == twoDaysBeforeOriginal;
-    },
-    onDateChanged: (newSelectedDate) {
-      if (newSelectedDate.isBefore(twoDaysBeforeOriginal)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                "You must reschedule at least 2 days before the appointment."),
-          ),
-        );
-        return;
-      }
+    return CalendarDatePicker(
+      initialDate: initialDate,
+      firstDate: startDate,
+      lastDate: endDate,
+      selectableDayPredicate: (date) {
+        return date.isAfter(twoDaysBeforeOriginal) || date == twoDaysBeforeOriginal;
+      },
+      onDateChanged: (newSelectedDate) {
+        if (newSelectedDate.isBefore(twoDaysBeforeOriginal)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("You must reschedule at least 2 days before the appointment."),
+            ),
+          );
+          return;
+        }
 
-      setState(() {
-        _selectedDate = newSelectedDate;
-        isLoadingSlots = true;
-        availableTimeSlots.clear();
-      });
+        setState(() {
+          _selectedDate = newSelectedDate;
+          isLoadingSlots = true;
+          availableTimeSlots.clear();
+        });
 
-      _fetchAvailableTimeSlots();
-    },
-  );
-}
+        _fetchAvailableTimeSlots();
+      },
+    );
+  }
 
-
-
-  // Time slot selection widget
   Widget _buildTimeSlotSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -310,18 +368,17 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
     );
   }
 
-  // Section title widget
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
       style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Color.fromARGB(255, 90, 113, 243)),
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Color.fromARGB(255, 90, 113, 243),
+      ),
     );
   }
 
-  // Section subtitle widget
   Widget _buildSectionSubtitle(String subtitle) {
     return Text(
       subtitle,

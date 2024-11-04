@@ -1,9 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:nutricare/main/navigation_bar.dart';
+import '../admin_site/admin_dashboard.dart';
+import '../specialist_site/specialist_dashboard.dart';
 import 'signup.dart';
 import 'authentication.dart';
-import 'forgot_password.dart'; // Import the forgot password page
+import 'forgot_password.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,8 +17,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final AuthenticationService _authService = AuthenticationService(); // Create an instance of the authentication service
-  final _formKey = GlobalKey<FormState>(); // Create a GlobalKey for the Form widget
+  final AuthenticationService _authService =
+      AuthenticationService(); // Create an instance of the authentication service
+  final _formKey =
+      GlobalKey<FormState>(); // Create a GlobalKey for the Form widget
   bool _passwordVisible = false;
   bool _isHovered = false;
 
@@ -96,7 +100,9 @@ class _LoginPageState extends State<LoginPage> {
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                      _passwordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
                     onPressed: () {
                       setState(() {
@@ -123,7 +129,8 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+                      MaterialPageRoute(
+                          builder: (context) => const ForgotPasswordPage()),
                     );
                   },
                   child: const Text(
@@ -142,16 +149,42 @@ class _LoginPageState extends State<LoginPage> {
                         _emailController.text.trim(),
                         _passwordController.text.trim(),
                       );
+
                       if (user != null) {
-                        // If login is successful, navigate to the MainScreen
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const MainScreen()),
-                        );
+                        // Check user email
+                        String email = user.email ?? '';
+
+                        // Check for Admin first
+                        if (email == 'admin@nutricare.com') {
+                          // Define user as admin
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const AdminDashboard()),
+                          );
+                        } else if (email.endsWith('@nutricare.com')) {
+                          // Define user as specialist
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const SpecialistDashboard()),
+                          );
+                        } else {
+                          // Regular user flow
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const MainScreen()),
+                          );
+                        }
                       }
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text((e as FirebaseAuthException).message ?? 'Login failed')),
+                        SnackBar(
+                            content: Text(
+                                (e as FirebaseAuthException).message ??
+                                    'Login failed')),
                       );
                     }
                   }
@@ -162,10 +195,13 @@ class _LoginPageState extends State<LoginPage> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      color: _isHovered ? Colors.blueAccent : const Color.fromARGB(255, 90, 113, 243),
+                      color: _isHovered
+                          ? Colors.blueAccent
+                          : const Color.fromARGB(255, 90, 113, 243),
                       borderRadius: BorderRadius.circular(30),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 50, vertical: 15),
                     child: const Text(
                       'Login',
                       style: TextStyle(color: Colors.white, fontSize: 20),
@@ -181,8 +217,10 @@ class _LoginPageState extends State<LoginPage> {
                     MaterialPageRoute(builder: (context) => const SignupPage()),
                   );
                 },
-                child: const Text('Don\'t have an account? Sign Up',
-                style: TextStyle(color: Colors.blueAccent, fontSize: 16),),
+                child: const Text(
+                  'Don\'t have an account? Sign Up',
+                  style: TextStyle(color: Colors.blueAccent, fontSize: 16),
+                ),
               ),
             ],
           ),

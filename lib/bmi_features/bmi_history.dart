@@ -490,7 +490,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
   // Method to build a line chart for BMI history
   Widget _buildBmiChart(List<FlSpot> chartData, List<String> chartDates) {
     return Container(
-      height: 250, // Reduced height of the chart
+      height: 350, // Reduced height of the chart
       padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 10),
       decoration: BoxDecoration(
         color: const Color.fromARGB(

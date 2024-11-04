@@ -4,7 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // To get current user ID
 import 'dart:math';
 
-import '../main/navigation_bar.dart'; // For random number generation
+// Assuming there's MainScreen imported
+import '../main/navigation_bar.dart';
 
 class PaymentSuccessScreen extends StatefulWidget {
   final String specialistName;
@@ -40,7 +41,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
   @override
   void initState() {
     super.initState();
-    appointmentId = _generateAppointmentId(); // Generate appointment ID when the widget is initialized
+    appointmentId = _generateAppointmentId(); // Generate appointment ID on initialization
   }
 
   // Function to generate a random 4-digit appointment ID
@@ -50,30 +51,77 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
     return id.toString(); // Convert to string for easier display and storage
   }
 
+  Future<void> _checkForChatAndCreateMessage(BuildContext context) async {
+    String currentUserId = FirebaseAuth.instance.currentUser!.uid; // Get current user ID
+
+    try {
+      // Get the reference to the chats collection
+      QuerySnapshot chatSnapshot = await FirebaseFirestore.instance.collection('chats').get();
+      bool chatFound = false;
+      String chatId;
+
+      // Iterate through each document in the chats collection
+      for (var chat in chatSnapshot.docs) {
+        List<dynamic> users = chat['users'] ?? [];
+
+        // Check if both the currentUserId and specialistId are in the users array
+        if (users.contains(currentUserId) && users.contains(widget.specialistId)) {
+          chatFound = true;
+          chatId = chat.id;
+
+          // Send message with appointment details
+          await _sendAppointmentMessage(chatId, appointmentId, widget.specialistId);
+          return; // Exit the function after sending the message
+        }
+      }
+
+      // If no chat session is found, create a new chat
+      if (!chatFound) {
+        // Create a new chat document
+        DocumentReference newChatDoc = await FirebaseFirestore.instance.collection('chats').add({
+          'users': [currentUserId, widget.specialistId],
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        // Send message with appointment details
+        await _sendAppointmentMessage(newChatDoc.id, appointmentId, widget.specialistId);
+      }
+    } catch (e) {
+      print('Error checking chat session and creating message: $e');
+    }
+  }
+
+  Future<void> _sendAppointmentMessage(String chatId, String appointmentId, String specialistId) async {
+  // Prepare the success message for appointment confirmation
+  String messageText = '''
+Your appointment has been successfully booked!
+
+Appointment Details:
+- Appointment ID: $appointmentId
+- Specialist: Dr. ${widget.specialistName}
+- Date: ${DateFormat('yyyy-MM-dd').format(widget.selectedDate)}
+- Time: ${widget.selectedTimeSlot ?? 'N/A'}
+- Mode: ${widget.appointmentMode}
+- Amount Paid: RM ${widget.amountPaid.toStringAsFixed(2)}
+- Service: ${widget.serviceName}
+- Status: ${widget.appointmentStatus}
+
+Please review the details above and let us know if you spot any errors.
+''';
+
+  // Send the message to Firestore
+  await FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').add({
+    'text': messageText,
+    'senderId': specialistId, // Set the sender ID to specialist ID
+    'isImage': false,
+    'timestamp': FieldValue.serverTimestamp(),
+  });
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // appBar: AppBar(
-      //   automaticallyImplyLeading: false,
-      //   title: const Text(
-      //     "Payment Success",
-      //     style: TextStyle(
-      //       color: Color.fromARGB(255, 90, 113, 243),
-      //       fontWeight: FontWeight.bold,
-      //     ),
-      //   ),
-      //   bottom: const PreferredSize(
-      //     preferredSize: Size.fromHeight(1),
-      //     child: Divider(
-      //       height: 0.5,
-      //       color: Color.fromARGB(255, 220, 220, 241),
-      //     ),
-      //   ),
-      //   backgroundColor: Colors.white,
-      //   elevation: 0,
-      //   iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
-      // ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -212,58 +260,69 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
   }
 
   Widget _buildDoneButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () async {
-          // Fetch current user ID
-          User? currentUser = FirebaseAuth.instance.currentUser;
+  return SizedBox(
+    width: double.infinity,
+    child: ElevatedButton(
+      onPressed: () async {
+        // Invoke the function to check for chat and create a message.
+        await _checkForChatAndCreateMessage(context);
 
-          if (currentUser != null) {
-            String userId = currentUser.uid;
+        User? currentUser = FirebaseAuth.instance.currentUser;
 
-            // Create the appointment data to save to Firestore
-            Map<String, dynamic> appointmentData = {
-              'appointmentId': appointmentId, // Add the appointment ID
-              'specialistId': widget.specialistId,
-              'specialistName': widget.specialistName,
-              'selectedDate': widget.selectedDate,
-              'selectedTimeSlot': widget.selectedTimeSlot,
-              'appointmentMode': widget.appointmentMode,
-              'amountPaid': widget.amountPaid,
-              'serviceName': widget.serviceName,
-              'paymentCardUsed': widget.paymentCardUsed,
-              'appointmentStatus': widget.appointmentStatus,
-              'createdAt': DateTime.now(), // Add a timestamp
-            };
+        if (currentUser != null) {
+          String userId = currentUser.uid;
 
-            // Save to Firestore under the current user's ID
-            await FirebaseFirestore.instance
-                .collection('users')   // Collection
-                .doc(userId)                  // Document for the current user
-                .collection('appointments') // Sub-collection for appointments
-                .doc(appointmentId)           // Use the generated appointment ID as the document ID
-                .set(appointmentData);        // Add the appointment data
+          // Create the appointment data to save to Firestore
+          Map<String, dynamic> appointmentData = {
+            'appointmentId': appointmentId, // Add the appointment ID
+            'specialistId': widget.specialistId,
+            'specialistName': widget.specialistName,
+            'selectedDate': widget.selectedDate,
+            'selectedTimeSlot': widget.selectedTimeSlot,
+            'appointmentMode': widget.appointmentMode,
+            'amountPaid': widget.amountPaid,
+            'serviceName': widget.serviceName,
+            'paymentCardUsed': widget.paymentCardUsed,
+            'appointmentStatus': widget.appointmentStatus,
+            'createdAt': DateTime.now(), // Add a timestamp
+          };
 
-            // Navigate back to the first screen
-             Navigator.pushReplacement(
+          // Save the appointment data to Firestore
+          // 1. Save the appointment data into the appointments collection with appointmentId as document ID.
+          // 2. Create a sub-collection named 'details' under the appointment document.
+          await FirebaseFirestore.instance
+              .collection('appointments')   // Main collection for appointments
+              .doc(appointmentId)           // Document ID is the appointmentId
+              .set({
+                'users': [userId, widget.specialistId], // Add user IDs to the main appointment document
+              });
+
+          // Add appointment details to a subcollection called 'details'
+          await FirebaseFirestore.instance
+              .collection('appointments')
+              .doc(appointmentId)
+              .collection('details')
+              .add(appointmentData); // Append details to subcollection
+
+          // Navigate back to the schedule screen
+          Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 2)), // Replace MainScreen with your actual screen widget
+            MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 2)), // Assuming index 2 is the schedule screen
           );
         }
       },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-        ),
-        child: const Text(
-          "Done",
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
         ),
       ),
-    );
-  }
+      child: const Text(
+        "Done",
+        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+    ),
+  );
+}
 }

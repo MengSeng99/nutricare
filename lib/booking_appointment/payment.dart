@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 // Import the PaymentMethodsScreen for navigation
-import '../settings/payment_methods.dart';
 import 'payment_success.dart';
 
 
@@ -547,32 +546,25 @@ Future<void> _showAddCardDialog() async {
 
 
 
-// Show Add Card button when no saved payment methods
 Widget _buildAddCardButton() {
   return SizedBox(
     width: double.infinity,
     child: ElevatedButton(
       onPressed: () async {
-        // Navigate to PaymentMethodsScreen and refresh payment methods after returning
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PaymentMethodsScreen(),
-          ),
-        );
-        if (result == true) {
-          // Refresh the payment methods after returning
-          _fetchUserPaymentMethods();
-        }
+        // Show the add card form in a dialog
+        await _showAddCardDialog();
+        // If needed, refresh payment methods after closing the dialog
+        // Uncomment this if you have logic to check saved payment methods
+        _fetchUserPaymentMethods();
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
+        backgroundColor: Color.fromARGB(255, 90, 113, 243),
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
       ),
-      child: const Text("Add New Card"),
+      child: const Text("Add New Card", style: TextStyle(color: Colors.white)),
     ),
   );
 }
@@ -651,7 +643,7 @@ Widget _buildAddCardButton() {
                     amountPaid: selectedServiceFee,
                     serviceName: selectedService.toString(),
                     paymentCardUsed: selectedPaymentMethod,
-                    appointmentStatus: "Pending Confirmation",
+                    appointmentStatus: "Confirmed",
                   ),
                 ),
               );

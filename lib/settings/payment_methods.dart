@@ -49,8 +49,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
             const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
         actions: [
           IconButton(
-            icon:
-                const Icon(Icons.add_card_rounded, color: Color.fromARGB(255, 90, 113, 243)),
+            icon: const Icon(Icons.add_card_rounded,
+                color: Color.fromARGB(255, 90, 113, 243)),
             onPressed: () => _addCardDialog.showAddCardDialog(context),
           ),
         ],
@@ -69,7 +69,15 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 if (snapshot.hasError ||
                     !snapshot.hasData ||
                     snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No payment methods added."));
+                  return Center(
+                      child: Text(
+                    "No payment methods added.",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[600],
+                    ),
+                  ));
                 }
 
                 var cards = snapshot.data!.docs;

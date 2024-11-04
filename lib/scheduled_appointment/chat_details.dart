@@ -15,7 +15,7 @@ class ChatDetailScreen extends StatelessWidget {
   final String specialistName;
   final String profilePictureUrl;
 
-  ChatDetailScreen({
+  ChatDetailScreen({super.key, 
     required this.chatId,
     required this.currentUserId,
     required this.receiverId,
@@ -62,7 +62,7 @@ class ChatDetailScreen extends StatelessWidget {
                     CircleAvatar(
                       backgroundImage: NetworkImage(
                         specialistData['profile_picture_url'] ?? 
-                        "assets/default_profile.png",
+                        "https://cdn-icons-png.flaticon.com/512/9187/9187532.png",
                       ),
                       radius: 40,
                     ),
@@ -160,7 +160,7 @@ class ChatDetailScreen extends StatelessWidget {
             CircleAvatar(
               backgroundImage: profilePictureUrl.isNotEmpty
                   ? NetworkImage(profilePictureUrl)
-                  : AssetImage("assets/default_profile.png") as ImageProvider,
+                  : const AssetImage('images/user_profile/default_profile.png') as ImageProvider,
             ),
             SizedBox(width: 16),
             Text(
@@ -344,7 +344,7 @@ class ChatDetailScreen extends StatelessWidget {
               child: Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isMe ? Color.fromARGB(255, 90, 113, 243) : Color.fromARGB(255, 233, 242, 255),
+                  color: isMe ? Color.fromARGB(255, 90, 113, 243) : Color.fromARGB(255, 236, 238, 241),
                   borderRadius: BorderRadius.circular(15),
                   boxShadow: [
                     BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(1, 2)),
@@ -395,7 +395,7 @@ class ChatDetailScreen extends StatelessWidget {
 
                 if (!userSnapshot.hasData || userSnapshot.data == null) {
                   return CircleAvatar(
-                    backgroundImage: AssetImage("assets/default_profile.png"),
+                    backgroundImage: const AssetImage('images/user_profile/default_profile.png') as ImageProvider,
                     radius: 18,
                   );
                 }
@@ -403,7 +403,7 @@ class ChatDetailScreen extends StatelessWidget {
                 var userData = userSnapshot.data!.data() as Map<String, dynamic>;
                 return CircleAvatar(
                   backgroundImage: NetworkImage(
-                    userData['profile_pic'] ?? "assets/default_profile.png",
+                    userData['profile_pic'] ?? "https://cdn-icons-png.freepik.com/512/3177/3177440.png",
                   ),
                   radius: 18,
                 );
