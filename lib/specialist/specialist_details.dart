@@ -99,9 +99,10 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
           final experienceYears = (data['experience_years'] is int)
               ? (data['experience_years'] as int).toDouble()
               : (data['experience_years'] ?? 0.0);
-          final services = List<Map<String, dynamic>>.from(data['services']);
-          final reviews = List<Map<String, dynamic>>.from(data['reviews']);
-          final about = data['about'] ?? 'No details available';
+           // Ensure reviews defaults to an empty list if it's null
+        final services = List<Map<String, dynamic>>.from(data['services'] ?? []);
+        final reviews = List<Map<String, dynamic>>.from(data['reviews'] ?? []);
+        final about = data['about'] ?? 'No details available';
 
           final rating = _calculateAverageRating(reviews);
 
@@ -354,21 +355,29 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
     );
   }
 
-  // Helper method to build modern reviews section
-  Widget _buildReviewsSection(List<Map<String, dynamic>> reviews) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+// Helper method to build modern reviews section
+Widget _buildReviewsSection(List<Map<String, dynamic>> reviews) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Reviews:',
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 10),
+      // Check if reviews are empty
+      if (reviews.isEmpty)
         const Text(
-          'Reviews:',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
+          'No reviews yet.',
+          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+        )
+      else
         for (var review in reviews)
-          _buildReviewCard(review['reviewer_name'], review['review'], (review['rating'] is int) ? (review['rating'] as int).toDouble() : review['rating']),
-      ],
-    );
-  }
+          _buildReviewCard(review['reviewer_name'], review['review'], 
+              (review['rating'] is int) ? (review['rating'] as int).toDouble() : review['rating']),
+    ],
+  );
+}
 
   // Helper method to build individual review card with modern design
   Widget _buildReviewCard(String reviewerName, String review, double rating) {

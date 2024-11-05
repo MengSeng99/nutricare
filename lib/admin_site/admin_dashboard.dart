@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-
 import 'admin_appointment.dart';
-import 'admin_articles.dart';
-import 'admin_recipe.dart';
-import 'admin_specialist.dart';
+import 'admin_settings.dart';
+import 'articles_management/admin_articles.dart';
+import 'recipe_management/admin_recipe.dart';
+import 'specialist_management/admin_specialist.dart';
+
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -15,12 +16,13 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0; // Handle the selected index
 
-  // List of screens for each navigation item
+  // Add the Settings screen to the list of screens
   static const List<Widget> _screens = <Widget>[
-    AdminRecipeScreen(), // You will create this screen
-    AdminSpecialistsScreen(), // You will create this screen
-    AdminArticlesScreen(), // You will create this screen
-    AdminAppointmentScreen(), // You will create this screen
+    AdminRecipeScreen(), 
+    AdminSpecialistsScreen(), 
+    AdminArticlesScreen(),
+    AdminAppointmentScreen(),
+    AdminSettingsScreen(), // New settings screen
   ];
 
   void _onItemTapped(int index) {
@@ -105,11 +107,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     ? (index == 0 ? Icons.receipt_outlined :
                        index == 1 ? Icons.person_outlined :
                        index == 2 ? Icons.article_outlined :
-                       Icons.event_outlined)
+                       index == 3 ? Icons.event_outlined : // Appointments
+                       Icons.settings_outlined) // Settings
                     : (index == 0 ? Icons.receipt :
                        index == 1 ? Icons.person :
                        index == 2 ? Icons.article :
-                       Icons.event),
+                       index == 3 ? Icons.event :
+                       Icons.settings), // Settings
                 color: iconColor,
                 size: 30, // Icon size
               ),
@@ -118,11 +122,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 index == 0 ? 'Recipe' :
                 index == 1 ? 'Specialist' :
                 index == 2 ? 'Articles' :
-                'Appointments',
+                index == 3 ? 'Appointment' : // Appointments
+                'Settings', // Settings
                 style: TextStyle(
                   color: iconColor, 
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontSize: 10,
                 ),
                 textAlign: TextAlign.center,
               ),

@@ -9,10 +9,10 @@ class EditSpecialistScreen extends StatefulWidget {
   final Map<String, dynamic> specialistData;
 
   const EditSpecialistScreen({
-    Key? key,
+    super.key,
     required this.specialistId,
     required this.specialistData,
-  }) : super(key: key);
+  });
 
   @override
   _EditSpecialistScreenState createState() => _EditSpecialistScreenState();

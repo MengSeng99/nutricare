@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
 import 'admin_specialist_details.dart';
+import 'admin_create_specialist.dart'; // Import your new screen here
 
 class AdminSpecialistsScreen extends StatefulWidget {
   const AdminSpecialistsScreen({super.key});
@@ -31,7 +31,7 @@ class _AdminSpecialistsScreenState extends State<AdminSpecialistsScreen>
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Admin Specialists',
+        title: const Text('Manage Specialists',
             style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color.fromARGB(255, 90, 113, 243))),
@@ -47,6 +47,20 @@ class _AdminSpecialistsScreenState extends State<AdminSpecialistsScreen>
             Tab(text: 'Dietitians'),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add_alt_rounded,
+                color: Color.fromARGB(255, 90, 113, 243)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateSpecialistScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: TabBarView(
         controller: _tabController,
@@ -81,8 +95,6 @@ class SpecialistsListView extends StatelessWidget {
 
         final specialists = snapshot.data!.docs;
 
-        // Inside SpecialistsListView class
-
         return ListView.builder(
           itemCount: specialists.length,
           itemBuilder: (context, index) {
@@ -92,6 +104,7 @@ class SpecialistsListView extends StatelessWidget {
                 ''; // Retrieve profile picture URL
             final email =
                 specialistData['email'] ?? 'No Email'; // Retrieve email
+            final specialistId = specialists[index].id; // Get the specialist ID
 
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -111,9 +124,9 @@ class SpecialistsListView extends StatelessWidget {
                 title: RichText(
                   text: TextSpan(
                     children: <TextSpan>[
-                      TextSpan(
+                      const TextSpan(
                         text: 'Dr. ',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                           color: Color.fromARGB(255, 90, 113, 243),
@@ -135,16 +148,21 @@ class SpecialistsListView extends StatelessWidget {
                   children: [
                     Text(specialistData['specialization'] ??
                         'No Specialization'),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       email,
                       style: const TextStyle(color: Colors.grey),
                     ),
                   ],
                 ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    _showDeleteConfirmationDialog(
+                        context, specialistData['name'], specialistId);
+                  },
+                ),
                 onTap: () {
-                  final specialistId =
-                      specialists[index].id; // Get the specialist ID
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -156,6 +174,70 @@ class SpecialistsListView extends StatelessWidget {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog(
+      BuildContext context, String? specialistName, String specialistId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text('Delete Specialist',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 90, 113, 243))),
+          content: RichText(
+          text: TextSpan(
+            style: const TextStyle(fontSize: 16, color: Colors.black), // General text style
+            children: [
+              const TextSpan(text: 'Are you sure you want to remove\n'),
+              TextSpan(
+                text: 'Dr. ${specialistName ?? "this specialist"}',
+                style: const TextStyle(
+                  color: Color.fromARGB(255, 90, 113, 243), // Specific color for the name
+                  fontWeight: FontWeight.bold, // Bold for emphasis
+                ),
+              ),
+              const TextSpan(text: '?'),
+            ],
+          ),
+        ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              onPressed: () async {
+                // Delete the specialist from Firestore
+                await FirebaseFirestore.instance
+                    .collection('specialists')
+                    .doc(specialistId)
+                    .delete();
+                Navigator.of(context).pop(); // Close the dialog
+                // Optionally, show a snackbar or a toast to confirm deletion
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Specialist removed successfully')),
+                );
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            ),
+          ],
         );
       },
     );
