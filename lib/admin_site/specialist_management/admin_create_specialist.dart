@@ -92,7 +92,7 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
         selectedSpecialization == null ||
         services.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields and add at least one service!')),
+        const SnackBar(content: Text('Please fill all required fields and add at least one service!',style: TextStyle(backgroundColor: Colors.red),)),
       );
       return;
     }
@@ -100,7 +100,7 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
     // Validate email format
     if (!isEmailValid(emailController.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address!')),
+        const SnackBar(content: Text('Please enter a valid email address!',style: TextStyle(backgroundColor: Colors.red),)),
       );
       return;
     }
@@ -108,7 +108,7 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
     // Validate password length
     if (passwordController.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password must be at least 6 characters!')),
+        const SnackBar(content: Text('Password must be at least 6 characters!',style: TextStyle(backgroundColor: Colors.red),)),
       );
       return;
     }
@@ -138,7 +138,7 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
       await FirebaseFirestore.instance.collection('specialists').doc(specialistId).set(newSpecialist);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Specialist created successfully!')),
+        const SnackBar(content: Text('Specialist created successfully!',style: TextStyle(backgroundColor: Colors.green),)),
       );
 
       Navigator.pop(context); // Go back to the previous screen
@@ -211,7 +211,7 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text('Please enter valid service details')),
+                        content: Text('Please enter valid service details',style: TextStyle(backgroundColor: Colors.red),)),
                   );
                 }
               },

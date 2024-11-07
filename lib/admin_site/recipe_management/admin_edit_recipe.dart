@@ -15,7 +15,7 @@ class EditRecipeDetailsScreen extends StatefulWidget {
   final String? imageUrl;
 
   const EditRecipeDetailsScreen({
-    Key? key,
+    super.key,
     required this.recipeId,
     required this.title,
     required this.category,
@@ -24,7 +24,7 @@ class EditRecipeDetailsScreen extends StatefulWidget {
     required this.calories,
     required this.difficulty,
     this.imageUrl,
-  }) : super(key: key);
+  });
 
   @override
   _EditRecipeDetailsScreenState createState() => _EditRecipeDetailsScreenState();
@@ -206,7 +206,7 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
       await _updateSubcollections('steps', stepsList);
       await _updateSubcollections('nutritionalFacts', nutritionalFactsList);
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Recipe updated successfully!')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Recipe updated successfully!',style: TextStyle(backgroundColor: Colors.green),)));
 
       final updatedData = {
         'title': _title,
@@ -370,14 +370,14 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
             Expanded(
               child: TextFormField(
                 controller: _nutritionalFactControllers[index],
-                decoration: InputDecoration(labelText: "Nutritional Fact Label ${index + 1}"),
+                decoration: InputDecoration(labelText: "Nutritional Fact${index + 1}"),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: TextFormField(
                 controller: _nutritionalValueControllers[index], // Use the value controller
-                decoration: InputDecoration(labelText: "Value"),
+                decoration: InputDecoration(labelText: "Value (g)"),
                 keyboardType: TextInputType.number,
               ),
             ),
@@ -475,7 +475,7 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
                         // Servings Field
                         TextFormField(
                           initialValue: _servings?.toString(),
-                          decoration: const InputDecoration(labelText: "Servings"),
+                          decoration: const InputDecoration(labelText: "Servings (person)"),
                           keyboardType: TextInputType.number,
                           validator: (value) => value!.isEmpty ? 'Please enter the number of servings.' : null,
                           onSaved: (value) => _servings = int.tryParse(value!),

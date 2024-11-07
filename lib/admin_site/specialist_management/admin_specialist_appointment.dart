@@ -7,7 +7,7 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
 
   const SpecialistAppointmentsScreen({super.key, required this.specialistId});
 
-   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
@@ -24,35 +24,58 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No appointment time slots found."));
+                  return const Center(child: Text("No appointment time slots found for this specialist."));
                 }
 
                 final appointments = snapshot.data!.docs;
-                Map<String, Map<String, dynamic>> groupedAppointments = {};
+                // Updated grouping structure
+                Map<String, Map<String, Map<String, List<String>>>> groupedAppointments = {};
 
-                // Group appointments by mode and month
                 for (var appointmentDoc in appointments) {
                   final appointment = appointmentDoc.data() as Map<String, dynamic>;
-                  final appointmentMode = appointmentDoc.id; // This holds the mode (Online or Physical)
+                  final appointmentMode = appointmentDoc.id; // 'Online' or 'Physical'
                   final dateSlots = appointment['date_slots'] as Map<String, dynamic>?;
 
                   if (dateSlots != null) {
                     for (String date in dateSlots.keys) {
-                      String monthYear = DateFormat('MMMM yyyy').format(DateTime.parse(date));
-                      if (!groupedAppointments.containsKey(monthYear)) {
-                        groupedAppointments[monthYear] = {};
+                      DateTime parsedDate = DateTime.parse(date);
+                      if (parsedDate.isAfter(DateTime.now())) { // Filter future dates
+                        String monthYear = DateFormat('MMMM yyyy').format(parsedDate);
+                        if (!groupedAppointments.containsKey(monthYear)) {
+                          groupedAppointments[monthYear] = {};
+                        }
+                        if (!groupedAppointments[monthYear]!.containsKey(appointmentMode)) {
+                          groupedAppointments[monthYear]![appointmentMode] = {};
+                        }
+                        if (!groupedAppointments[monthYear]![appointmentMode]!.containsKey(date)) {
+                          groupedAppointments[monthYear]![appointmentMode]![date] = [];
+                        }
+                        // Assuming dateSlots[date] is a List<dynamic> of time slots
+                        groupedAppointments[monthYear]![appointmentMode]![date]!.addAll(
+                          List<String>.from(dateSlots[date] as List<dynamic>),
+                        );
                       }
-
-                      groupedAppointments[monthYear]![appointmentMode] = dateSlots;
                     }
                   }
                 }
 
+                if (groupedAppointments.isEmpty) {
+                  return const Center(child: Text("No upcoming appointment time slots."));
+                }
+
+                // Sort the groupedAppointments by month and year
+                List<String> sortedMonthYears = groupedAppointments.keys.toList()
+                  ..sort((a, b) {
+                    DateTime dateA = DateFormat('MMMM yyyy').parse(a);
+                    DateTime dateB = DateFormat('MMMM yyyy').parse(b);
+                    return dateA.compareTo(dateB);
+                  });
+
                 return ListView.builder(
-                  itemCount: groupedAppointments.keys.length,
+                  itemCount: sortedMonthYears.length,
                   itemBuilder: (context, index) {
-                    String monthYear = groupedAppointments.keys.elementAt(index);
-                    Map<String, dynamic> modes = groupedAppointments[monthYear]!;
+                    String monthYear = sortedMonthYears[index];
+                    Map<String, Map<String, List<String>>> modes = groupedAppointments[monthYear]!;
 
                     return Card(
                       elevation: 4,
@@ -68,14 +91,14 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 20,
-                                color: Color(0xFF5A71F3), // Set the month color to blue
+                                color: Color(0xFF5A71F3), // Blue color for month
                               ),
                             ),
                             const SizedBox(height: 8),
                             for (String mode in modes.keys)
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 8.0),
-                                child: _buildAppointmentModeSection(mode, modes[mode], context),
+                                child: _buildAppointmentModeSection(mode, modes[mode]!, context),
                               ),
                           ],
                         ),
@@ -105,25 +128,29 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAppointmentModeSection(String mode, Map<String, dynamic>? dateSlots, BuildContext context) {
-    if (dateSlots == null || dateSlots.isEmpty) {
-      return Text("$mode Appointment - No time slots available", style: TextStyle(color: Colors.red));
+  Widget _buildAppointmentModeSection(String mode, Map<String, List<String>> dateSlots, BuildContext context) {
+    if (dateSlots.isEmpty) {
+      return Text("$mode Appointment - No time slots available", style: const TextStyle(color: Colors.red));
     }
+
+    // Sort the dates
+    List<String> sortedDates = dateSlots.keys.toList()
+      ..sort((a, b) => DateTime.parse(a).compareTo(DateTime.parse(b)));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Center( // Center the title
+        Center( 
           child: Text(
             "$mode Appointment Slots", 
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
         ),
         const SizedBox(height: 8),
-        for (String date in dateSlots.keys)
+        for (String date in sortedDates)
           ExpansionTile(
             title: Text(
-              DateFormat("EEEE, yyyy-MM-dd").format(DateTime.parse(date)),
+              "${DateFormat("EEEE, yyyy-MM-dd").format(DateTime.parse(date))} (${dateSlots[date]!.length} slots available)",
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
             children: [
@@ -131,10 +158,12 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(8.0),
                 child: Wrap(
                   spacing: 8.0,
-                  children: (dateSlots[date] as List<dynamic>).map((timeSlot) {
+                  children: dateSlots[date]!.map((timeSlot) {
                     return Chip(
                       label: Text(timeSlot, style: const TextStyle(color: Colors.white)),
-                      backgroundColor: (mode == 'Online') ? const Color(0xFF5A71F3) : const Color(0xFFF35A5A),
+                      backgroundColor: (mode.toLowerCase() == 'online') 
+                          ? const Color(0xFF5A71F3) 
+                          : const Color(0xFFF35A5A),
                       deleteIcon: const Icon(Icons.delete, size: 18, color: Colors.white),
                       onDeleted: () {
                         _showDeleteConfirmationDialog(context, mode, date, timeSlot);
@@ -173,8 +202,11 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    DropdownButton<String>(
-                      isExpanded: true,
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Appointment Mode',
+                        border: OutlineInputBorder(),
+                      ),
                       value: selectedMode,
                       items: <String>['Online', 'Physical'].map((String value) {
                         return DropdownMenuItem<String>(
@@ -205,11 +237,14 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                           });
                         }
                       },
-                      child: Text(
-                        selectedDate == null
-                            ? "Select Date"
-                            : DateFormat("yyyy-MM-dd").format(selectedDate!),
-                        style: const TextStyle(fontSize: 16, color: Color(0xFF5A71F3)),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          selectedDate == null
+                              ? "Select Date"
+                              : DateFormat("yyyy-MM-dd").format(selectedDate!),
+                          style: const TextStyle(fontSize: 16, color: Color(0xFF5A71F3)),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -225,11 +260,14 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                           });
                         }
                       },
-                      child: Text(
-                        selectedTime == null
-                            ? "Select Time"
-                            : selectedTime!.format(context),
-                        style: const TextStyle(fontSize: 16, color: Color(0xFF5A71F3)),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          selectedTime == null
+                              ? "Select Time"
+                              : selectedTime!.format(context),
+                          style: const TextStyle(fontSize: 16, color: Color(0xFF5A71F3)),
+                        ),
                       ),
                     ),
                   ],
@@ -259,7 +297,17 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                           DateFormat("yyyy-MM-dd").format(selectedDate!);
                       String timeFormatted = selectedTime!.format(context);
                       _addTimeSlot(selectedMode, formattedDate, timeFormatted);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('$selectedMode appointment slot on $formattedDate - $timeFormatted added successfully!',style: TextStyle(backgroundColor: Colors.green),)),
+                      );
                       Navigator.of(context).pop();
+                    } else {
+                      // Show an error if date or time is not selected
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please select both date and time.',style: TextStyle(backgroundColor: Colors.red),),
+                        ),
+                      );
                     }
                   },
                 ),
@@ -281,13 +329,24 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
     DocumentSnapshot snapshot = await appointmentCollection.get();
 
     if (snapshot.exists) {
-      Map<String, dynamic> dateSlots =
-          (snapshot.data() as Map<String, dynamic>)['date_slots'] ?? {};
+      Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+      Map<String, dynamic> dateSlots = data['date_slots'] != null
+          ? Map<String, dynamic>.from(data['date_slots'])
+          : {};
+
       if (dateSlots[dateFormatted] == null) {
         dateSlots[dateFormatted] = [];
       }
-      dateSlots[dateFormatted].add(time);
-      await appointmentCollection.update({'date_slots': dateSlots});
+
+      List<dynamic> times = dateSlots[dateFormatted] as List<dynamic>;
+
+      if (!times.contains(time)) { // Avoid duplicate time slots
+        times.add(time);
+        await appointmentCollection.update({'date_slots': dateSlots});
+      } else {
+        // Optionally, notify the user that the time slot already exists
+        // This can be handled in the dialog or via a SnackBar
+      }
     } else {
       await appointmentCollection.set({
         'date_slots': {
@@ -297,7 +356,7 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _deleteTimeSlot(String mode, String dateFormatted, String time) async {
+  Future<void> _deleteTimeSlot(String mode, String dateFormatted, String timeSlot) async {
     var appointmentCollection = FirebaseFirestore.instance
         .collection('specialists')
         .doc(specialistId)
@@ -307,17 +366,19 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
     DocumentSnapshot snapshot = await appointmentCollection.get();
 
     if (snapshot.exists) {
-      Map<String, dynamic> dateSlots =
-          (snapshot.data() as Map<String, dynamic>)['date_slots'] ?? {};
+      Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+      Map<String, dynamic> dateSlots = data['date_slots'] != null
+          ? Map<String, dynamic>.from(data['date_slots'])
+          : {};
 
       if (dateSlots[dateFormatted] != null) {
-        dateSlots[dateFormatted] = (dateSlots[dateFormatted] as List<dynamic>)
-            .where((t) => t != time) // Remove the specific time slot
-            .toList();
+        List<dynamic> times = dateSlots[dateFormatted] as List<dynamic>;
+        times.remove(timeSlot); // Remove the specific time slot
 
-        // Check if the date no longer has any time slots
-        if (dateSlots[dateFormatted].isEmpty) {
-          dateSlots.remove(dateFormatted);
+        if (times.isEmpty) {
+          dateSlots.remove(dateFormatted); // Remove the date if no time slots left
+        } else {
+          dateSlots[dateFormatted] = times;
         }
 
         await appointmentCollection.update({'date_slots': dateSlots});

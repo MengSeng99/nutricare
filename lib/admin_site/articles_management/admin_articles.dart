@@ -32,48 +32,52 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
         ),
         backgroundColor: Colors.white,
         automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            color: const Color.fromARGB(255, 90, 113, 243),
-            onPressed: () => _showFilterDialog(),
-          ),
-        ],
       ),
       body: Column(
         children: [
-          // Updated Search Field
+          // Updated Search Field with Filter Button
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: searchController,
-              onChanged: (value) {
-                setState(() {
-                  searchKeyword = value;
-                });
-              },
-              decoration: InputDecoration(
-                hintText: "Search by Title", // New hint text
-                prefixIcon: const Icon(Icons.search), // Search icon
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20.0), // Rounded corners
-                  borderSide: BorderSide.none, // No border line
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        searchKeyword = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: "Search by Title", // New hint text
+                      prefixIcon: const Icon(Icons.search), // Search icon
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.0), // Rounded corners
+                        borderSide: BorderSide.none, // No border line
+                      ),
+                      suffixIcon: searchKeyword.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                setState(() {
+                                  searchKeyword = '';
+                                  searchController.clear();
+                                });
+                              },
+                            )
+                          : null,
+                    ),
+                    style: const TextStyle(color: Colors.black),
+                  ),
                 ),
-                suffixIcon: searchKeyword.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setState(() {
-                            searchKeyword = '';
-                            searchController.clear();
-                          });
-                        },
-                      )
-                    : null,
-              ),
-              style: const TextStyle(color: Colors.black),
+                IconButton(
+                  icon: const Icon(Icons.filter_list),
+                  color: const Color.fromARGB(255, 90, 113, 243),
+                  onPressed: () => _showFilterDialog(),
+                ),
+              ],
             ),
           ),
           // Articles List
@@ -230,7 +234,7 @@ class ArticlesListView extends StatelessWidget {
         final articles = snapshot.data!.docs.where((article) {
           final articleData = article.data() as Map<String, dynamic>;
           final title = articleData['title']?.toLowerCase() ?? '';
-          final matchesSearch = title.contains(searchKeyword.toLowerCase());
+          final matchesSearch = title.startsWith(searchKeyword.toLowerCase());
           final matchesSpecialist = selectedSpecialistIds.isEmpty || selectedSpecialistIds.contains(articleData['specialistId']);
 
           return matchesSearch && matchesSpecialist;
@@ -404,7 +408,7 @@ class ArticlesListView extends StatelessWidget {
                     .delete();
                 Navigator.of(context).pop(); // Close the dialog
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Article removed successfully')),
+                  const SnackBar(content: Text('Article removed successfully',style: TextStyle(backgroundColor: Colors.green),)),
                 );
               },
               child: const Text('Delete', style: TextStyle(color: Colors.white)),

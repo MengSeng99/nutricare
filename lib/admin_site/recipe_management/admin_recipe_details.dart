@@ -5,7 +5,7 @@ import 'admin_edit_recipe.dart';
 class AdminRecipeDetailsScreen extends StatefulWidget {
   final String recipeId;
 
-  const AdminRecipeDetailsScreen({Key? key, required this.recipeId}) : super(key: key);
+  const AdminRecipeDetailsScreen({super.key, required this.recipeId});
 
   @override
   _AdminRecipeDetailsScreenState createState() => _AdminRecipeDetailsScreenState();
@@ -141,7 +141,7 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
     if (shouldDelete == true) {
       try {
         await FirebaseFirestore.instance.collection('recipes').doc(widget.recipeId).delete();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recipe deleted successfully!')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recipe deleted successfully!',style: TextStyle(backgroundColor: Colors.green),)));
         Navigator.pop(context);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting recipe: $e')));
@@ -175,7 +175,7 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.delete),
-            color: const Color.fromARGB(255, 90, 113, 243),
+            color:  Colors.red,
             onPressed: () async {
               final recipe = await _recipeFuture; // Fetch current recipe data
               String recipeName = recipe['title'] ?? 'this recipe'; // Use recipe title or a default message
@@ -313,8 +313,8 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                             var stepNumber = snapshot.data![index]['number'] ?? 0;
                             return ListTile(
                               leading: CircleAvatar(
-                                child: Text('$stepNumber', style: const TextStyle(color: Colors.white)),
                                 backgroundColor: const Color(0xFF5A71F3),
+                                child: Text('$stepNumber', style: const TextStyle(color: Colors.white)),
                               ),
                               title: Text(step),
                             );
@@ -351,7 +351,7 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                             var fact = snapshot.data![index]['label'] ?? 'Unnamed Fact';
                             var value = snapshot.data![index]['value']?.toString() ?? 'N/A';
                             return ListTile(
-                              title: Text('$fact: $value'),
+                              title: Text('$fact: $value g'),
                             );
                           },
                         );

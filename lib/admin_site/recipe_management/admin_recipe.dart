@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'admin_create_recipe.dart';
 import 'admin_recipe_details.dart';
-
 
 class AdminRecipeScreen extends StatefulWidget {
   const AdminRecipeScreen({super.key});
@@ -12,9 +12,15 @@ class AdminRecipeScreen extends StatefulWidget {
 }
 
 class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
-  String? selectedCategory;
+  String? selectedCategory; // To track the selected category
   TextEditingController searchController = TextEditingController();
   String searchQuery = "";
+
+  @override
+  void initState() {
+    super.initState();
+    selectedCategory = 'All'; // Set default selected category to 'All'
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +38,21 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
             color: Color.fromARGB(255, 220, 220, 241),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            color: Color.fromARGB(255, 90, 113, 243),
+            onPressed: () {
+              // Navigate to the Create Recipe screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateRecipeScreen(),
+                ),
+              );
+            },
+          ),
+        ],
         backgroundColor: Colors.white,
         automaticallyImplyLeading: false,
       ),
@@ -75,7 +96,8 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
             ),
             // Fetch categories and build category chips
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('recipes').snapshots(),
+              stream:
+                  FirebaseFirestore.instance.collection('recipes').snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -85,18 +107,93 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
                   return const Center(child: Text('No recipes available.'));
                 }
 
-                List<String> categories = _getAvailableCategories(snapshot.data!);
+                List<String> categories =
+                    _getAvailableCategories(snapshot.data!);
 
                 return Column(
                   children: [
                     // Category Chips Row
+// Category Chips Row
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            ...categories.map((category) {
+                            // 'All' Category Chip
+                            Padding(
+                              padding: const EdgeInsets.only(right: 12.0),
+                              child: ChoiceChip(
+                                label: const Text('All'),
+                                selected: selectedCategory == 'All',
+                                onSelected: (isSelected) {
+                                  setState(() {
+                                    selectedCategory =
+                                        isSelected ? 'All' : null;
+                                    if (selectedCategory == null) {
+                                      selectedCategory =
+                                          'All'; // Revert to 'All' if deselected
+                                    }
+                                  });
+                                },
+                                selectedColor:
+                                    const Color.fromARGB(255, 90, 113, 243),
+                                backgroundColor: Colors.grey[200],
+                                labelStyle: TextStyle(
+                                  color: selectedCategory == 'All'
+                                      ? Colors.white
+                                      : const Color.fromARGB(255, 0, 0, 0),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      100), // Fully rounded corners
+                                  side: BorderSide(
+                                    color: selectedCategory == 'All'
+                                        ? const Color.fromARGB(
+                                            255, 90, 113, 243)
+                                        : Colors.transparent,
+                                    width: 2.0,
+                                  ),
+                                ),
+                                labelPadding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                elevation: selectedCategory == 'All'
+                                    ? 2
+                                    : 1, // Elevated when selected
+                              ),
+                            ),
+                            // Dynamically display selected category chip if one is selected
+                            if (selectedCategory != null &&
+                                selectedCategory != 'All')
+                              Padding(
+                                padding: const EdgeInsets.only(right: 12.0),
+                                child: ChoiceChip(
+                                  label: Text(selectedCategory!),
+                                  selected: true,
+                                  onSelected: (_) {
+                                    setState(() {
+                                      selectedCategory =
+                                          'All'; // Change to All if selected
+                                    });
+                                  },
+                                  selectedColor:
+                                      const Color.fromARGB(255, 90, 113, 243),
+                                  backgroundColor: Colors.grey[200],
+                                  labelStyle: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                        100), // Fully rounded corners
+                                  ),
+                                ),
+                              ),
+                            // Display other category chips
+                            ...categories
+                                .where(
+                                    (category) => category != selectedCategory)
+                                .map((category) {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12.0),
                                 child: ChoiceChip(
@@ -104,10 +201,16 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
                                   selected: selectedCategory == category,
                                   onSelected: (isSelected) {
                                     setState(() {
-                                      selectedCategory = isSelected ? category : null;
+                                      selectedCategory =
+                                          isSelected ? category : null;
+                                      if (selectedCategory == null) {
+                                        selectedCategory =
+                                            'All'; // Revert to 'All' if deselected
+                                      }
                                     });
                                   },
-                                  selectedColor: const Color.fromARGB(255, 90, 113, 243),
+                                  selectedColor:
+                                      const Color.fromARGB(255, 90, 113, 243),
                                   backgroundColor: Colors.grey[200],
                                   labelStyle: TextStyle(
                                     color: selectedCategory == category
@@ -115,14 +218,31 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
                                         : const Color.fromARGB(255, 0, 0, 0),
                                     fontWeight: FontWeight.bold,
                                   ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                        100), // Fully rounded corners
+                                    side: BorderSide(
+                                      color: selectedCategory == category
+                                          ? const Color.fromARGB(
+                                              255, 90, 113, 243)
+                                          : Colors.transparent,
+                                      width: 2.0,
+                                    ),
+                                  ),
+                                  labelPadding: const EdgeInsets.symmetric(
+                                      horizontal:
+                                          8.0), // Padding around the text
+                                  elevation: selectedCategory == category
+                                      ? 2
+                                      : 1, // Slight elevation when selected
+                                  pressElevation: 2, // More elevation on press
                                 ),
                               );
-                            }).toList(),
+                            }),
                           ],
                         ),
                       ),
                     ),
-
                     // Show recipes based on selected category and search query
                     _buildRecipeList(context, snapshot.data!),
                   ],
@@ -149,8 +269,11 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
   Widget _buildRecipeList(BuildContext context, QuerySnapshot snapshot) {
     final recipes = snapshot.docs.where((doc) {
       var data = doc.data() as Map<String, dynamic>;
-      bool matchesSearchQuery = data['title'].toString().toLowerCase().contains(searchQuery);
-      bool matchesCategory = selectedCategory == null || data['category'] == selectedCategory;
+      bool matchesSearchQuery =
+          data['title'].toString().toLowerCase().contains(searchQuery);
+      bool matchesCategory = selectedCategory == null ||
+          selectedCategory == 'All' ||
+          data['category'] == selectedCategory;
       return matchesSearchQuery && matchesCategory;
     }).toList();
 
@@ -212,7 +335,8 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
             child: Container(
               padding: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15.0)),
+                borderRadius:
+                    const BorderRadius.vertical(bottom: Radius.circular(15.0)),
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -224,15 +348,20 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
                 children: [
                   Text(
                     recipe['title'],
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16.0),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.0),
                   ),
                   Text(
                     recipe['category'], // Display the category
-                    style: const TextStyle(color: Colors.white70, fontSize: 14.0),
+                    style:
+                        const TextStyle(color: Colors.white70, fontSize: 14.0),
                   ),
                   Text(
                     "${recipe['cookingTime']} min",
-                    style: const TextStyle(color: Colors.white70, fontSize: 14.0),
+                    style:
+                        const TextStyle(color: Colors.white70, fontSize: 14.0),
                   ),
                 ],
               ),

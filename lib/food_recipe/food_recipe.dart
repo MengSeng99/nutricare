@@ -12,14 +12,14 @@ class FoodRecipeScreen extends StatefulWidget {
 
 class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
   String? selectedCategory; // To track the selected category
-  TextEditingController searchController =
-      TextEditingController(); // Search text controller
+  TextEditingController searchController = TextEditingController(); // Search text controller
   String searchQuery = ""; // To track search query
   Set<String> favoriteRecipeIds = <String>{};
 
   @override
   void initState() {
     super.initState();
+    selectedCategory = 'All'; // Set default selected category to 'All'
     _loadFavoriteRecipes(); // Load favorite recipes on page load
   }
 
@@ -50,58 +50,6 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: searchController,
-                onChanged: (value) {
-                  setState(() {
-                    searchQuery = value.toLowerCase(); // Update search query when input changes
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: "Search any recipe",
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor:
-                      const Color.fromARGB(255, 250, 250, 250).withOpacity(0.5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 221, 222, 226),
-                      width: 1.0,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 221, 222, 226),
-                      width: 1.5,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 90, 113, 243),
-                      width: 2.0,
-                    ),
-                  ),
-                  suffixIcon: searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            setState(() {
-                              searchController.clear(); // Clear the search field
-                              searchQuery = ""; // Clear the search query
-                            });
-                          },
-                        )
-                      : null,
-                ),
-                style: const TextStyle(color: Color.fromARGB(255, 74, 60, 137)),
-              ),
-            ),
             // Fetch categories and build category chips, including Favorites
             StreamBuilder<QuerySnapshot>(
               stream:
@@ -121,6 +69,58 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
 
                 return Column(
                   children: [
+                    // Search Bar
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextField(
+                        controller: searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            searchQuery = value.toLowerCase(); // Update search query when input changes
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText: "Search any recipe",
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          fillColor:
+                              const Color.fromARGB(255, 250, 250, 250).withOpacity(0.5),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20.0),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 221, 222, 226),
+                              width: 1.0,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20.0),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 221, 222, 226),
+                              width: 1.5,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20.0),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 90, 113, 243),
+                              width: 2.0,
+                            ),
+                          ),
+                          suffixIcon: searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    setState(() {
+                                      searchController.clear(); // Clear the search field
+                                      searchQuery = ""; // Clear the search query
+                                    });
+                                  },
+                                )
+                              : null,
+                        ),
+                        style: const TextStyle(color: Color.fromARGB(255, 74, 60, 137)),
+                      ),
+                    ),
                     // Category Chips Row
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -128,47 +128,66 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            // Add a Favorite category chip
+                            // Add an All category chip
                             Padding(
                               padding: const EdgeInsets.only(right: 12.0),
                               child: ChoiceChip(
-                                label: const Text('Favorites'),
-                                selected: selectedCategory == 'Favorites',
+                                label: const Text('All'),
+                                selected: selectedCategory == 'All',
                                 onSelected: (isSelected) {
                                   setState(() {
-                                    selectedCategory =
-                                        isSelected ? 'Favorites' : null;
+                                    selectedCategory = isSelected ? 'All' : null;
+                                    if (selectedCategory == null) {
+                                      selectedCategory = 'All'; // Revert to 'All' if deselected
+                                    }
                                   });
                                 },
-                                selectedColor:
-                                    const Color.fromARGB(255, 90, 113, 243),
+                                selectedColor: const Color.fromARGB(255, 90, 113, 243),
                                 backgroundColor: Colors.grey[200],
                                 labelStyle: TextStyle(
-                                  color: selectedCategory == 'Favorites'
+                                  color: selectedCategory == 'All'
                                       ? Colors.white
                                       : const Color.fromARGB(255, 0, 0, 0),
                                   fontWeight: FontWeight.bold,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      100), // Rounded corners
+                                  borderRadius: BorderRadius.circular(100), // Rounded corners
                                   side: BorderSide(
-                                    color: selectedCategory == 'Favorites'
-                                        ? const Color.fromARGB(
-                                            255, 90, 113, 243)
+                                    color: selectedCategory == 'All'
+                                        ? const Color.fromARGB(255, 90, 113, 243)
                                         : Colors.transparent,
                                     width: 2.0,
                                   ),
                                 ),
                                 labelPadding:
                                     const EdgeInsets.symmetric(horizontal: 8.0),
-                                elevation: selectedCategory == 'Favorites'
-                                    ? 2
-                                    : 1, // Slight elevation when selected
-                                pressElevation: 2, // More elevation on press
+                                elevation: selectedCategory == 'All' ? 2 : 1,
                               ),
                             ),
-                            ...categories.map((category) {
+                            // Conditionally display selected category chip next to "All"
+                            if (selectedCategory != 'All' && selectedCategory != null) 
+                              Padding(
+                                padding: const EdgeInsets.only(right: 12.0),
+                                child: ChoiceChip(
+                                  label: Text(selectedCategory!),
+                                  selected: true,
+                                  onSelected: (_) {
+                                    setState(() {
+                                      selectedCategory = 'All'; // Change to All if selected
+                                    });
+                                  },
+                                  selectedColor: const Color.fromARGB(255, 90, 113, 243),
+                                  backgroundColor: Colors.grey[200],
+                                  labelStyle: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(100), // Rounded corners
+                                  ),
+                                ),
+                              ),
+                            ...categories.where((category) => category != selectedCategory).map((category) {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12.0),
                                 child: ChoiceChip(
@@ -176,8 +195,10 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                                   selected: selectedCategory == category,
                                   onSelected: (isSelected) {
                                     setState(() {
-                                      selectedCategory =
-                                          isSelected ? category : null;
+                                      selectedCategory = isSelected ? category : null;
+                                      if (selectedCategory == null) {
+                                        selectedCategory = 'All'; // Revert to 'All' if deselected
+                                      }
                                     });
                                   },
                                   selectedColor:
@@ -214,7 +235,7 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                       ),
                     ),
                     // Show recipes based on selected category and search query
-                    _buildRecipeCards(context),
+                    _buildRecipeCards(context), // Moved here
                   ],
                 );
               },
@@ -277,114 +298,117 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
   }
 
   Widget _buildRecipeCards(BuildContext context) {
-  // Using StreamBuilder to listen for recipe data
-  return StreamBuilder<QuerySnapshot>(
-    stream: selectedCategory == 'Favorites' && favoriteRecipeIds.isNotEmpty
-        ? FirebaseFirestore.instance
-            .collection('recipes')
-            .where(FieldPath.documentId, whereIn: favoriteRecipeIds.toList())
-            .snapshots()
-        : selectedCategory != null
-            ? FirebaseFirestore.instance
-                .collection('recipes')
-                .where('category', isEqualTo: selectedCategory)
-                .snapshots()
-            : FirebaseFirestore.instance.collection('recipes').snapshots(),
-    builder: (context, snapshot) {
-      // Check connection state
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      
-      // Handle snapshot error
-      if (snapshot.hasError) {
-        return const Center(child: Text('Error fetching recipes.'));
-      }
-      
-      // Check if there's data in the snapshot
-      if (!snapshot.hasData || snapshot.data == null || snapshot.data!.docs.isEmpty) {
-        // Handle no data scenarios
-        if (selectedCategory == 'Favorites') {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0), // Add some padding
-              child: Container(
-                padding: const EdgeInsets.all(16.0),
-                margin: const EdgeInsets.symmetric(horizontal: 4.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10.0,
-                      spreadRadius: 2.0,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.bookmark_border,
-                      size: 48.0,
-                      color: Color.fromARGB(255, 90, 113, 243),
-                    ),
-                    const SizedBox(height: 16.0),
-                    const Text(
-                      'No Favorite Recipes Yet!',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold,
+    // Using StreamBuilder to listen for recipe data
+    return StreamBuilder<QuerySnapshot>(
+      stream: selectedCategory == 'Favorites' && favoriteRecipeIds.isNotEmpty
+          ? FirebaseFirestore.instance
+              .collection('recipes')
+              .where(FieldPath.documentId, whereIn: favoriteRecipeIds.toList())
+              .snapshots()
+          : selectedCategory == 'All' // Adjust to fetch all recipes
+              ? FirebaseFirestore.instance.collection('recipes').snapshots()
+              : selectedCategory != null
+                  ? FirebaseFirestore.instance
+                      .collection('recipes')
+                      .where('category', isEqualTo: selectedCategory)
+                      .snapshots()
+                  : FirebaseFirestore.instance.collection('recipes').snapshots(),
+      builder: (context, snapshot) {
+        // Check connection state
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        // Handle snapshot error
+        if (snapshot.hasError) {
+          return const Center(child: Text('Error fetching recipes.'));
+        }
+        
+        // Check if there's data in the snapshot
+        if (!snapshot.hasData || snapshot.data == null || snapshot.data!.docs.isEmpty) {
+          // Handle no data scenarios
+          if (selectedCategory == 'Favorites') {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0), // Add some padding
+                child: Container(
+                  padding: const EdgeInsets.all(16.0),
+                  margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10.0,
+                        spreadRadius: 2.0,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.bookmark_border,
+                        size: 48.0,
                         color: Color.fromARGB(255, 90, 113, 243),
                       ),
-                    ),
-                    const SizedBox(height: 8.0),
-                    const Text(
-                      'Add some by clicking the bookmark button on the recipe card.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        color: Colors.grey,
+                      const SizedBox(height: 16.0),
+                      const Text(
+                        'No Favorite Recipes Yet!',
+                        style: TextStyle(
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 90, 113, 243),
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8.0),
+                      const Text(
+                        'Add some by clicking the bookmark button on the recipe card.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
+            );
+          }
+          return const Center(child: Text('No recipes available.'));
         }
-        return const Center(child: Text('No recipes available.'));
-      }
 
-      // Extract recipes
-      final recipes = snapshot.data!.docs.where((doc) {
-        var data = doc.data() as Map<String, dynamic>;
-        return data['title'].toString().toLowerCase().contains(searchQuery);
-      }).toList();
+        // Extract recipes
+        final recipes = snapshot.data!.docs.where((doc) {
+          var data = doc.data() as Map<String, dynamic>;
+          return data['title'].toString().toLowerCase().contains(searchQuery);
+        }).toList();
 
-      // Return the grid view of recipes
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 8.0,
-            childAspectRatio: 0.8,
+        // Return the grid view of recipes
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8.0,
+              mainAxisSpacing: 8.0,
+              childAspectRatio: 0.8,
+            ),
+            itemCount: recipes.length,
+            itemBuilder: (context, index) {
+              var recipe = recipes[index].data() as Map<String, dynamic>;
+              return _buildModernRecipeCard(context, recipe, recipes[index].id);
+            },
           ),
-          itemCount: recipes.length,
-          itemBuilder: (context, index) {
-            var recipe = recipes[index].data() as Map<String, dynamic>;
-            return _buildModernRecipeCard(context, recipe, recipes[index].id);
-          },
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
+
   Widget _buildModernRecipeCard(
       BuildContext context, Map<String, dynamic> recipe, String recipeId) {
     bool isFavorite = favoriteRecipeIds.contains(recipeId);

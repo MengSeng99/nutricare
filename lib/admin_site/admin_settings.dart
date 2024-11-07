@@ -25,11 +25,11 @@ class AdminSettingsScreen extends StatelessWidget {
                 // Perform logout operation
                 await _logout(context);
               },
-              child: Text('Logout'),
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                 textStyle: TextStyle(fontSize: 18),
               ),
+              child: Text('Logout'),
             ),
           ],
         ),
