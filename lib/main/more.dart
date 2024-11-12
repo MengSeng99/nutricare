@@ -6,6 +6,7 @@ import 'package:nutricare/bmi_features/bmi_tracker.dart';
 import 'package:nutricare/health_record/health_record.dart';
 import 'package:nutricare/user_profile_management/user_profile.dart';
 
+import '../diet_tracker/calories_calculator.dart';
 import '../settings/settings.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -289,6 +290,76 @@ class _MoreScreenState extends State<MoreScreen> {
                                   SizedBox(height: 4), // Space between description lines
                                   Text(
                                     'Monitor your weight and health effectively.',
+                                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    
+                    
+                    const SizedBox(height: 15), // Space between sections
+
+                    // BMI Tracker Section
+                    const Text(
+                      'Calories Calculator',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                      ),
+                    ),
+                    const SizedBox(height: 10), // Space between title and content
+
+                    // BMI Tracker Box
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const CaloriesCalculatorScreen()),
+                        );
+                      },
+                      child: Container(
+                        width: double.infinity, // Full width
+                        padding: const EdgeInsets.all(16.0), // Padding for the box
+                        decoration: BoxDecoration(
+                          color: Colors.white, // White background
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Colors.grey[400]!), 
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2), // Light shadow for depth
+                              spreadRadius: 1,
+                              blurRadius: 5,
+                              offset: const Offset(0, 3), // Position of the shadow
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            // Replace Icon with the BMI image
+                            Image.asset(
+                              'images/calories-calculator.png', // Replace with the path to the BMI image
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            ),
+                            const SizedBox(width: 16), // Space between image and text
+                            // Description of BMI Tracker
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Calories Goal Calculator',
+                                    style: TextStyle(fontSize: 16, color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
+                                  ),
+                                  SizedBox(height: 4), // Space between description lines
+                                  Text(
+                                    'Calculate your calories goal and track your progress.',
                                     style: TextStyle(fontSize: 14, color: Colors.grey),
                                   ),
                                 ],

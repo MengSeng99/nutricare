@@ -162,6 +162,12 @@ class _LoginPageState extends State<LoginPage> {
                             MaterialPageRoute(
                                 builder: (context) => const AdminDashboard()),
                           );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Suceessfully logged in as Admin'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
                         } else if (email.endsWith('@nutricare.com')) {
                           // Define user as specialist
                           Navigator.pushReplacement(
@@ -170,12 +176,24 @@ class _LoginPageState extends State<LoginPage> {
                                 builder: (context) =>
                                     const SpecialistDashboard()),
                           );
+                         ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Successfully logged in as Specialist'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
                         } else {
                           // Regular user flow
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
                                 builder: (context) => const MainScreen()),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Welcome to Nutricare!'),
+                              backgroundColor: Colors.green,
+                            ),
                           );
                         }
                       }

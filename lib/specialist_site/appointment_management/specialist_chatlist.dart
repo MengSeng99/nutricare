@@ -1,27 +1,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'chat_details.dart';
 import 'package:intl/intl.dart';
 
-class ChatListScreen extends StatefulWidget {
-  const ChatListScreen({super.key});
+import 'specialist_chat_details.dart';
+
+class SpecialistChatListScreen extends StatefulWidget {
+  const SpecialistChatListScreen({super.key});
 
   @override
-  _ChatListScreenState createState() => _ChatListScreenState();
+  _SpecialistChatListScreenState createState() =>
+      _SpecialistChatListScreenState();
 }
 
-class _ChatListScreenState extends State<ChatListScreen> {
+class _SpecialistChatListScreenState extends State<SpecialistChatListScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   List<Map<String, dynamic>> chatList = [];
-  late String currentUserId;
+  late String specialistId;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    currentUserId = _auth.currentUser?.uid ?? "";
+    specialistId = _auth.currentUser?.uid ?? "";
     _retrieveChatData();
   }
 
@@ -37,37 +39,33 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Future<void> _retrieveChatData() async {
     try {
-      // Query chats where the current user is a part of
+      // Query chats where the current specialist is a part of
       QuerySnapshot querySnapshot = await _firestore
           .collection('chats')
-          .where('users',
-              arrayContains: currentUserId) // Filter by current user
+          .where('users', arrayContains: specialistId) // Filter by specialist
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        print("No chats found for the user.");
+        print("No chats found for the specialist.");
         return;
       }
 
       for (var doc in querySnapshot.docs) {
-        List<String> users = List<String>.from(
-            (doc.data() as Map<String, dynamic>)['users'] ?? []);
-        var specialistId = users.first == currentUserId
-            ? users.last
-            : users.first; // Specify the specialist ID
+        List<String> users =
+            List<String>.from((doc.data() as Map<String, dynamic>)['users'] ?? []);
+        var clientId = users.first == specialistId ? users.last : users.first; // Specify the client ID
 
-        // Fetch specialist data
-        DocumentSnapshot specialistDoc =
-            await _firestore.collection('specialists').doc(specialistId).get();
-        var specialistData = specialistDoc.data() as Map<String, dynamic>?;
+        // Fetch client data
+        DocumentSnapshot clientDoc =
+            await _firestore.collection('users').doc(clientId).get();
+        var clientData = clientDoc.data() as Map<String, dynamic>?;
 
         // Fetch the latest message from the chat
         QuerySnapshot messagesSnapshot = await _firestore
             .collection('chats')
             .doc(doc.id)
             .collection('messages')
-            .orderBy('timestamp',
-                descending: true) // Order by most recent timestamp
+            .orderBy('timestamp', descending: true) // Order by most recent timestamp
             .limit(1) // Get only the latest message
             .get();
 
@@ -78,32 +76,29 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
         if (lastMessage != null) {
           String messageText = lastMessage['text'] ?? "No text";
-          // Check if the last message is from the current user and format accordingly
-          if (lastMessage['senderId'] == currentUserId) {
-            messageText =
-                "You: $messageText"; // Prepend "You: " for user messages
+          // Check if the last message is from the current specialist and format accordingly
+          if (lastMessage['senderId'] == specialistId) {
+            messageText = "You: $messageText"; // Prepend "You: " for specialist messages
           }
 
           // Truncate the message if it's too long
           messageText = _truncateMessage(messageText);
 
-          Timestamp timestamp =
-              lastMessage['timestamp'] as Timestamp? ?? Timestamp.now();
+          Timestamp timestamp = lastMessage['timestamp'] as Timestamp? ?? Timestamp.now();
 
           chatList.add({
             'chatId': doc.id,
             'lastMessage': messageText,
             'lastTimestamp': timestamp,
-            'specialistName': specialistData?['name'] ?? "Unknown",
-            'profilePictureUrl': specialistData?['profile_picture_url'] ?? "",
-            'specialistId': specialistId, // Store specialistId
+            'clientName': clientData?['name'] ?? "Unknown",
+            'profilePictureUrl': clientData?['profile_pic'] ?? "",
+            'clientId': clientId, // Store clientId
           });
         }
       }
 
       // Sort chatList by lastTimestamp
-      chatList.sort((a, b) => b['lastTimestamp']
-          .compareTo(a['lastTimestamp'])); // Sort descending order
+      chatList.sort((a, b) => b['lastTimestamp'].compareTo(a['lastTimestamp'])); // Sort descending order
 
       setState(() {
         _isLoading = false; // Set loading to false when done
@@ -136,7 +131,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
-          "Chat List",
+          "Client Chats",
           style: TextStyle(
             color: Color.fromARGB(255, 90, 113, 243),
             fontWeight: FontWeight.bold,
@@ -151,8 +146,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme:
-            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator()) // Show loading indicator
@@ -184,16 +178,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         leading: CircleAvatar(
                           backgroundImage: chat['profilePictureUrl'].isNotEmpty
                               ? NetworkImage(chat['profilePictureUrl'])
-                              : AssetImage(
-                                      "images/user_profile/default_profile.png")
-                                  as ImageProvider,
+                              : AssetImage("images/user_profile/default_profile.png") as ImageProvider,
                         ),
                         title: Text(
-                          chat['specialistName'],
+                          chat['clientName'],
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: Color.fromARGB(255, 90, 113, 243)
                           ),
                         ),
                         subtitle: Text(
@@ -208,11 +199,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ChatDetailScreen(
+                              builder: (context) => SpecialistChatDetailScreen(
                                 chatId: chat['chatId'],
-                                currentUserId: currentUserId,
-                                receiverId: chat['specialistId'],
-                                specialistName: chat['specialistName'],
+                                currentUserId: specialistId,
+                                receiverId: chat['clientId'],
+                                clientName: chat['clientName'],
                                 profilePictureUrl: chat['profilePictureUrl'],
                               ),
                             ),

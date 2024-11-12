@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../authentication_process/login.dart';  // Import the login page
-import '../authentication_process/signup.dart';  // Import the signup page
+import '../authentication_process/login.dart'; // Import the login page
+import '../authentication_process/signup.dart'; // Import the signup page
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,22 +14,27 @@ class _SplashScreenState extends State<SplashScreen> {
   final List<Map<String, String>> _splashData = [
     {
       'image': 'images/counseling.png',
+      'title': 'Nutrition Counseling',
       'description': 'We solve nutrition issues for those who struggle with managing their nutrition and diet.'
     },
     {
       'image': 'images/nutritionist.png',
+      'title': 'Personalized Meal Plans',
       'description': 'We provide personalized meal plans from professionals who design the best plans suited for you.'
     },
     {
       'image': 'images/online-consultation.png',
+      'title': 'Online Consultation',
       'description': 'We provide online consultation services, saving time and travel costs with flexible scheduling.'
     },
     {
       'image': 'images/appointment.png',
+      'title': 'Specialist Appointments',
       'description': 'We offer appointments to consult with our specialists.'
     },
     {
       'image': 'images/BMI Tracker.png',
+      'title': 'BMI Tracker',
       'description': 'We offer several features to support your diet journey, such as a BMI tracker and diet tracker.'
     }
   ];
@@ -64,11 +69,24 @@ class _SplashScreenState extends State<SplashScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
+                      _splashData[index]['title']!,  // Display the title
+                      style: const TextStyle(
+                        fontSize: 24, // Increased size for title
+                        fontWeight: FontWeight.bold, // Bold title
+                        color: Color.fromARGB(255, 90, 113, 243),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 10), // Spacing between title and description
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
                       _splashData[index]['description']!,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: Color.fromARGB(255, 90, 113, 243),
+                        color: Colors.black,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -77,17 +95,14 @@ class _SplashScreenState extends State<SplashScreen> {
               );
             },
           ),
-          // Positioned logo at the top right corner
           Positioned(
             top: 20,
-            // right: 20,
             child: Image.asset(
               'images/Logo-rounded.png',
               width: MediaQuery.of(context).size.width * 0.2,
               height: MediaQuery.of(context).size.width * 0.2,
             ),
           ),
-          // Dots indicator
           Positioned(
             bottom: 120,
             left: 0,
@@ -109,7 +124,6 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
           ),
-          // Buttons at the bottom side by side
           Positioned(
             bottom: 40,
             left: 0,
@@ -117,7 +131,6 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Login button
                 GestureDetector(
                   onTap: () {
                     Navigator.pushReplacement(
@@ -150,7 +163,6 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ),
                 ),
-                // Sign Up button
                 GestureDetector(
                   onTap: () {
                     Navigator.pushReplacement(

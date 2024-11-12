@@ -74,10 +74,28 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
                   hintText: "Search any recipe",
                   prefixIcon: const Icon(Icons.search),
                   filled: true,
-                  fillColor: Colors.grey[200],
+                  fillColor:
+                      const Color.fromARGB(255, 250, 250, 250).withOpacity(0.5),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20.0),
-                    borderSide: BorderSide.none,
+                    borderSide: const BorderSide(
+                      color: Color.fromARGB(255, 221, 222, 226),
+                      width: 1.0,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                    borderSide: const BorderSide(
+                      color: Color.fromARGB(255, 221, 222, 226),
+                      width: 1.5,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                    borderSide: const BorderSide(
+                      color: Color.fromARGB(255, 90, 113, 243),
+                      width: 2.0,
+                    ),
                   ),
                   suffixIcon: searchQuery.isNotEmpty
                       ? IconButton(
@@ -130,10 +148,7 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
                                   setState(() {
                                     selectedCategory =
                                         isSelected ? 'All' : null;
-                                    if (selectedCategory == null) {
-                                      selectedCategory =
-                                          'All'; // Revert to 'All' if deselected
-                                    }
+                                    selectedCategory ??= 'All';
                                   });
                                 },
                                 selectedColor:
@@ -203,10 +218,7 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
                                     setState(() {
                                       selectedCategory =
                                           isSelected ? category : null;
-                                      if (selectedCategory == null) {
-                                        selectedCategory =
-                                            'All'; // Revert to 'All' if deselected
-                                      }
+                                      selectedCategory ??= 'All';
                                     });
                                   },
                                   selectedColor:
@@ -270,7 +282,7 @@ class _AdminRecipeScreenState extends State<AdminRecipeScreen> {
     final recipes = snapshot.docs.where((doc) {
       var data = doc.data() as Map<String, dynamic>;
       bool matchesSearchQuery =
-          data['title'].toString().toLowerCase().contains(searchQuery);
+          data['title'].toString().toLowerCase().startsWith(searchQuery);
       bool matchesCategory = selectedCategory == null ||
           selectedCategory == 'All' ||
           data['category'] == selectedCategory;

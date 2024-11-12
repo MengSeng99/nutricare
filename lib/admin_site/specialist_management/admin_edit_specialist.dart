@@ -147,8 +147,10 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
         reviewsToDelete.clear();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Specialist details updated successfully')),
+          SnackBar(
+            content: const Text('Specialist details updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -247,8 +249,11 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
                   Navigator.of(context).pop();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Please enter valid service details')),
+                    SnackBar(
+                      content:
+                          const Text('Please enter a valid service details'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                 }
               },
@@ -371,8 +376,8 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
                   children: [
                     const Text(
                       'Services',
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     IconButton(
                       icon: const Icon(Icons.add_circle_outline,
@@ -393,7 +398,8 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       child: ListTile(
                         title: Text(service['name'] ?? 'Unnamed Service',
-                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text('Fee: RM ${service['fee'] ?? 'N/A'}',
                             style: const TextStyle(color: Colors.grey)),
                         trailing: IconButton(
@@ -409,8 +415,7 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
                 // Reviews Section
                 const Text(
                   'Reviews',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 ListView.builder(
                   itemCount: reviews.length,
@@ -437,7 +442,8 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       child: ListTile(
                         title: Text(review['reviewer_name'] ?? 'Anonymous',
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

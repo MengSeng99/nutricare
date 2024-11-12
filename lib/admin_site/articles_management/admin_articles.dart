@@ -51,12 +51,30 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                     decoration: InputDecoration(
                       hintText: "Search by Title", // New hint text
                       prefixIcon: const Icon(Icons.search), // Search icon
-                      filled: true,
-                      fillColor: Colors.grey[200],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20.0), // Rounded corners
-                        borderSide: BorderSide.none, // No border line
-                      ),
+                     filled: true,
+                  fillColor:
+                      const Color.fromARGB(255, 250, 250, 250).withOpacity(0.5),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                    borderSide: const BorderSide(
+                      color: Color.fromARGB(255, 221, 222, 226),
+                      width: 1.0,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                    borderSide: const BorderSide(
+                      color: Color.fromARGB(255, 221, 222, 226),
+                      width: 1.5,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                    borderSide: const BorderSide(
+                      color: Color.fromARGB(255, 90, 113, 243),
+                      width: 2.0,
+                    ),
+                  ),
                       suffixIcon: searchKeyword.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear),
@@ -291,7 +309,7 @@ class ArticlesListView extends StatelessWidget {
                     elevation: 2,
                     color: Colors.white,
                     shape: RoundedRectangleBorder(
-                      side: BorderSide(color: Colors.grey.shade600, width: 1),
+                      side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Padding(

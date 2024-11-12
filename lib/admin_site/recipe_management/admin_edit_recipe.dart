@@ -206,7 +206,7 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
       await _updateSubcollections('steps', stepsList);
       await _updateSubcollections('nutritionalFacts', nutritionalFactsList);
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Recipe updated successfully!',style: TextStyle(backgroundColor: Colors.green),)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Recipe updated successfully!'),backgroundColor: Colors.green,));
 
       final updatedData = {
         'title': _title,

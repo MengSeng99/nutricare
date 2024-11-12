@@ -109,7 +109,7 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
           return CustomScrollView(
             slivers: [
               SliverAppBar(
-                expandedHeight: 300.0,
+                expandedHeight: 500.0,
                 floating: false,
                 pinned: true,
                 leading: _buildCustomBackButton(),

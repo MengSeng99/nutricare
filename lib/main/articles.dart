@@ -210,7 +210,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
                 child: isImageUrlValid
                     ? Image.network(
                         widget.imageUrl,
-                        height: 250,
+                        height: MediaQuery.of(context).size.height * 0.5,
                         width: double.infinity,
                         fit: BoxFit.cover,
                       )

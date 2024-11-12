@@ -7,13 +7,15 @@ class BookingScreen extends StatefulWidget {
   final String specialistName;
   final String specialistId; // Added specialistId to fetch data
 
-  const BookingScreen({super.key, required this.specialistName, required this.specialistId});
+  const BookingScreen(
+      {super.key, required this.specialistName, required this.specialistId});
 
   @override
   _BookingScreenState createState() => _BookingScreenState();
 }
 
-class _BookingScreenState extends State<BookingScreen> with SingleTickerProviderStateMixin {
+class _BookingScreenState extends State<BookingScreen>
+    with SingleTickerProviderStateMixin {
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
   TabController? _tabController;
@@ -44,7 +46,8 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
         .collection('specialists')
         .doc(widget.specialistId)
         .collection('appointments')
-        .doc(_selectedMode); // Fetch either 'physical' or 'online' document based on selected mode
+        .doc(
+            _selectedMode); // Fetch either 'physical' or 'online' document based on selected mode
 
     final docSnapshot = await docRef.get();
 
@@ -53,13 +56,35 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
       if (data != null && data['date_slots'] != null) {
         final dateSlots = Map<String, dynamic>.from(data['date_slots']);
         setState(() {
-          availableTimeSlots = List<String>.from(dateSlots[selectedDateString] ?? []);
+          availableTimeSlots =
+              List<String>.from(dateSlots[selectedDateString] ?? []);
+          // Sort the time slots manually
+          availableTimeSlots.sort((a, b) => _compareTimeSlots(a, b));
         });
       }
     } else {
       setState(() {
         availableTimeSlots = [];
       });
+    }
+  }
+
+  int _compareTimeSlots(String a, String b) {
+    // Extract AM/PM and time parts
+    final ampmA = a.split(' ').last; // Get AM or PM
+    final ampmB = b.split(' ').last;
+
+    // If both are AM, compare times directly
+    if (ampmA == 'AM' && ampmB == 'AM') {
+      return a.compareTo(b);
+    }
+    // If both are PM, compare times directly
+    else if (ampmA == 'PM' && ampmB == 'PM') {
+      return a.compareTo(b);
+    }
+    // If one is AM and the other is PM, place AM before PM
+    else {
+      return ampmA == 'AM' ? -1 : 1; // AM comes before PM
     }
   }
 
@@ -70,7 +95,9 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
       appBar: AppBar(
         title: const Text(
           "Booking Details",
-          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: Color.fromARGB(255, 90, 113, 243),
+              fontWeight: FontWeight.bold),
         ),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
@@ -81,7 +108,8 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        iconTheme:
+            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -135,11 +163,15 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
           return isSameDay(_selectedDay, day);
         },
         onDaySelected: (selectedDay, focusedDay) {
-          setState(() {
-            _selectedDay = selectedDay;
-            _focusedDay = focusedDay;
-          });
-          _fetchAvailableTimeSlots(); // Fetch time slots when a new date is selected
+          // Check if the selected day is a weekend
+          if (selectedDay.weekday != DateTime.saturday &&
+              selectedDay.weekday != DateTime.sunday) {
+            setState(() {
+              _selectedDay = selectedDay;
+              _focusedDay = focusedDay;
+            });
+            _fetchAvailableTimeSlots(); // Fetch time slots when a new date is selected
+          }
         },
         calendarStyle: CalendarStyle(
           selectedDecoration: BoxDecoration(
@@ -149,6 +181,10 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
           todayDecoration: BoxDecoration(
             color: const Color.fromARGB(255, 135, 136, 137),
             shape: BoxShape.circle,
+          ),
+          // You can customize the appearance of weekends here if needed
+          weekendTextStyle: TextStyle(
+            color: Colors.grey[300], // Customize weekend day text color
           ),
         ),
         headerStyle: const HeaderStyle(
@@ -164,65 +200,71 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: const [
-        _ColorDescriptionBox(color: Color.fromARGB(255, 135, 136, 137), description: 'Today'),
-        _ColorDescriptionBox(color: Color.fromARGB(255, 33, 82, 243), description: 'Selected Date'),
+        _ColorDescriptionBox(
+            color: Color.fromARGB(255, 135, 136, 137), description: 'Today'),
+        _ColorDescriptionBox(
+            color: Color.fromARGB(255, 33, 82, 243),
+            description: 'Selected Date'),
       ],
     );
   }
 
   Widget _buildTimeSlotSelection() {
-  // Check if availableTimeSlots is empty
-  if (availableTimeSlots.isEmpty) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          Text(
-            'The day you selected has no time slots available.',
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold), // Style for the warning message
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 2), // Add some spacing
-          Text(
-            'Please select a different day.',
-            style: TextStyle(color: Colors.black54), // Style for the reminder
-            textAlign: TextAlign.center,
-          ),
-        ],
+    // Check if availableTimeSlots is empty
+    if (availableTimeSlots.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              'The day you selected has no time slots available.',
+              style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold), // Style for the warning message
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 2), // Add some spacing
+            Text(
+              'Please select a different day.',
+              style: TextStyle(color: Colors.black54), // Style for the reminder
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    // If time slots are available, display them as ChoiceChips
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: availableTimeSlots.map((timeSlot) {
+          final isSelected = selectedTimeSlot == timeSlot;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: ChoiceChip(
+              label: Text(
+                timeSlot,
+                style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.grey[800]),
+              ),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  selectedTimeSlot = selected ? timeSlot : null;
+                });
+              },
+              selectedColor: const Color.fromARGB(255, 33, 82, 243),
+              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
-
-  // If time slots are available, display them as ChoiceChips
-  return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: Row(
-      children: availableTimeSlots.map((timeSlot) {
-        final isSelected = selectedTimeSlot == timeSlot;
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: ChoiceChip(
-            label: Text(
-              timeSlot,
-              style: TextStyle(color: isSelected ? Colors.white : Colors.grey[800]),
-            ),
-            selected: isSelected,
-            onSelected: (selected) {
-              setState(() {
-                selectedTimeSlot = selected ? timeSlot : null;
-              });
-            },
-            selectedColor: const Color.fromARGB(255, 33, 82, 243),
-            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-      }).toList(),
-    ),
-  );
-}
 
   Widget _buildAppointmentModeTabs(BuildContext context) {
     return Row(
@@ -247,7 +289,7 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
           ),
         ),
         IconButton(
-          icon: const Icon(Icons.info_outline, color: Colors.grey),
+          icon: const Icon(Icons.info_outline, color: Color.fromARGB(255, 90, 113, 243)),
           onPressed: () {
             _showModeInfoDialog(context);
           },
@@ -261,13 +303,23 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Appointment Modes"),
+          shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text("Appointment Modes",
+          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243),fontWeight: FontWeight.bold)),
           content: const Text(
               "Physical Appointment: \nPlease arrive at the clinic 30 minutes before your scheduled time.\n\n"
               "Online Appointment: \nYou will receive a virtual consultation at the scheduled time."),
           actions: [
-            TextButton(
-              child: const Text("Close"),
+            ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+              child: const Text("Close",style: TextStyle(color: Colors.white)),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -306,7 +358,8 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
         ),
         child: const Text(
           "Select",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(
+              fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
     );
@@ -326,7 +379,8 @@ class _ColorDescriptionBox extends StatelessWidget {
         Container(
           width: 20,
           height: 20,
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(5)),
+          decoration: BoxDecoration(
+              color: color, borderRadius: BorderRadius.circular(5)),
         ),
         const SizedBox(width: 14),
         Text(description, style: const TextStyle(fontSize: 16)),

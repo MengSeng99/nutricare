@@ -24,34 +24,46 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No appointment time slots found for this specialist."));
+                  return const Center(
+                      child: Text(
+                          "No appointment time slots found for this specialist."));
                 }
 
                 final appointments = snapshot.data!.docs;
                 // Updated grouping structure
-                Map<String, Map<String, Map<String, List<String>>>> groupedAppointments = {};
+                Map<String, Map<String, Map<String, List<String>>>>
+                    groupedAppointments = {};
 
                 for (var appointmentDoc in appointments) {
-                  final appointment = appointmentDoc.data() as Map<String, dynamic>;
-                  final appointmentMode = appointmentDoc.id; // 'Online' or 'Physical'
-                  final dateSlots = appointment['date_slots'] as Map<String, dynamic>?;
+                  final appointment =
+                      appointmentDoc.data() as Map<String, dynamic>;
+                  final appointmentMode =
+                      appointmentDoc.id; // 'Online' or 'Physical'
+                  final dateSlots =
+                      appointment['date_slots'] as Map<String, dynamic>?;
 
                   if (dateSlots != null) {
                     for (String date in dateSlots.keys) {
                       DateTime parsedDate = DateTime.parse(date);
-                      if (parsedDate.isAfter(DateTime.now())) { // Filter future dates
-                        String monthYear = DateFormat('MMMM yyyy').format(parsedDate);
+                      if (parsedDate.isAfter(DateTime.now())) {
+                        // Filter future dates
+                        String monthYear =
+                            DateFormat('MMMM yyyy').format(parsedDate);
                         if (!groupedAppointments.containsKey(monthYear)) {
                           groupedAppointments[monthYear] = {};
                         }
-                        if (!groupedAppointments[monthYear]!.containsKey(appointmentMode)) {
+                        if (!groupedAppointments[monthYear]!
+                            .containsKey(appointmentMode)) {
                           groupedAppointments[monthYear]![appointmentMode] = {};
                         }
-                        if (!groupedAppointments[monthYear]![appointmentMode]!.containsKey(date)) {
-                          groupedAppointments[monthYear]![appointmentMode]![date] = [];
+                        if (!groupedAppointments[monthYear]![appointmentMode]!
+                            .containsKey(date)) {
+                          groupedAppointments[monthYear]![appointmentMode]![
+                              date] = [];
                         }
                         // Assuming dateSlots[date] is a List<dynamic> of time slots
-                        groupedAppointments[monthYear]![appointmentMode]![date]!.addAll(
+                        groupedAppointments[monthYear]![appointmentMode]![date]!
+                            .addAll(
                           List<String>.from(dateSlots[date] as List<dynamic>),
                         );
                       }
@@ -60,27 +72,32 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                 }
 
                 if (groupedAppointments.isEmpty) {
-                  return const Center(child: Text("No upcoming appointment time slots."));
+                  return const Center(
+                      child: Text("No upcoming appointment time slots."));
                 }
 
                 // Sort the groupedAppointments by month and year
-                List<String> sortedMonthYears = groupedAppointments.keys.toList()
-                  ..sort((a, b) {
-                    DateTime dateA = DateFormat('MMMM yyyy').parse(a);
-                    DateTime dateB = DateFormat('MMMM yyyy').parse(b);
-                    return dateA.compareTo(dateB);
-                  });
+                List<String> sortedMonthYears =
+                    groupedAppointments.keys.toList()
+                      ..sort((a, b) {
+                        DateTime dateA = DateFormat('MMMM yyyy').parse(a);
+                        DateTime dateB = DateFormat('MMMM yyyy').parse(b);
+                        return dateA.compareTo(dateB);
+                      });
 
                 return ListView.builder(
                   itemCount: sortedMonthYears.length,
                   itemBuilder: (context, index) {
                     String monthYear = sortedMonthYears[index];
-                    Map<String, Map<String, List<String>>> modes = groupedAppointments[monthYear]!;
+                    Map<String, Map<String, List<String>>> modes =
+                        groupedAppointments[monthYear]!;
 
                     return Card(
                       elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15)),
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 16),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -91,14 +108,16 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 20,
-                                color: Color(0xFF5A71F3), // Blue color for month
+                                color:
+                                    Color(0xFF5A71F3), // Blue color for month
                               ),
                             ),
                             const SizedBox(height: 8),
                             for (String mode in modes.keys)
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 8.0),
-                                child: _buildAppointmentModeSection(mode, modes[mode]!, context),
+                                child: _buildAppointmentModeSection(
+                                    mode, modes[mode]!, context),
                               ),
                           ],
                         ),
@@ -117,10 +136,12 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 24.0),
+                padding: const EdgeInsets.symmetric(
+                    vertical: 14.0, horizontal: 24.0),
               ),
               onPressed: () => _showAddTimeSlotDialog(context),
-              child: const Text("Add Timeslots", style: TextStyle(fontSize: 16, color: Colors.white)),
+              child: const Text("Add Timeslots",
+                  style: TextStyle(fontSize: 16, color: Colors.white)),
             ),
           ),
         ],
@@ -128,9 +149,11 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAppointmentModeSection(String mode, Map<String, List<String>> dateSlots, BuildContext context) {
+  Widget _buildAppointmentModeSection(
+      String mode, Map<String, List<String>> dateSlots, BuildContext context) {
     if (dateSlots.isEmpty) {
-      return Text("$mode Appointment - No time slots available", style: const TextStyle(color: Colors.red));
+      return Text("$mode Appointment - No time slots available",
+          style: const TextStyle(color: Colors.red));
     }
 
     // Sort the dates
@@ -140,9 +163,9 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Center( 
+        Center(
           child: Text(
-            "$mode Appointment Slots", 
+            "$mode Appointment Slots",
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
         ),
@@ -160,13 +183,16 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                   spacing: 8.0,
                   children: dateSlots[date]!.map((timeSlot) {
                     return Chip(
-                      label: Text(timeSlot, style: const TextStyle(color: Colors.white)),
-                      backgroundColor: (mode.toLowerCase() == 'online') 
-                          ? const Color(0xFF5A71F3) 
+                      label: Text(timeSlot,
+                          style: const TextStyle(color: Colors.white)),
+                      backgroundColor: (mode.toLowerCase() == 'online')
+                          ? const Color(0xFF5A71F3)
                           : const Color(0xFFF35A5A),
-                      deleteIcon: const Icon(Icons.delete, size: 18, color: Colors.white),
+                      deleteIcon: const Icon(Icons.delete,
+                          size: 18, color: Colors.white),
                       onDeleted: () {
-                        _showDeleteConfirmationDialog(context, mode, date, timeSlot);
+                        _showDeleteConfirmationDialog(
+                            context, mode, date, timeSlot);
                       },
                     );
                   }).toList(),
@@ -211,7 +237,8 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                       items: <String>['Online', 'Physical'].map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
-                          child: Text(value, style: const TextStyle(fontSize: 16)),
+                          child:
+                              Text(value, style: const TextStyle(fontSize: 16)),
                         );
                       }).toList(),
                       onChanged: (value) {
@@ -223,30 +250,52 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: () async {
-                        DateTime? date = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime(2101),
-                        );
-                        if (date != null) {
-                          setState(() {
-                            selectedDate = date;
-                          });
-                        }
-                      },
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          selectedDate == null
-                              ? "Select Date"
-                              : DateFormat("yyyy-MM-dd").format(selectedDate!),
-                          style: const TextStyle(fontSize: 16, color: Color(0xFF5A71F3)),
-                        ),
-                      ),
-                    ),
+                   TextButton(
+  onPressed: () async {
+    DateTime? date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(Duration(days: 1)),
+      firstDate: DateTime.now().add(Duration(days: 1)),
+      lastDate: DateTime.now().add(Duration(days: 30)),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: Color.fromARGB(255, 90, 113, 243), // Custom color for header
+            hintColor: Color.fromARGB(255, 90, 113, 243), // Custom color for actions
+            colorScheme: ColorScheme.light(primary: Color.fromARGB(255, 90, 113, 243)),
+            buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (date != null) {
+      // Check if the selected date is a weekend, and if so, show a warning
+      if (date.weekday == DateTime.saturday || date.weekday == DateTime.sunday) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Weekends are not allowed. Please select a weekday.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } else {
+        setState(() {
+          selectedDate = date;
+        });
+      }
+    }
+  },
+  child: Align(
+    alignment: Alignment.centerLeft,
+    child: Text(
+      selectedDate == null
+          ? "Select Date"
+          : DateFormat("yyyy-MM-dd").format(selectedDate!),
+      style: const TextStyle(fontSize: 16, color: Color(0xFF5A71F3)),
+    ),
+  ),
+),
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () async {
@@ -266,7 +315,8 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                           selectedTime == null
                               ? "Select Time"
                               : selectedTime!.format(context),
-                          style: const TextStyle(fontSize: 16, color: Color(0xFF5A71F3)),
+                          style: const TextStyle(
+                              fontSize: 16, color: Color(0xFF5A71F3)),
                         ),
                       ),
                     ),
@@ -290,7 +340,8 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: const Text('Add', style: TextStyle(color: Colors.white)),
+                  child:
+                      const Text('Add', style: TextStyle(color: Colors.white)),
                   onPressed: () {
                     if (selectedDate != null && selectedTime != null) {
                       String formattedDate =
@@ -298,14 +349,17 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                       String timeFormatted = selectedTime!.format(context);
                       _addTimeSlot(selectedMode, formattedDate, timeFormatted);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('$selectedMode appointment slot on $formattedDate - $timeFormatted added successfully!',style: TextStyle(backgroundColor: Colors.green),)),
+                        SnackBar(
+                            content: Text(
+                                '$selectedMode appointment slot on $formattedDate - $timeFormatted added successfully!')),
                       );
                       Navigator.of(context).pop();
                     } else {
-                      // Show an error if date or time is not selected
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please select both date and time.',style: TextStyle(backgroundColor: Colors.red),),
+                        SnackBar(
+                          content:
+                              const Text('Please select both date and time.'),
+                          backgroundColor: Colors.red,
                         ),
                       );
                     }
@@ -319,7 +373,8 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _addTimeSlot(String mode, String dateFormatted, String time) async {
+  Future<void> _addTimeSlot(
+      String mode, String dateFormatted, String time) async {
     var appointmentCollection = FirebaseFirestore.instance
         .collection('specialists')
         .doc(specialistId)
@@ -340,7 +395,8 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
 
       List<dynamic> times = dateSlots[dateFormatted] as List<dynamic>;
 
-      if (!times.contains(time)) { // Avoid duplicate time slots
+      if (!times.contains(time)) {
+        // Avoid duplicate time slots
         times.add(time);
         await appointmentCollection.update({'date_slots': dateSlots});
       } else {
@@ -356,7 +412,8 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _deleteTimeSlot(String mode, String dateFormatted, String timeSlot) async {
+  Future<void> _deleteTimeSlot(
+      String mode, String dateFormatted, String timeSlot) async {
     var appointmentCollection = FirebaseFirestore.instance
         .collection('specialists')
         .doc(specialistId)
@@ -374,9 +431,11 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
       if (dateSlots[dateFormatted] != null) {
         List<dynamic> times = dateSlots[dateFormatted] as List<dynamic>;
         times.remove(timeSlot); // Remove the specific time slot
+        
 
         if (times.isEmpty) {
-          dateSlots.remove(dateFormatted); // Remove the date if no time slots left
+          dateSlots
+              .remove(dateFormatted); // Remove the date if no time slots left
         } else {
           dateSlots[dateFormatted] = times;
         }
@@ -386,7 +445,8 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
     }
   }
 
-  void _showDeleteConfirmationDialog(BuildContext context, String mode, String date, String timeSlot) {
+  void _showDeleteConfirmationDialog(
+      BuildContext context, String mode, String date, String timeSlot) {
     showDialog(
       context: context,
       builder: (context) {
@@ -405,15 +465,18 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
             text: TextSpan(
               style: const TextStyle(fontSize: 16, color: Colors.black),
               children: [
-                const TextSpan(text: 'Are you sure you want to delete the time slot on '),
+                const TextSpan(
+                    text: 'Are you sure you want to delete the time slot on '),
                 TextSpan(
                   text: '($date)',
-                  style: const TextStyle(color: Color.fromARGB(255, 90, 113, 243)),
+                  style:
+                      const TextStyle(color: Color.fromARGB(255, 90, 113, 243)),
                 ),
                 const TextSpan(text: ' at '),
                 TextSpan(
                   text: '($timeSlot)',
-                  style: const TextStyle(color: Color.fromARGB(255, 90, 113, 243)),
+                  style:
+                      const TextStyle(color: Color.fromARGB(255, 90, 113, 243)),
                 ),
                 const TextSpan(text: '?'),
               ],
@@ -437,7 +500,8 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              child: const Text('Delete', style: TextStyle(color: Colors.white)),
+              child:
+                  const Text('Delete', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

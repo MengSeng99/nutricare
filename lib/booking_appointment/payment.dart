@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 // Import the PaymentMethodsScreen for navigation
+import '../settings/client_info.dart';
 import 'payment_success.dart';
 
 
@@ -38,13 +39,63 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String promoCode = "";
   bool isPromoApplied = false;
   final TextEditingController promoCodeController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String personalDetailsDocId = '';
+  final TextEditingController nricController = TextEditingController();
+  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController phoneNumberController = TextEditingController();
+  DateTime dateOfBirth = DateTime.now();
+  String gender = '';
+
+  // Variable to track if the user information is loaded successfully
+  bool isUserInfoLoaded = false;
+  bool isProfileComplete = false;
+
 
   @override
   void initState() {
     super.initState();
     _fetchUserPaymentMethods();
     _fetchSpecialistServices();
+    _loadUserData();
   }
+
+  Future<void> _loadUserData() async {
+  final user = _auth.currentUser;
+
+  if (user != null) {
+    String userId = user.uid;
+
+    // Fetching the user's personal details
+    QuerySnapshot snapshot = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('personal_details')
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      DocumentSnapshot doc = snapshot.docs.first; // Assuming there's only one document
+      setState(() {
+        personalDetailsDocId = doc.id; // Store the document ID
+        nricController.text = doc['nric'];
+        fullNameController.text = doc['fullName'];
+        dateOfBirth = (doc['dateOfBirth'] as Timestamp).toDate();
+        gender = doc['gender'];
+        phoneNumberController.text = doc['phoneNumber'];
+        isProfileComplete = true; // Set to true if the details exist
+      });
+    } else {
+      setState(() {
+        isProfileComplete = false; // Profile is incomplete
+      });
+    }
+
+    setState(() {
+      isUserInfoLoaded = true; // Mark user info as loaded
+    });
+  }
+}
 
   Future<void> _fetchUserPaymentMethods() async {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -193,6 +244,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
               children: [
                 _buildSummarySection(),
                 const SizedBox(height: 20),
+                _buildUserInformationSection(),
+                const SizedBox(height: 20,),
                 _buildServiceSelector(),
                 const SizedBox(height: 20),
                 _buildPaymentMethodSelector(),
@@ -209,6 +262,117 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ),
     );
   }
+
+ Widget _buildUserInformationSection() {
+  return Center(
+    child: Container(
+      padding: const EdgeInsets.all(16.0),
+      width: double.infinity, // Make sure the container takes full width
+      constraints: const BoxConstraints(maxWidth: 600), // Optional: Add a maximum width for larger screens
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center, 
+            mainAxisAlignment: MainAxisAlignment.start, 
+            children: [
+              const Text(
+                "Your Information",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              if (!isUserInfoLoaded)
+                const Center(child: CircularProgressIndicator())
+              else if (!isProfileComplete)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Your profile is incomplete.",
+                      style: TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () async {
+                        // Navigate to ClientInfoScreen
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ClientInfoScreen()),
+                        );
+                        // Refresh the user data
+                        _loadUserData();
+                      },
+                      child: const Text("Add it Now"),
+                    ),
+                  ],
+                )
+              else ...[
+                const SizedBox(height: 10),
+                const Text(
+                  "(Please check if your personal details are correct.)",
+                  style: TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                _buildUserInfoRow('Full Name', fullNameController.text),
+                _buildUserInfoRow('NRIC', nricController.text),
+                _buildUserInfoRow('Date of Birth', '${dateOfBirth.toLocal()}'.split(' ')[0]),
+                _buildUserInfoRow('Gender', gender),
+                _buildUserInfoRow('Phone Number', phoneNumberController.text),
+              ],
+            ],
+          ),
+          Positioned(
+            right: 5,
+            child: IconButton(
+              icon: const Icon(Icons.edit, color: Color.fromARGB(255, 90, 113, 243)),
+              onPressed: () async {
+                // Navigate to ClientInfoScreen
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ClientInfoScreen()),
+                );
+                // Refresh the user data
+                _loadUserData();
+              },
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _buildUserInfoRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 16),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16),
+        ),
+      ],
+    ),
+  );
+}
 
 
     Widget _buildSummarySection() {
@@ -618,7 +782,7 @@ Widget _buildAddCardButton() {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: selectedService != null &&
+        onPressed: selectedService != null && isProfileComplete &&
                 selectedPaymentMethod != 'Credit/Debit Card'
             ? () async {
                 setState(() {

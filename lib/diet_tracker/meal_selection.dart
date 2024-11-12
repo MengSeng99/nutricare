@@ -20,14 +20,21 @@ class MealSelectionScreen extends StatefulWidget {
 class _MealSelectionScreenState extends State<MealSelectionScreen> {
   String searchQuery = "";
   List<String> categories = [];
-  String? selectedCategory;
-  Set<String> favoriteRecipeIds = <String>{}; // To track favorite recipes
+  String? selectedCategory = 'All';
+  Set<String> favoriteRecipeIds = <String>{};
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchCategories();
     _loadFavoriteRecipes(); // Load favorites on init
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchCategories() async {
@@ -87,197 +94,206 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
   }
 
   void _showRecipeDialog(
-    BuildContext context, String title, String imageUrl, String recipeId) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return FutureBuilder<QuerySnapshot>(
-        future: FirebaseFirestore.instance
-            .collection('recipes')
-            .doc(recipeId)
-            .collection('nutritionalFacts')
-            .get(), // Get nutritional facts
-        builder: (context, factsSnapshot) {
-          if (factsSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      BuildContext context, String title, String imageUrl, String recipeId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return FutureBuilder<QuerySnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('recipes')
+              .doc(recipeId)
+              .collection('nutritionalFacts')
+              .get(), // Get nutritional facts
+          builder: (context, factsSnapshot) {
+            if (factsSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (factsSnapshot.hasError || !factsSnapshot.hasData) {
-            return AlertDialog(
-              title: Text('Error'),
-              content: Text('No nutritional facts available.'),
-              actions: [
-                TextButton(
-                  child: const Text('Close'),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            );
-          }
-
-          var nutritionalDocuments = factsSnapshot.data!.docs;
-          Map<String, String> nutritionalValues = {
-            'Calories': '0',
-            'Proteins': '0',
-            'Carbohydrates': '0',
-            'Fats': '0',
-          };
-
-          for (var doc in nutritionalDocuments) {
-            var data = doc.data() as Map<String, dynamic>;
-            nutritionalValues[data['label']] = data['value'].toString();
-          }
-
-          int calories = int.parse(nutritionalValues['Calories'] ?? '0');
-          int proteins = int.parse(nutritionalValues['Proteins'] ?? '0');
-          int carbohydrates = int.parse(nutritionalValues['Carbohydrates'] ?? '0');
-          int fats = int.parse(nutritionalValues['Fats'] ?? '0');
-
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0),
-            ),
-            contentPadding: const EdgeInsets.all(0),
-            content: SizedBox(
-              width: MediaQuery.of(context).size.width * 0.9, // Set to 90% of screen width
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Stack(
-                    children: [
-                      // Full-size image
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(15.0)),
-                        child: Image.network(
-                          imageUrl,
-                          fit: BoxFit.contain,
-                          height: MediaQuery.of(context).size.height * 0.8,
-                          width: double.infinity,
-                        ),
-                      ),
-                      // Close button
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 34, 42, 92).withOpacity(0.4),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.close, color: Colors.white, size: 30),
-                            onPressed: () => Navigator.of(context).pop(), // Close on press
-                          ),
-                        ),
-                      ),
-                    ],
+            if (factsSnapshot.hasError || !factsSnapshot.hasData) {
+              return AlertDialog(
+                title: Text('Error'),
+                content: Text('No nutritional facts available.'),
+                actions: [
+                  TextButton(
+                    child: const Text('Close'),
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20.0,
-                      color: Color.fromARGB(255, 90, 113, 243),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Add to Log button
-                  ElevatedButton(
-                    onPressed: () {
-                      addToLog(
-                        title,  // Pass the food name
-                        calories, // Pass the calories
-                        proteins, // Pass the proteins
-                        carbohydrates, // Pass the carbohydrates
-                        fats, // Pass the fats
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    ),
-                    child: const Text('Add to Log', style: TextStyle(color: Colors.white)),
-                  ),
-                  const SizedBox(height: 16),
                 ],
+              );
+            }
+
+            var nutritionalDocuments = factsSnapshot.data!.docs;
+            Map<String, String> nutritionalValues = {
+              'Calories': '0',
+              'Proteins': '0',
+              'Carbohydrates': '0',
+              'Fats': '0',
+            };
+
+            for (var doc in nutritionalDocuments) {
+              var data = doc.data() as Map<String, dynamic>;
+              nutritionalValues[data['label']] = data['value'].toString();
+            }
+
+            int calories = int.parse(nutritionalValues['Calories'] ?? '0');
+            int proteins = int.parse(nutritionalValues['Proteins'] ?? '0');
+            int carbohydrates =
+                int.parse(nutritionalValues['Carbohydrates'] ?? '0');
+            int fats = int.parse(nutritionalValues['Fats'] ?? '0');
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
               ),
-            ),
-          );
-        },
-      );
-    },
-  );
-}
+              contentPadding: const EdgeInsets.all(0),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width *
+                    0.9, // Set to 90% of screen width
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Stack(
+                      children: [
+                        // Full-size image
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(15.0)),
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.contain,
+                            width: double.infinity,
+                          ),
+                        ),
+                        // Close button
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 34, 42, 92)
+                                  .withOpacity(0.4),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: IconButton(
+                              icon: Icon(Icons.close,
+                                  color: Colors.white, size: 30),
+                              onPressed: () =>
+                                  Navigator.of(context).pop(), // Close on press
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20.0,
+                        color: Color.fromARGB(255, 90, 113, 243),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Add to Log button
+                    ElevatedButton(
+                      onPressed: () {
+                        addToLog(
+                          title, // Pass the food name
+                          calories, // Pass the calories
+                          proteins, // Pass the proteins
+                          carbohydrates, // Pass the carbohydrates
+                          fats, // Pass the fats
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color.fromARGB(255, 90, 113, 243),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                      ),
+                      child: const Text('Add to Log',
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   void addToLog(
-    String title, int calories, int protein, int carbs, int fat) async {
-  final User? user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
+      String title, int calories, int protein, int carbs, int fat) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  String userId = user.uid;
-  String mealType = widget.mealType; // e.g., "Breakfast", "Lunch", or "Dinner"
-  String dateKey = DateFormat('yyyyMMdd').format(widget.selectedDate);
+    String userId = user.uid;
+    String mealType =
+        widget.mealType; // e.g., "Breakfast", "Lunch", or "Dinner"
+    String dateKey = DateFormat('yyyyMMdd').format(widget.selectedDate);
 
-  // Prepare the data to store
-  Map<String, dynamic> mealData = {
-    'name': title,
-    'Calories': calories,
-    'Proteins': protein,
-    'Carbohydrates': carbs,
-    'Fats': fat,
-  };
+    // Prepare the data to store
+    Map<String, dynamic> mealData = {
+      'name': title,
+      'Calories': calories,
+      'Proteins': protein,
+      'Carbohydrates': carbs,
+      'Fats': fat,
+    };
 
-  try {
-    // Create or update the corresponding meal type field in the dietHistory document
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('dietHistory')
-        .doc(dateKey)
-        .set({  // Use set() with merge to avoid overwriting existing fields
-          mealType: mealData,
-        }, SetOptions(merge: true)); // This merges the new meal type
+    try {
+      // Create or update the corresponding meal type field in the dietHistory document
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('dietHistory')
+          .doc(dateKey)
+          .set({
+        // Use set() with merge to avoid overwriting existing fields
+        mealType: mealData,
+      }, SetOptions(merge: true)); // This merges the new meal type
 
-    // Show a successful message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$title added to log!'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-      ),
-    );
-
-    // Go back to the previous screen and indicate success
-    Navigator.pop(context, true); // Pop with a return value of true
-
-  } catch (e) {
-    // Handle any errors that may occur
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Error adding to log.'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.red,
-      ),
-    );
-    print(e); // Print errors for debugging
-  }
-}
-
- @override
-Widget build(BuildContext context) {
-  // You can access selectedDate here
-  DateTime currentSelectedDate = widget.selectedDate;
-
-  return Scaffold(
-    appBar: AppBar(
-      centerTitle: true,
-      title: Text(
-        '${widget.mealType} on ${DateFormat('yyyy-MM-dd').format(currentSelectedDate)}', // Format the date
-        style: const TextStyle(
-          color: Color.fromARGB(255, 90, 113, 243),
-          fontWeight: FontWeight.bold,
+      // Show a successful message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$title added to log!'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: const Color.fromARGB(255, 90, 113, 243),
         ),
+      );
+
+      // Go back to the previous screen and indicate success
+      Navigator.pop(context, true); // Pop with a return value of true
+    } catch (e) {
+      // Handle any errors that may occur
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Error adding to log.'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+      print(e); // Print errors for debugging
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // You can access selectedDate here
+    DateTime currentSelectedDate = widget.selectedDate;
+
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text(
+          '${widget.mealType} on ${DateFormat('yyyy-MM-dd').format(currentSelectedDate)}', // Format the date
+          style: const TextStyle(
+            color: Color.fromARGB(255, 90, 113, 243),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back,
@@ -312,6 +328,7 @@ Widget build(BuildContext context) {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
+                  controller: _searchController,
                   onChanged: (value) {
                     setState(() {
                       searchQuery = value.toLowerCase();
@@ -320,6 +337,15 @@ Widget build(BuildContext context) {
                   decoration: InputDecoration(
                     hintText: "Search any recipe",
                     prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear(); // Clear the text field
+                        setState(() {
+                          searchQuery = ""; // Reset the search query
+                        });
+                      },
+                    ),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
@@ -348,6 +374,37 @@ Widget build(BuildContext context) {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
+                      // All category chip
+                      Padding(
+                        padding: const EdgeInsets.only(right: 12.0),
+                        child: ChoiceChip(
+                          label: const Text('All'),
+                          selected: selectedCategory == 'All',
+                          onSelected: (isSelected) {
+                            setState(() {
+                              selectedCategory = isSelected ? 'All' : null;
+                            });
+                          },
+                          selectedColor:
+                              const Color.fromARGB(255, 90, 113, 243),
+                          backgroundColor: Colors.grey[200],
+                          labelStyle: TextStyle(
+                            color: selectedCategory == 'All'
+                                ? Colors.white
+                                : const Color.fromARGB(255, 0, 0, 0),
+                            fontWeight: FontWeight.bold,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                            side: BorderSide(
+                              color: selectedCategory == 'All'
+                                  ? const Color.fromARGB(255, 90, 113, 243)
+                                  : Colors.transparent,
+                              width: 2.0,
+                            ),
+                          ),
+                        ),
+                      ),
                       // Favorites category chip
                       Padding(
                         padding: const EdgeInsets.only(right: 12.0),
@@ -360,14 +417,14 @@ Widget build(BuildContext context) {
                                 selectedCategory = 'Favorites';
                                 _loadFavoriteRecipes(); // Load favorites when selected
                               } else {
-                                selectedCategory = null; // Deselect
+                                selectedCategory =
+                                    'All'; // Switch back to All when deselected
                               }
                             });
                           },
                           selectedColor:
                               const Color.fromARGB(255, 90, 113, 243),
-                          backgroundColor:
-                              Colors.grey[200], // Light gray background
+                          backgroundColor: Colors.grey[200],
                           labelStyle: TextStyle(
                             color: selectedCategory == 'Favorites'
                                 ? Colors.white
@@ -375,7 +432,13 @@ Widget build(BuildContext context) {
                             fontWeight: FontWeight.bold,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(100),
+                            side: BorderSide(
+                              color: selectedCategory == 'Favorites'
+                                  ? const Color.fromARGB(255, 90, 113, 243)
+                                  : Colors.transparent,
+                              width: 2.0,
+                            ),
                           ),
                         ),
                       ),
@@ -388,7 +451,9 @@ Widget build(BuildContext context) {
                             selected: selectedCategory == category,
                             onSelected: (isSelected) {
                               setState(() {
-                                selectedCategory = isSelected ? category : null;
+                                selectedCategory = isSelected
+                                    ? category
+                                    : 'All'; // Deselect to 'All'
                               });
                             },
                             selectedColor:
@@ -401,7 +466,13 @@ Widget build(BuildContext context) {
                               fontWeight: FontWeight.bold,
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(100),
+                              side: BorderSide(
+                                color: selectedCategory == category
+                                    ? const Color.fromARGB(255, 90, 113, 243)
+                                    : Colors.transparent,
+                                width: 2.0,
+                              ),
                             ),
                           ),
                         );
@@ -434,11 +505,18 @@ Widget build(BuildContext context) {
                     bool matchesSearchQuery = data['title']
                         .toString()
                         .toLowerCase()
-                        .contains(searchQuery);
-                    bool matchesCategory = selectedCategory == null ||
-                        (selectedCategory == 'Favorites'
-                            ? favoriteRecipeIds.contains(doc.id)
-                            : data['category'] == selectedCategory);
+                        .startsWith(searchQuery);
+
+                    bool matchesCategory;
+                    if (selectedCategory == 'All') {
+                      // If 'All' is selected, don't filter by category
+                      matchesCategory = true;
+                    } else {
+                      // Apply category and favorites filtering
+                      matchesCategory = (selectedCategory == 'Favorites'
+                          ? favoriteRecipeIds.contains(doc.id)
+                          : data['category'] == selectedCategory);
+                    }
 
                     return matchesSearchQuery && matchesCategory;
                   }).toList();
@@ -470,7 +548,8 @@ Widget build(BuildContext context) {
 
     return GestureDetector(
       onTap: () {
-        _showRecipeDialog(context, recipe['title'], recipe['imageUrl'], recipeId);
+        _showRecipeDialog(
+            context, recipe['title'], recipe['imageUrl'], recipeId);
       },
       child: Card(
         shape:

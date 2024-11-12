@@ -104,15 +104,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: <Widget>[
               Icon(
                 isSelected 
-                    ? (index == 0 ? Icons.receipt_outlined :
+                    ? (index == 0 ? Icons.food_bank_outlined :
                        index == 1 ? Icons.person_outlined :
                        index == 2 ? Icons.article_outlined :
                        index == 3 ? Icons.event_outlined : // Appointments
                        Icons.settings_outlined) // Settings
-                    : (index == 0 ? Icons.receipt :
-                       index == 1 ? Icons.person :
-                       index == 2 ? Icons.article :
-                       index == 3 ? Icons.event :
+                    : (index == 0 ? Icons.food_bank_rounded :
+                       index == 1 ? Icons.person_rounded :
+                       index == 2 ? Icons.article_rounded :
+                       index == 3 ? Icons.event_rounded :
                        Icons.settings), // Settings
                 color: iconColor,
                 size: 30, // Icon size

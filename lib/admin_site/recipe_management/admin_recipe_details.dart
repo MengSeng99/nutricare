@@ -141,7 +141,12 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
     if (shouldDelete == true) {
       try {
         await FirebaseFirestore.instance.collection('recipes').doc(widget.recipeId).delete();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recipe deleted successfully!',style: TextStyle(backgroundColor: Colors.green),)));
+        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Recipe deleted successfully!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
         Navigator.pop(context);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting recipe: $e')));

@@ -62,7 +62,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
       String? imageUrl = await _uploadImage();
       if (imageUrl == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Image upload failed")));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Image upload failed"),backgroundColor: Colors.red,));
         return;
       }
 
@@ -82,7 +82,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       await _addSubcollectionItems(recipeRef, 'steps', _steps, _stepControllers);
       await _addSubcollectionItems(recipeRef, 'nutritionalFacts', _nutritionalFacts, _nutritionalFactControllers, _nutritionalValueControllers);
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recipe created successfully!')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recipe created successfully!'),backgroundColor: Colors.green,));
       Navigator.pop(context); // Navigate back to previous screen
     }
   }

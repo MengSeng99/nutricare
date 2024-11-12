@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:nutricare/specialist_site/specialist_more.dart';
-import 'package:nutricare/specialist_site/specialist_schedule.dart';
-import 'specialist_articles.dart';
-import 'specialist_home.dart'; // Import Home screen
-
+import 'package:nutricare/specialist_site/appointment_management/specialist_schedule.dart';
+import 'package:nutricare/specialist_site/articles_management/specialist_articles.dart';
+import 'client_management/client.dart';
+import 'specialist_home.dart';
 
 class SpecialistDashboard extends StatefulWidget {
   const SpecialistDashboard({super.key});
@@ -15,12 +15,13 @@ class SpecialistDashboard extends StatefulWidget {
 class _SpecialistDashboardState extends State<SpecialistDashboard> {
   int _selectedIndex = 0; // Handle the selected index
 
-  // List of screens for each navigation item
+  // List of screens for each navigation item, including the new Client screen
   static const List<Widget> _screens = <Widget>[
-    SpecialistHomeScreen(), // You will create this screen
-    SpecialistArticlesScreen(), // You will create this screen
-    SpecialistSchedulesScreen(),
-    SpecialistMoreScreen(),
+    SpecialistHomeScreen(),         // Home
+    SpecialistArticlesScreen(),     // Articles
+    SpecialistSchedulesScreen(),    // Schedule
+    SpecialistClientScreen(),       // New Client Screen
+    SpecialistMoreScreen(),         // More
   ];
 
   void _onItemTapped(int index) {
@@ -105,11 +106,13 @@ class _SpecialistDashboardState extends State<SpecialistDashboard> {
                     ? (index == 0 ? Icons.home_outlined :
                        index == 1 ? Icons.article_outlined :
                        index == 2 ? Icons.calendar_month_outlined :
+                       index == 3 ? Icons.people_outlined : // Icon for the Client screen
                        Icons.more_horiz_outlined) // Using outlined version when selected
                     : (index == 0 ? Icons.home :
                        index == 1 ? Icons.article :
                        index == 2 ? Icons.calendar_month :
-                       Icons.more_horiz), // Regular icons when unselected
+                       index == 3 ? Icons.people : // Regular icon for the Client screen when unselected
+                       Icons.more_horiz), 
                 color: iconColor,
                 size: 30, // Icon size
               ),
@@ -118,6 +121,7 @@ class _SpecialistDashboardState extends State<SpecialistDashboard> {
                 index == 0 ? 'Home' :
                 index == 1 ? 'Articles' :
                 index == 2 ? 'Schedule' :
+                index == 3 ? 'Client' : // Label for the Client option
                 'More',
                 style: TextStyle(
                   color: iconColor, 

@@ -92,7 +92,24 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
         selectedSpecialization == null ||
         services.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields and add at least one service!',style: TextStyle(backgroundColor: Colors.red),)),
+        SnackBar(
+          content: const Text(
+              'Please fill all required fields and add at least one service!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+
+      return;
+    }
+
+    // Validate if an image is uploaded
+    if (profilePictureUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              const Text('Please upload a profile picture for the specialist!'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -100,7 +117,11 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
     // Validate email format
     if (!isEmailValid(emailController.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address!',style: TextStyle(backgroundColor: Colors.red),)),
+        SnackBar(
+          content: const Text(
+              'Please enter a valid email address! Example: specialist@nutricare.com'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -108,19 +129,24 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
     // Validate password length
     if (passwordController.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password must be at least 6 characters!',style: TextStyle(backgroundColor: Colors.red),)),
+        SnackBar(
+          content: const Text('Password must be at least 6 characters long!'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
     try {
       // Create a user in FirebaseAuth
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
 
-      String specialistId = userCredential.user!.uid; // Use the UID as the specialistId
+      String specialistId =
+          userCredential.user!.uid; // Use the UID as the specialistId
 
       final newSpecialist = {
         'name': nameController.text,
@@ -135,13 +161,19 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
       };
 
       // Save the new specialist information to Firestore using the UID as the document ID
-      await FirebaseFirestore.instance.collection('specialists').doc(specialistId).set(newSpecialist);
+      await FirebaseFirestore.instance
+          .collection('specialists')
+          .doc(specialistId)
+          .set(newSpecialist);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Specialist created successfully!',style: TextStyle(backgroundColor: Colors.green),)),
+        SnackBar(
+          content: const Text('Specialist created successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
 
-      Navigator.pop(context); // Go back to the previous screen
+      Navigator.pop(context); // Go back to the previous screents
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error creating specialist: $e')),
@@ -210,8 +242,10 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
                   Navigator.of(context).pop();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Please enter valid service details',style: TextStyle(backgroundColor: Colors.red),)),
+                    SnackBar(
+                      content: const Text('Please enter valid service details'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                 }
               },
@@ -248,7 +282,8 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
           ),
         ),
         backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        iconTheme:
+            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -313,15 +348,18 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
                 ),
                 TextField(
                   controller: experienceController,
-                  decoration: const InputDecoration(labelText: 'Experience (Years)'),
+                  decoration:
+                      const InputDecoration(labelText: 'Experience (Years)'),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 10),
-                const Text('Gender', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Gender',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 DropdownButton<String>(
                   value: selectedGender,
                   hint: const Text('Select Gender'),
-                  items: <String>['Male', 'Female'].map<DropdownMenuItem<String>>((String value) {
+                  items: <String>['Male', 'Female']
+                      .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
                       child: Text(value),
@@ -334,11 +372,13 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
                   },
                 ),
                 const SizedBox(height: 10),
-                const Text('Specialization', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Specialization',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 DropdownButton<String>(
                   value: selectedSpecialization,
                   hint: const Text('Select Specialization'),
-                  items: <String>['Nutritionist', 'Dietitian'].map<DropdownMenuItem<String>>((String value) {
+                  items: <String>['Nutritionist', 'Dietitian']
+                      .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
                       child: Text(value),
@@ -359,9 +399,12 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Services', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Text('Services',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
                     IconButton(
-                      icon: const Icon(Icons.add_circle_outline, color: Color.fromARGB(255, 90, 113, 243)),
+                      icon: const Icon(Icons.add_circle_outline,
+                          color: Color.fromARGB(255, 90, 113, 243)),
                       tooltip: 'Add Service',
                       onPressed: showAddServiceDialog,
                     ),
@@ -378,7 +421,8 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       child: ListTile(
                         title: Text(service['name'] ?? 'Unnamed Service',
-                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text('Fee: RM ${service['fee'] ?? 'N/A'}',
                             style: const TextStyle(color: Colors.grey)),
                       ),
@@ -391,14 +435,18 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
                     onPressed: createSpecialist,
                     icon: const Icon(Icons.person_add, color: Colors.white),
                     label: const Text('Add',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Color.fromARGB(255, 90, 113, 243),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 16.0),
                       minimumSize: const Size(150, 50),
                     ),
                   ),

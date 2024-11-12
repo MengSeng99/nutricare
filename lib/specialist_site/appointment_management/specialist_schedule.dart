@@ -1,27 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:nutricare/scheduled_appointment/chat_list.dart';
-import '../main.dart';
-import 'appointment_details.dart';
 import 'package:intl/intl.dart';
-import 'reschedule.dart'; // For date formatting
 
-class ScheduleScreen extends StatefulWidget {
-  const ScheduleScreen({super.key});
+import '../../main.dart';
+import '../../scheduled_appointment/reschedule.dart';
+import 'specialist_appointment_details.dart';
+import 'specialist_chatlist.dart';
+
+class SpecialistSchedulesScreen extends StatefulWidget {
+  const SpecialistSchedulesScreen({super.key});
 
   @override
-  _ScheduleScreenState createState() => _ScheduleScreenState();
+  _SpecialistSchedulesScreenState createState() => _SpecialistSchedulesScreenState();
 }
 
-class _ScheduleScreenState extends State<ScheduleScreen>
-    with TickerProviderStateMixin {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-
+class _SpecialistSchedulesScreenState extends State<SpecialistSchedulesScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -64,7 +58,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        ChatListScreen(), // Replace with your chat screen
+                        SpecialistChatListScreen(), // Replace with your chat screen
                   ),
                 );
               },
@@ -73,8 +67,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         ),
         body: const TabBarView(
           children: [
-            AppointmentsTab(
-                statusFilter: ['Confirmed', 'Pending Confirmation']),
+            AppointmentsTab(statusFilter: ['Confirmed', 'Pending Confirmation']),
             AppointmentsTab(statusFilter: ['Completed']),
             AppointmentsTab(statusFilter: ['Canceled']),
           ],
@@ -82,14 +75,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       ),
     );
   }
-}
-
-Future<String?> _getSpecialistAvatar(String specialistId) async {
-  final snapshot = await FirebaseFirestore.instance
-      .collection('specialists')
-      .doc(specialistId)
-      .get();
-  return snapshot.data()?['profile_picture_url'] as String?;
 }
 
 class AppointmentsTab extends StatefulWidget {
@@ -123,36 +108,47 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
 
       for (var doc in querySnapshot.docs) {
         String appointmentId = doc.id;
+        List<dynamic> usersArray = doc['users'] ?? [];
 
-        // Fetch details subcollection within each appointment
-        QuerySnapshot detailsSnapshot = await FirebaseFirestore.instance
-            .collection('appointments')
-            .doc(appointmentId)
-            .collection('details')
-            .get();
+        if (usersArray.isNotEmpty) {
+          String clientId = usersArray[0];
 
-        for (var detailDoc in detailsSnapshot.docs) {
-          Map<String, dynamic> detailData =
-              detailDoc.data() as Map<String, dynamic>;
+          DocumentSnapshot clientDocSnapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(clientId)
+              .get();
 
-          // Only include appointments that match the status filter
-          if (detailData.containsKey('appointmentStatus') &&
-              widget.statusFilter.contains(detailData['appointmentStatus'])) {
-            detailData['appointmentId'] = appointmentId;
-            detailData['specialistId'] =
-                detailData['specialistId']; // Extract from details
-            appointments.add(detailData);
+          String clientName = (clientDocSnapshot.data() as Map<String, dynamic>)['name'] ?? 'Unknown';
+          String clientProfilePic = (clientDocSnapshot.data() as Map<String, dynamic>)['profile_pic'] ?? '';
+
+          QuerySnapshot detailsSnapshot = await FirebaseFirestore.instance
+              .collection('appointments')
+              .doc(appointmentId)
+              .collection('details')
+              .get();
+
+          // Fetch data from each detail
+          for (var detailDoc in detailsSnapshot.docs) {
+            Map<String, dynamic> detailData = detailDoc.data() as Map<String, dynamic>;
+
+            // Only include appointments that match the status filter
+            if (detailData.containsKey('appointmentStatus') &&
+                widget.statusFilter.contains(detailData['appointmentStatus'])) {
+              // Merge detail data with client information
+              detailData['clientId'] = clientId;
+              detailData['appointmentId'] = appointmentId;
+              detailData['clientName'] = clientName; 
+              detailData['clientProfilePic'] = clientProfilePic; 
+              detailData['amountPaid'] = detailData['amountPaid'] ?? 0;
+              detailData['paymentCardUsed'] = detailData['paymentCardUsed'] ?? 'N/A';
+              detailData['createdAt'] = (detailData['createdAt'] as Timestamp).toDate();
+              appointments.add(detailData);
+            }
           }
         }
       }
     }
     return appointments;
-  }
-
-  void refreshAppointments() {
-    setState(() {
-      _appointmentsFuture = _retrieveAppointmentData();
-    });
   }
 
   @override
@@ -180,34 +176,32 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
         return ListView(
           padding: const EdgeInsets.all(16.0),
           children: snapshot.data!.map((data) {
-            String specialistId = data['specialistId'];
-
-            return FutureBuilder<String?>(
-              future: _getSpecialistAvatar(specialistId),
-              builder: (context, avatarSnapshot) {
-                if (avatarSnapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                return AppointmentCard(
-                  date: (data['selectedDate'] as Timestamp).toDate(),
-                  time: data['selectedTimeSlot'] ?? 'N/A',
-                  specialistName: data['specialistName'],
-                  appointmentStatus: data['appointmentStatus'],
-                  service: data['serviceName'],
-                  showButtons: widget.statusFilter.contains('Confirmed'),
-                  appointmentId: data['appointmentId'].toString(),
-                  appointmentMode: data['appointmentMode'],
-                  specialistId: data['specialistId'],
-                  specialistAvatarUrl: avatarSnapshot.data,
-                  refreshAppointments: refreshAppointments, // Pass the refresh method
-                );
-              },
+            return AppointmentCard(
+              appointmentId: data['appointmentId'],
+              date: (data['selectedDate'] as Timestamp).toDate(),
+              time: data['selectedTimeSlot'] ?? 'N/A',
+              appointmentMode: data['appointmentMode'],
+              appointmentStatus: data['appointmentStatus'],
+              service: data['serviceName'],
+              clientName: data['clientName'], 
+              clientProfilePic: data['clientProfilePic'], 
+              amountPaid: data['amountPaid'],               
+              paymentCardUsed: data['paymentCardUsed'], 
+              createdAt: data['createdAt'], 
+              clientId: data['clientId'],
+              specialistName: data['specialistName'],
+              refreshAppointments: refreshAppointments,
             );
           }).toList(),
         );
       },
     );
+  }
+
+  void refreshAppointments() {
+    setState(() {
+      _appointmentsFuture = _retrieveAppointmentData();
+    });
   }
 }
 
@@ -215,29 +209,50 @@ class AppointmentCard extends StatelessWidget {
   final String appointmentId;
   final DateTime date;
   final String time;
-  final String specialistName;
   final String appointmentStatus;
-  final String appointmentMode;
   final String service;
-  final bool showButtons;
-  final String specialistId;
-  final String? specialistAvatarUrl;
+  final String clientName; 
+  final String clientProfilePic;
+  final String appointmentMode;
+  final double amountPaid;
+  final String paymentCardUsed; 
+  final DateTime createdAt; 
+  final String clientId;
   final Function refreshAppointments;
+  final String specialistName;
 
   const AppointmentCard({
     required this.appointmentId,
     required this.date,
     required this.time,
-    required this.specialistName,
     required this.appointmentStatus,
-    required this.appointmentMode,
     required this.service,
-    required this.showButtons,
-    required this.specialistId,
+    required this.clientName,
+    required this.clientProfilePic,
+    required this.appointmentMode,
+    required this.amountPaid,
+    required this.paymentCardUsed,
+    required this.createdAt,
+    required this.clientId,
     required this.refreshAppointments,
-    this.specialistAvatarUrl,
+    required this.specialistName,
     super.key,
   });
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Confirmed':
+        return Colors.green;
+      case 'Pending Confirmation':
+        return Colors.orange;
+      case 'Canceled':
+        return Colors.red;
+      case 'Completed':
+        return Colors.blueGrey;
+      default:
+        return Colors.grey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -246,15 +261,20 @@ class AppointmentCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AppointmentDetailsScreen(
+            builder: (context) => SpecialistAppointmentDetailsScreen(
+              clientId: clientId,
               appointmentId: appointmentId,
-              specialistAvatarUrl: specialistAvatarUrl,
               date: date,
               time: time,
-              specialistName: specialistName,
-              specialistId: specialistId,
+              appointmentMode: appointmentMode,
+              appointmentStatus: appointmentStatus,
               service: service,
-              status: appointmentStatus,
+              clientName: clientName,
+              clientProfilePic: clientProfilePic,
+              amountPaid: amountPaid, // Pass amountPaid
+              paymentCardUsed: paymentCardUsed, // Pass paymentCardUsed
+              createdAt: createdAt, // Pass createdAt
+              onRefresh: refreshAppointments,
             ),
           ),
         );
@@ -272,30 +292,29 @@ class AppointmentCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Appointment ID Display
               Align(
                 alignment: Alignment.topRight,
                 child: Text(
                   "Appointment ID: $appointmentId",
                   style: const TextStyle(
-                    color: Color.fromARGB(255, 90, 113, 243), // Blue color
+                    color: Color.fromARGB(255, 90, 113, 243),
                     fontWeight: FontWeight.bold,
-                    fontSize: 14, // Adjust size as needed
+                    fontSize: 14,
                   ),
                 ),
               ),
-              const SizedBox(height: 0), // Space between ID and specialist info
+              const SizedBox(height: 0),
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundImage: specialistAvatarUrl != null
-                        ? NetworkImage(specialistAvatarUrl!)
+                    backgroundImage: clientProfilePic.isNotEmpty
+                        ? NetworkImage(clientProfilePic)
                         : null,
                     backgroundColor: Colors.blueAccent,
                     radius: 30,
-                    child: specialistAvatarUrl == null
+                    child: clientProfilePic.isEmpty
                         ? Text(
-                            specialistName[0],
+                            clientName.isNotEmpty ? clientName[0] : '?',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 24,
@@ -310,9 +329,8 @@ class AppointmentCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          specialistName,
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                          clientName,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Row(
@@ -335,7 +353,7 @@ class AppointmentCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           '$appointmentMode Appointment',
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Color.fromARGB(255, 79, 53, 150),
                             fontWeight: FontWeight.bold,
                           ),
@@ -343,10 +361,7 @@ class AppointmentCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           "${DateFormat('MMMM dd, yyyy').format(date)} | $time",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF6D6D6D),
-                          ),
+                          style: const TextStyle(fontSize: 16, color: Color(0xFF6D6D6D)),
                         ),
                       ],
                     ),
@@ -356,14 +371,10 @@ class AppointmentCard extends StatelessWidget {
               const Divider(height: 24, color: Colors.grey),
               Text(
                 service,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF6D6D6D),
-                ),
+                style: const TextStyle(fontSize: 14, color: Color(0xFF6D6D6D)),
               ),
               const SizedBox(height: 10),
-              if (appointmentStatus == "Confirmed" ||
-                  appointmentStatus == "Pending Confirmation")
+              if (appointmentStatus == "Confirmed" || appointmentStatus == "Pending Confirmation") 
                 _buildActionButtons(context),
             ],
           ),
@@ -372,30 +383,12 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Confirmed':
-        return Colors.green;
-      case 'Pending Confirmation':
-        return Colors.orange;
-      case 'Canceled':
-        return Colors.red;
-      case 'Completed':
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  // Action Buttons for Cancel and Reschedule
   Widget _buildActionButtons(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         ElevatedButton(
-          onPressed: () {
-            _showCancelConfirmationDialog(context);
-          },
+          onPressed: () => _showCancelConfirmationDialog(context),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color.fromARGB(255, 232, 235, 247),
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
@@ -405,13 +398,21 @@ class AppointmentCard extends StatelessWidget {
           ),
           child: const Text(
             "Cancel",
-            style:
-                TextStyle(color: Color.fromARGB(255, 59, 59, 59), fontSize: 16),
+            style: TextStyle(color: Color.fromARGB(255, 59, 59, 59), fontSize: 16),
           ),
         ),
         const SizedBox(width: 12),
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
+            // Get specialistId (current user ID)
+            String specialistId = FirebaseAuth.instance.currentUser!.uid;
+            // Fetch the specialist name
+            DocumentSnapshot specialistDoc = await FirebaseFirestore.instance
+                .collection('specialists')
+                .doc(specialistId)
+                .get();
+            String specialistName = (specialistDoc.data() as Map<String, dynamic>)['name'] ?? 'Unknown';
+            
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -420,16 +421,15 @@ class AppointmentCard extends StatelessWidget {
                   originalDate: date,
                   originalTime: time,
                   appointmentMode: appointmentMode,
-                  specialistId: specialistId,
-                  specialistName: specialistName,
+                  specialistId: specialistId, // Pass the specialist ID
+                  specialistName: specialistName, // Pass the specialist name
                   onRefresh: refreshAppointments, 
                 ),
               ),
-              ).then((_) {
-      // After going back from the reschedule screen, refresh the appointments
-      refreshAppointments();
-    });
- 
+            ).then((_) {
+              // After going back from the reschedule screen, refresh the appointments
+              refreshAppointments();
+            });
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color.fromARGB(255, 90, 113, 243),
@@ -447,7 +447,6 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  // Update the _showCancelConfirmationDialog to pass refreshAppointments
   void _showCancelConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -468,21 +467,10 @@ class AppointmentCard extends StatelessWidget {
             style: TextStyle(fontSize: 14.0),
           ),
           actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop(); // Dismiss the dialog
-              },
-              child: const Text(
-                "No",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
+            TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("No"),
+           ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -505,7 +493,7 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  void _cancelAppointment(BuildContext context, String appointmentId) async {
+   void _cancelAppointment(BuildContext context, String appointmentId) async {
   try {
     final detailsCollectionRef = FirebaseFirestore.instance
         .collection('appointments')
@@ -569,7 +557,7 @@ class AppointmentCard extends StatelessWidget {
         List<dynamic> users = chat['users'] ?? [];
 
         // Check if both the currentUserId and specialistId are in the users array
-        if (users.contains(currentUserId) && users.contains(specialistId)) {
+        if (users.contains(currentUserId) && users.contains(clientId)) {
           chatFound = true;
           chatId = chat.id;
 
@@ -584,7 +572,7 @@ class AppointmentCard extends StatelessWidget {
         // Create a new chat document
         DocumentReference newChatDoc =
             await FirebaseFirestore.instance.collection('chats').add({
-          'users': [currentUserId, specialistId],
+          'users': [clientId, currentUserId],
           'createdAt': FieldValue.serverTimestamp(),
         });
 
@@ -598,6 +586,8 @@ class AppointmentCard extends StatelessWidget {
 
   Future<void> _sendCancellationMessage(String chatId) async {
     // Prepare the cancellation message
+    String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
     String messageText = '''
 Your appointment has been canceled.
 
@@ -620,7 +610,7 @@ If you have any further questions or wish to reschedule, please reach out to us.
         .collection('messages')
         .add({
       'text': messageText,
-      'senderId': specialistId,
+      'senderId': currentUserId,
       'isImage': false,
       'timestamp': FieldValue.serverTimestamp(),
     });
