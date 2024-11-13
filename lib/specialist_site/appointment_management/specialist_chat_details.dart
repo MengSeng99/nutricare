@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:nutricare/specialist_site/client_management/client_details.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SpecialistChatDetailScreen extends StatelessWidget {
@@ -48,6 +49,21 @@ class SpecialistChatDetailScreen extends StatelessWidget {
             ),
           ],
         ),
+         actions: [
+          IconButton(
+            icon: Icon(Icons.info_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ClientDetailsScreen(
+                    clientId: receiverId,
+                    clientName: clientName,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(

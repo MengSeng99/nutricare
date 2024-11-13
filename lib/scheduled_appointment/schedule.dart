@@ -255,6 +255,7 @@ class AppointmentCard extends StatelessWidget {
               specialistId: specialistId,
               service: service,
               status: appointmentStatus,
+              appointmentMode: appointmentMode,
             ),
           ),
         );

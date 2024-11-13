@@ -103,7 +103,7 @@ class _DietsScreenState extends State<DietsScreen> {
         if (mealData != null) {
           Meal meal = Meal(
             mealType: mealType,
-            name: mealData['name'] ?? 'Unnamed Meal',
+            name: mealData['name'] ?? 'No Meal Logged Yet',
             calories: mealData['Calories'] ?? 0,
             protein: mealData['Proteins'] ?? 0,
             carbs: mealData['Carbohydrates'] ?? 0,
@@ -120,7 +120,7 @@ class _DietsScreenState extends State<DietsScreen> {
         } else {
           newMeals.add(Meal(
             mealType: mealType,
-            name: 'Unnamed Meal',
+            name: 'No Meal Logged Yet',
             calories: 0,
             protein: 0,
             carbs: 0,
@@ -413,66 +413,69 @@ class _DietsScreenState extends State<DietsScreen> {
     );
   }
 
-  Widget _buildMealCard(String mealType, String description, int calories,
-      int protein, int carbs, int fat) {
-    String imagePath =
-        'images/food_category/${mealType.toLowerCase()}.png'; // Image based on meal type
-    return Card(
-      elevation: 3,
-      color: Colors.white,
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: Colors.grey.shade400, width: 1),
+ Widget _buildMealCard(String mealType, String description, int calories,
+    int protein, int carbs, int fat) {
+  String imagePath =
+      'images/food_category/${mealType.toLowerCase()}.png'; // Image based on meal type
+
+  // Determine which icon to use based on whether the meal has been logged
+  IconData iconData = description != 'No Meal Logged Yet' && description.isNotEmpty
+      ? Icons.edit_outlined // Use edit icon if meal has data
+      : Icons.add_circle_outline_rounded; // Use add icon if meal is not logged
+
+  return Card(
+    elevation: 3,
+    color: Colors.white,
+    margin: const EdgeInsets.symmetric(vertical: 10),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(15),
+      side: BorderSide(color: Colors.grey.shade400, width: 1),
+    ),
+    child: ListTile(
+      contentPadding: const EdgeInsets.only(left: 16, right: 16, top: 2, bottom: 2),
+      leading: CircleAvatar(
+        backgroundColor: Colors.transparent,
+        child: Image.asset(imagePath, fit: BoxFit.cover),
       ),
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.only(left: 16, right: 16, top: 2, bottom: 2),
-        leading: CircleAvatar(
-          backgroundColor: Colors.transparent,
-          child: Image.asset(imagePath, fit: BoxFit.cover),
-        ),
-        title: Text(
-          mealType,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Divider(),
-            const SizedBox(height: 5),
-            Text(description, style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 5),
-            Text('$calories kcal', style: const TextStyle(color: Colors.grey)),
-            Text('Protein: $protein g',
-                style: const TextStyle(color: Colors.grey)),
-            Text('Carbs: $carbs g', style: const TextStyle(color: Colors.grey)),
-            Text('Fat: $fat g', style: const TextStyle(color: Colors.grey)),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.add_circle_outline_rounded,
-              color: Color.fromARGB(255, 90, 113, 243)),
-          iconSize: 40,
-          onPressed: () {
-            Navigator.push<bool>(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MealSelectionScreen(
-                  mealType: mealType,
-                  selectedDate: _selectedDate, // Pass the selected date here
-                ),
+      title: Text(
+        mealType,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(),
+          const SizedBox(height: 5),
+          Text(description, style: const TextStyle(color: Colors.grey)),
+          const SizedBox(height: 5),
+          Text('$calories kcal', style: const TextStyle(color: Colors.grey)),
+          Text('Protein: $protein g', style: const TextStyle(color: Colors.grey)),
+          Text('Carbs: $carbs g', style: const TextStyle(color: Colors.grey)),
+          Text('Fat: $fat g', style: const TextStyle(color: Colors.grey)),
+        ],
+      ),
+      trailing: IconButton(
+        icon: Icon(iconData, color: const Color.fromARGB(255, 90, 113, 243)),
+        iconSize: 40,
+        onPressed: () {
+          Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MealSelectionScreen(
+                mealType: mealType,
+                selectedDate: _selectedDate, // Pass the selected date here
               ),
-            ).then((shouldRefresh) {
-              if (shouldRefresh == true) {
-                _loadDietData(); // Refresh the diet data when coming back
-              }
-            });
-          },
-        ),
+            ),
+          ).then((shouldRefresh) {
+            if (shouldRefresh == true) {
+              _loadDietData(); // Refresh the diet data when coming back
+            }
+          });
+        },
       ),
-    );
-  }
+    ),
+  );
+}
 
   // Function to select a date using the DatePicker dialog
   Future<void> _selectDate(BuildContext context) async {

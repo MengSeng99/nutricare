@@ -225,60 +225,56 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
     );
   }
 
-  void addToLog(
-      String title, int calories, int protein, int carbs, int fat) async {
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+ void addToLog(String title, int calories, int protein, int carbs, int fat) async {
+  final User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
 
-    String userId = user.uid;
-    String mealType =
-        widget.mealType; // e.g., "Breakfast", "Lunch", or "Dinner"
-    String dateKey = DateFormat('yyyyMMdd').format(widget.selectedDate);
+  String userId = user.uid;
+  String mealType = widget.mealType; // e.g., "Breakfast", "Lunch", or "Dinner"
+  String dateKey = DateFormat('yyyyMMdd').format(widget.selectedDate);
 
-    // Prepare the data to store
-    Map<String, dynamic> mealData = {
-      'name': title,
-      'Calories': calories,
-      'Proteins': protein,
-      'Carbohydrates': carbs,
-      'Fats': fat,
-    };
+  // Prepare the data to store
+  Map<String, dynamic> mealData = {
+    'name': title,
+    'Calories': calories,
+    'Proteins': protein,
+    'Carbohydrates': carbs,
+    'Fats': fat,
+  };
 
-    try {
-      // Create or update the corresponding meal type field in the dietHistory document
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('dietHistory')
-          .doc(dateKey)
-          .set({
-        // Use set() with merge to avoid overwriting existing fields
-        mealType: mealData,
-      }, SetOptions(merge: true)); // This merges the new meal type
+  try {
+    // Create or update the corresponding meal type field in the dietHistory document
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('dietHistory')
+        .doc(dateKey)
+        .set({
+      mealType: mealData,
+    }, SetOptions(merge: true)); // This merges the new meal type
 
-      // Show a successful message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$title added to log!'),
-          duration: const Duration(seconds: 2),
-          backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-        ),
-      );
+    // Show a successful message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$title added to log! You may view it in the Diet History.'),
+        duration: const Duration(seconds: 4),
+        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+      ),
+    );
 
-      // Go back to the previous screen and indicate success
-      Navigator.pop(context, true); // Pop with a return value of true
-    } catch (e) {
-      // Handle any errors that may occur
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Error adding to log.'),
-          duration: const Duration(seconds: 2),
-          backgroundColor: Colors.red,
-        ),
-      );
-      print(e); // Print errors for debugging
-    }
+    Navigator.pop(context, true); 
+  } catch (e) {
+    // Handle any errors that may occur
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Error adding to log.'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.red,
+      ),
+    );
+    print(e); // Print errors for debugging
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -299,7 +295,7 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
           icon: const Icon(Icons.arrow_back,
               color: Color.fromARGB(255, 90, 113, 243)),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context,true);
           },
         ),
         bottom: const PreferredSize(
@@ -337,15 +333,17 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                   decoration: InputDecoration(
                     hintText: "Search any recipe",
                     prefixIcon: const Icon(Icons.search),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear(); // Clear the text field
-                        setState(() {
-                          searchQuery = ""; // Reset the search query
-                        });
-                      },
-                    ),
+                  suffixIcon: searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear(); // Clear the text field
+                            setState(() {
+                              searchQuery = ""; // Reset the search query
+                            });
+                          },
+                        )
+                      : null,
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(

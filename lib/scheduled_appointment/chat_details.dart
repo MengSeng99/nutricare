@@ -183,7 +183,7 @@ class ChatDetailScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.info_outline),
             onPressed: () {
-              // _showSpecialistDetails(context);
+              _showSpecialistDetails(context);
             },
           ),
         ],

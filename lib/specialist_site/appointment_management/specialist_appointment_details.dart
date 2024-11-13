@@ -324,6 +324,7 @@ class _SpecialistAppointmentDetailsScreenState extends State<SpecialistAppointme
         const SnackBar(
           content: Text(
               "You cannot mark this appointment as completed yet. Please wait until the scheduled time has passed."),
+             backgroundColor: Colors.red,
         ),
       );
     }
