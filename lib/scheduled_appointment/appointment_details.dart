@@ -220,7 +220,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                   if (reviews.isNotEmpty)
                     ...reviews
                         .map((review) => _buildReviewCard(review))
-                        .toList()
+                        
                   else
                     const SizedBox.shrink(),
                   const SizedBox(height: 10),
