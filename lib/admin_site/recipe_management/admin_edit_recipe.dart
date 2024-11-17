@@ -145,7 +145,6 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
         String downloadUrl = await storageRef.getDownloadURL();
         return downloadUrl;
       } catch (e) {
-        print(e);
         return null;
       }
     }

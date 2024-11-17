@@ -78,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList().where((article) => article['specialistId'].isNotEmpty).toList(); // Ensure specialistId is not empty
     });
   } catch (e) {
-    print("Error fetching articles: $e");
+    // print("Error fetching articles: $e");
     // Handle error here
   }
 }

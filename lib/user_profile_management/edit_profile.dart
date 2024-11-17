@@ -40,7 +40,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
       }
     } catch (e) {
-      print('Failed to load user data: $e');
+      // print('Failed to load user data: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -66,7 +66,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         return await storageRef.getDownloadURL();
       }
     } catch (e) {
-      print('Image upload failed: $e');
+      // print('Image upload failed: $e');
     }
     return null;
   }
@@ -102,7 +102,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         );
       }
     } catch (e) {
-      print('Failed to update profile: $e');
+      // print('Failed to update profile: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to update profile. Please try again.')),
       );

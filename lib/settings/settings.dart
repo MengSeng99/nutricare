@@ -184,7 +184,7 @@ Future<void> _handleLogout(BuildContext context) async {
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LoginPage()));
   } catch (e) {
     // Handle error
-    print("Error logging out: $e");
+    // print("Error logging out: $e");
   }
 }
 }

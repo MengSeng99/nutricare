@@ -49,7 +49,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         String downloadUrl = await storageRef.getDownloadURL();
         return downloadUrl;
       } catch (e) {
-        print(e);
         return null;
       }
     }

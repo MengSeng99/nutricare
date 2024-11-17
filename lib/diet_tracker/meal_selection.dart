@@ -272,7 +272,7 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
         backgroundColor: Colors.red,
       ),
     );
-    print(e); // Print errors for debugging
+    // print(e); // Print errors for debugging
   }
 }
 

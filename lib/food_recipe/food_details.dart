@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_unnecessary_containers
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -47,7 +49,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
       nutritionalFacts = await _getNutritionalFacts();
     } catch (e) {
       // Handle error appropriately, perhaps log it or show a message
-      print("Error fetching data: $e");
+      // print("Error fetching data: $e");
     }
     setState(() {}); // Refresh the UI after data is fetched
   }
@@ -70,7 +72,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
           isBookmarked = false;
         });
       }).catchError((error) {
-        print("Failed to remove bookmark: $error");
+        // print("Failed to remove bookmark: $error");
       });
     } else {
       await favRecipesRef.set({'isBookmarked': true}).then((_) {
@@ -78,7 +80,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
           isBookmarked = true;
         });
       }).catchError((error) {
-        print("Failed to add bookmark: $error");
+        // print("Failed to add bookmark: $error");
       });
     }
   }

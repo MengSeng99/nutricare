@@ -637,7 +637,7 @@ class AppointmentCard extends StatelessWidget {
 
       await detailDocRef.update({'appointmentStatus': 'Canceled'});
 
-      print('Appointment status updated to Canceled successfully.');
+      // print('Appointment status updated to Canceled successfully.');
 
       // Instead of using context, use the global key to show SnackBar
       scaffoldMessengerKey.currentState?.showSnackBar(
@@ -646,13 +646,13 @@ class AppointmentCard extends StatelessWidget {
           duration: const Duration(seconds: 2),
         ),
       );
-      print('SnackBar displayed for cancellation success.');
+      // print('SnackBar displayed for cancellation success.');
 
       refreshAppointments();
 
       await _checkForChatAndCreateCancellationMessage();
     } else {
-      print('No appointment details found to update.');
+      // print('No appointment details found to update.');
       scaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(
           content: Text('No appointment details found.'),
@@ -661,7 +661,7 @@ class AppointmentCard extends StatelessWidget {
       );
     }
   } catch (e) {
-    print('Error canceling appointment: $e');
+    // print('Error canceling appointment: $e');
 
     scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
@@ -710,7 +710,7 @@ class AppointmentCard extends StatelessWidget {
         await _sendCancellationMessage(newChatDoc.id);
       }
     } catch (e) {
-      print('Error checking chat session and creating cancel message: $e');
+      // print('Error checking chat session and creating cancel message: $e');
     }
   }
 

@@ -53,7 +53,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
         });
       }
     } catch (e) {
-      print("Error fetching like count: $e");
+      // print("Error fetching like count: $e");
     }
   }
 
@@ -82,7 +82,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
         isLiked = !isLiked;
       });
     } catch (e) {
-      print("Error updating like count: $e");
+      // print("Error updating like count: $e");
     }
   }
 
@@ -99,7 +99,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
         });
       }
     } catch (e) {
-      print("Error fetching specialist info: $e");
+      // print("Error fetching specialist info: $e");
     }
   }
 
@@ -121,7 +121,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
         });
       }
     } catch (e) {
-      print("Error fetching article content: $e");
+      // print("Error fetching article content: $e");
       setState(() {
         subtitle = 'Error fetching subtitle or content';
         content = '';

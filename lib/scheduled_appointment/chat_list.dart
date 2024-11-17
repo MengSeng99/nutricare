@@ -45,7 +45,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        print("No chats found for the user.");
+        // print("No chats found for the user.");
         return;
       }
 
@@ -109,7 +109,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         _isLoading = false; // Set loading to false when done
       });
     } catch (error) {
-      print("Error retrieving chat data: $error");
+      // print("Error retrieving chat data: $error");
       setState(() {
         _isLoading = false; // Set loading to false even on error
       });

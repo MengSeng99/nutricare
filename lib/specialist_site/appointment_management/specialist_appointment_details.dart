@@ -283,7 +283,7 @@ class _SpecialistAppointmentDetailsScreenState
         "${DateFormat("MMMM dd, yyyy").format(widget.date)} ${widget.time}";
 
     // Log the complete datetime string to debug
-    print("Complete dateTime string: $dateTimeString");
+    // print("Complete dateTime string: $dateTimeString");
 
     try {
       DateTime appointmentDateTime =
@@ -343,7 +343,7 @@ class _SpecialistAppointmentDetailsScreenState
       }
     } catch (e) {
       // Log the exception to understand the parsing issue
-      print("Error parsing date and time: $e");
+      // print("Error parsing date and time: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -392,7 +392,7 @@ class _SpecialistAppointmentDetailsScreenState
 
         widget.onRefresh();
       } else {
-        print('No appointment details found to update.');
+        // print('No appointment details found to update.');
         scaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
             content: Text('No appointment details found.'),
@@ -401,7 +401,7 @@ class _SpecialistAppointmentDetailsScreenState
         );
       }
     } catch (e) {
-      print('Error marking appointment as completed: $e');
+      // print('Error marking appointment as completed: $e');
 
       // Show an error message in case of failure
       scaffoldMessengerKey.currentState?.showSnackBar(

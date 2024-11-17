@@ -137,7 +137,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         });
       }
     } catch (e) {
-      print('Error fetching services: $e');
+      // print('Error fetching services: $e');
     }
   }
 

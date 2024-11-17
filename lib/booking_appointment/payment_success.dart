@@ -126,7 +126,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
         await _sendAppointmentMessage(newChatDoc.id, appointmentId, widget.specialistId);
       }
     } catch (e) {
-      print('Error checking chat session and creating message: $e');
+      // print('Error checking chat session and creating message: $e');
     }
   }
 

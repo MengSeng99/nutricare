@@ -91,7 +91,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
 
       return appointmentData;
     } catch (e) {
-      print("Error fetching appointment details: $e");
+      // print("Error fetching appointment details: $e");
       return null;
     }
   }
@@ -291,7 +291,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
             _fetchAppointmentDetails(); // Refresh appointment details
       });
     } else {
-      print("User has already submitted a review for this appointment.");
+      // print("User has already submitted a review for this appointment.");
     }
   }
 
@@ -425,7 +425,7 @@ Future<void> _showRatingDialog(BuildContext context, String specialistId,
                         true)); // Create `reviews` array if it doesn't exist
 
                 // Print confirmation
-                print('Review submitted: $reviewData');
+                // print('Review submitted: $reviewData');
 
                 // Close the dialog
                 Navigator.of(dialogContext).pop();
@@ -490,7 +490,7 @@ Future<void> _showRatingDialog(BuildContext context, String specialistId,
         ));
       }
     } catch (e) {
-      print('Error checking chat session: $e');
+      // print('Error checking chat session: $e');
     }
   }
 

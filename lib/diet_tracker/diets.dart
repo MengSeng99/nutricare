@@ -32,7 +32,7 @@ class _DietsScreenState extends State<DietsScreen> {
   Future<void> _loadDietData() async {
     User? user = _auth.currentUser; // Get current user
     if (user == null) {
-      print("User is not logged in");
+      // print("User is not logged in");
       return; // Handle user not logged in
     }
 
@@ -69,13 +69,13 @@ class _DietsScreenState extends State<DietsScreen> {
           (userSnapshot.data() as Map<String, dynamic>)
               .containsKey('calorieGoal')) {
         dailyCalorieGoal = userSnapshot['calorieGoal'] ?? 0; // Set to 0 if null
-        print("Daily calorie goal: $dailyCalorieGoal");
+        // print("Daily calorie goal: $dailyCalorieGoal");
       } else {
-        print("Field 'calorieGoal' does not exist. Defaulting to 0.");
+        // print("Field 'calorieGoal' does not exist. Defaulting to 0.");
         dailyCalorieGoal = 0; // Explicitly set to 0
       }
     } else {
-      print("User snapshot does not exist");
+      // print("User snapshot does not exist");
       dailyCalorieGoal = 0; // Set to 0 if user does not exist
     }
 

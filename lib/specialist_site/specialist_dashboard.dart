@@ -4,7 +4,6 @@ import 'package:nutricare/specialist_site/appointment_management/specialist_sche
 import 'package:nutricare/specialist_site/articles_management/specialist_articles.dart';
 import 'chat_management/specialist_chatlist.dart';
 import 'client_management/client.dart';
-import 'specialist_home.dart';
 
 class SpecialistDashboard extends StatefulWidget {
   const SpecialistDashboard({super.key});

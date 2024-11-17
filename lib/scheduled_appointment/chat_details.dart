@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -124,10 +126,10 @@ class ChatDetailScreen extends StatelessWidget {
           },
         );
       } else {
-        print("No specialist found");
+        // print("No specialist found");
       }
     } catch (e) {
-      print("Error fetching specialist details: $e");
+      // print("Error fetching specialist details: $e");
     }
   }
 

@@ -245,7 +245,7 @@ void _showDeleteConfirmationDialog(BuildContext context, String? articleTitle, S
                   final Reference storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
                   await storageRef.delete();
                 } catch (e) {
-                  print('Error deleting image: $e'); // Handle error as needed
+                  // print('Error deleting image: $e'); // Handle error as needed
                 }
               }
               

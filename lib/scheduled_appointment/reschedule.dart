@@ -268,7 +268,7 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
         await _sendRescheduleMessage(newChatDoc.id);
       }
     } catch (e) {
-      print('Error checking chat session and creating message: $e');
+      // print('Error checking chat session and creating message: $e');
     }
   }
 

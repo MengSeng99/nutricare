@@ -46,7 +46,7 @@ class _SpecialistChatListScreenState extends State<SpecialistChatListScreen> {
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        print("No chats found for the specialist.");
+        // print("No chats found for the specialist.");
         return;
       }
 
@@ -104,7 +104,7 @@ class _SpecialistChatListScreenState extends State<SpecialistChatListScreen> {
         _isLoading = false; // Set loading to false when done
       });
     } catch (error) {
-      print("Error retrieving chat data: $error");
+      // print("Error retrieving chat data: $error");
       setState(() {
         _isLoading = false; // Set loading to false even on error
       });
