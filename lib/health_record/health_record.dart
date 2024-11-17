@@ -14,24 +14,26 @@ class HealthRecordScreen extends StatefulWidget {
   _HealthRecordScreenState createState() => _HealthRecordScreenState();
 }
 
-class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTickerProviderStateMixin {
-  bool _isLoading = false; 
-  bool _isUploading = false; 
-  List<Map<String, dynamic>> _uploadedRecords = []; 
-  List<Map<String, dynamic>> _specialistReports = []; 
-  late TabController _tabController;  // Correctly using TabController
+class _HealthRecordScreenState extends State<HealthRecordScreen>
+    with SingleTickerProviderStateMixin {
+  bool _isLoading = false;
+  bool _isUploading = false;
+  List<Map<String, dynamic>> _uploadedRecords = [];
+  List<Map<String, dynamic>> _specialistReports = [];
+  late TabController _tabController; // Correctly using TabController
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);  // Initialize TabController
+    _tabController =
+        TabController(length: 2, vsync: this); // Initialize TabController
     _fetchUploadedRecords();
     _fetchSpecialistReports();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();  // Dispose of the TabController when done
+    _tabController.dispose(); // Dispose of the TabController when done
     super.dispose();
   }
 
@@ -45,7 +47,9 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
           ),
           title: const Text(
             'Confirm Delete',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(255, 90, 113, 243)),
           ),
           content: const Text(
             'Are you sure you want to delete this record?',
@@ -59,7 +63,8 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+              child:
+                  const Text('Cancel', style: TextStyle(color: Colors.white)),
               onPressed: () {
                 Navigator.of(context).pop(false);
               },
@@ -71,7 +76,8 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              child: const Text('Delete', style: TextStyle(color: Colors.white)),
+              child:
+                  const Text('Delete', style: TextStyle(color: Colors.white)),
               onPressed: () {
                 Navigator.of(context).pop(true);
               },
@@ -82,7 +88,8 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
     );
 
     if (confirmed == true) {
-      Reference storageReference = FirebaseStorage.instance.refFromURL(filePath);
+      Reference storageReference =
+          FirebaseStorage.instance.refFromURL(filePath);
       await storageReference.delete();
 
       String userId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown_user';
@@ -96,7 +103,9 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
       if (querySnapshot.docs.isNotEmpty) {
         await querySnapshot.docs.first.reference.delete();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Health record deleted successfully!'), backgroundColor: Colors.green),
+          const SnackBar(
+              content: Text('Health record deleted successfully!'),
+              backgroundColor: Colors.green),
         );
 
         _fetchUploadedRecords();
@@ -171,16 +180,18 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
         const SnackBar(content: Text('No file selected. Please try again.')),
       );
       setState(() {
-        _isUploading = false; 
+        _isUploading = false;
       });
-      return; 
+      return;
     }
 
     try {
       File file = File(result.files.single.path!);
       String fileName = result.files.single.name;
 
-      Reference storageReference = FirebaseStorage.instance.ref().child('health-records/$userId/$fileName');
+      Reference storageReference = FirebaseStorage.instance
+          .ref()
+          .child('health-records/$userId/$fileName');
 
       UploadTask uploadTask = storageReference.putFile(file);
       TaskSnapshot snapshot = await uploadTask;
@@ -197,7 +208,9 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Health record uploaded successfully!'), backgroundColor: Colors.green),
+        const SnackBar(
+            content: Text('Health record uploaded successfully!'),
+            backgroundColor: Colors.green),
       );
 
       _tabController.index = 0; // Switch to "Your Records" tab
@@ -208,7 +221,7 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
       );
     } finally {
       setState(() {
-        _isUploading = false; 
+        _isUploading = false;
       });
     }
   }
@@ -220,7 +233,9 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
       appBar: AppBar(
         title: const Text(
           'Health Record',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243)),
         ),
         bottom: TabBar(
           controller: _tabController,
@@ -234,7 +249,8 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
         ),
         backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 90, 113, 243)),
+          icon: const Icon(Icons.arrow_back,
+              color: Color.fromARGB(255, 90, 113, 243)),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -262,7 +278,8 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
             Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image.asset('images/health-record-2.png', width: 180, height: 180),
+                Image.asset('images/health-record-2.png',
+                    width: 180, height: 180),
                 const SizedBox(height: 20),
                 const Text(
                   "You don't have any health records yet",
@@ -293,10 +310,17 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
                     itemCount: _uploadedRecords.length,
                     itemBuilder: (context, index) {
                       final record = _uploadedRecords[index];
-                      final formattedTime = DateFormat('dd MMM yyyy, hh:mm a').format(record['uploadTime']);
+                      final formattedTime = DateFormat('dd MMM yyyy, hh:mm a')
+                          .format(record['uploadTime']);
                       return Card(
-                        elevation: 3,
-                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          side:
+                              BorderSide(color: Colors.grey.shade400, width: 1),
+                        ),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        elevation: 2,
                         child: ListTile(
                           title: Text(
                             record['fileId'],
@@ -305,26 +329,33 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
                               color: Color.fromARGB(255, 90, 113, 243),
                             ),
                           ),
-                          subtitle: Text('Uploaded on $formattedTime', style: const TextStyle(color: Colors.grey)),
+                          subtitle: Text('Uploaded on $formattedTime',
+                              style: const TextStyle(color: Colors.grey)),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.open_in_new, color: Colors.grey),
+                                icon: const Icon(Icons.open_in_new,
+                                    color: Colors.grey),
                                 onPressed: () async {
                                   final url = record['filePath'];
                                   Uri fileUri = Uri.parse(url);
                                   if (await canLaunchUrl(fileUri)) {
                                     await launchUrl(fileUri);
                                   } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open the file')));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                'Could not open the file')));
                                   }
                                 },
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () {
-                                  _confirmDeleteRecord(record['fileId'], record['filePath']);
+                                  _confirmDeleteRecord(
+                                      record['fileId'], record['filePath']);
                                 },
                               ),
                             ],
@@ -342,10 +373,16 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
                 itemCount: _specialistReports.length,
                 itemBuilder: (context, index) {
                   final report = _specialistReports[index];
-                  final formattedTime = DateFormat('dd MMM yyyy, hh:mm a').format(report['uploadTime']);
+                  final formattedTime = DateFormat('dd MMM yyyy, hh:mm a')
+                      .format(report['uploadTime']);
                   return Card(
-                    elevation: 3,
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      side: BorderSide(color: Colors.grey.shade400, width: 1),
+                    ),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    elevation: 2,
                     child: ListTile(
                       title: Text(
                         report['reportId'],
@@ -354,7 +391,8 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
                           color: Color.fromARGB(255, 90, 113, 243),
                         ),
                       ),
-                      subtitle: Text('Uploaded on $formattedTime', style: const TextStyle(color: Colors.grey)),
+                      subtitle: Text('Uploaded on $formattedTime',
+                          style: const TextStyle(color: Colors.grey)),
                       trailing: IconButton(
                         icon: const Icon(Icons.open_in_new, color: Colors.grey),
                         onPressed: () async {
@@ -363,7 +401,9 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
                           if (await canLaunchUrl(reportUri)) {
                             await launchUrl(reportUri);
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open the file')));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Could not open the file')));
                           }
                         },
                       ),
@@ -388,7 +428,8 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
           const SizedBox(height: 20),
           const Text(
             'Store and access your health records',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+            style: TextStyle(
+                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
@@ -404,7 +445,8 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> with SingleTick
             ElevatedButton.icon(
               onPressed: _uploadHealthRecord,
               icon: const Icon(Icons.upload_file, color: Colors.white),
-              label: const Text('Upload Health Record', style: TextStyle(color: Colors.white)),
+              label: const Text('Upload Health Record',
+                  style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 90, 113, 243),
                 padding: const EdgeInsets.symmetric(vertical: 16.0),

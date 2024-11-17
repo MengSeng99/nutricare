@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:nutricare/user_profile_management/change_password.dart';
-import '../authentication_process/login.dart';
 import 'edit_profile.dart'; // Import the EditProfileScreen
 
 class UserProfileScreen extends StatefulWidget {
@@ -168,40 +167,40 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       ),
                     ),
 
-                    // Logout Button
-                    Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.symmetric(vertical: 10.0),
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.red),
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        icon: const Icon(Icons.logout, color: Colors.red),
-                        label: const Text(
-                          "Logout",
-                          style: TextStyle(color: Colors.red, fontSize: 16.0),
-                        ),
-                        onPressed: () {
-                          FirebaseAuth.instance.signOut().then((value) {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(builder: (context) => const LoginPage()),
-                              (Route<dynamic> route) => false,
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Account logged out successfully.'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          });
-                        },
-                      ),
-                    ),
+                    // // Logout Button
+                    // Container(
+                    //   width: double.infinity,
+                    //   margin: const EdgeInsets.symmetric(vertical: 10.0),
+                    //   child: OutlinedButton.icon(
+                    //     style: OutlinedButton.styleFrom(
+                    //       side: const BorderSide(color: Colors.red),
+                    //       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+                    //       shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(30),
+                    //       ),
+                    //     ),
+                    //     icon: const Icon(Icons.logout, color: Colors.red),
+                    //     label: const Text(
+                    //       "Logout",
+                    //       style: TextStyle(color: Colors.red, fontSize: 16.0),
+                    //     ),
+                    //     onPressed: () {
+                    //       FirebaseAuth.instance.signOut().then((value) {
+                    //         Navigator.pushAndRemoveUntil(
+                    //           context,
+                    //           MaterialPageRoute(builder: (context) => const LoginPage()),
+                    //           (Route<dynamic> route) => false,
+                    //         );
+                    //         ScaffoldMessenger.of(context).showSnackBar(
+                    //           SnackBar(
+                    //             content: const Text('Account logged out successfully.'),
+                    //             backgroundColor: Colors.green,
+                    //           ),
+                    //         );
+                    //       });
+                    //     },
+                    //   ),
+                    // ),
                   ],
                 ),
               ),

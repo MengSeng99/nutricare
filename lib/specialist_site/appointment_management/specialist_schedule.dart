@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import '../../main.dart';
 import '../../scheduled_appointment/reschedule.dart';
 import 'specialist_appointment_details.dart';
-import 'specialist_chatlist.dart';
 
 class SpecialistSchedulesScreen extends StatefulWidget {
   const SpecialistSchedulesScreen({super.key});
@@ -42,28 +41,12 @@ class _SpecialistSchedulesScreenState extends State<SpecialistSchedulesScreen> w
               indicatorColor: Color.fromARGB(255, 78, 98, 215),
               indicatorWeight: 3,
               tabs: [
-                Tab(text: "Upcoming"),
-                Tab(text: "Completed"),
-                Tab(text: "Canceled"),
+                Tab(text: "Upcoming", icon: Icon(Icons.schedule_outlined)),
+                Tab(text: "Completed", icon: Icon(Icons.done)),
+                Tab(text: "Canceled", icon: Icon(Icons.cancel_outlined)),
               ],
             ),
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.chat_bubble_outline_rounded,
-                  color: Color.fromARGB(255, 90, 113, 243)),
-              onPressed: () {
-                // Navigate to chat screen or perform desired action here
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        SpecialistChatListScreen(), // Replace with your chat screen
-                  ),
-                );
-              },
-            ),
-          ],
         ),
         body: const TabBarView(
           children: [
@@ -87,6 +70,7 @@ class AppointmentsTab extends StatefulWidget {
 
 class _AppointmentsTabState extends State<AppointmentsTab> {
   late Future<List<Map<String, dynamic>>> _appointmentsFuture;
+  String _selectedSortOption = 'Appointment Date'; // Default sort option
 
   @override
   void initState() {
@@ -127,18 +111,15 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
               .collection('details')
               .get();
 
-          // Fetch data from each detail
           for (var detailDoc in detailsSnapshot.docs) {
             Map<String, dynamic> detailData = detailDoc.data() as Map<String, dynamic>;
 
-            // Only include appointments that match the status filter
             if (detailData.containsKey('appointmentStatus') &&
                 widget.statusFilter.contains(detailData['appointmentStatus'])) {
-              // Merge detail data with client information
               detailData['clientId'] = clientId;
               detailData['appointmentId'] = appointmentId;
-              detailData['clientName'] = clientName; 
-              detailData['clientProfilePic'] = clientProfilePic; 
+              detailData['clientName'] = clientName;
+              detailData['clientProfilePic'] = clientProfilePic;
               detailData['amountPaid'] = detailData['amountPaid'] ?? 0;
               detailData['paymentCardUsed'] = detailData['paymentCardUsed'] ?? 'N/A';
               detailData['createdAt'] = (detailData['createdAt'] as Timestamp).toDate();
@@ -148,60 +129,132 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
         }
       }
     }
+
+    // Sort appointments based on the selected option
+    switch (_selectedSortOption) {
+      case 'Appointment Id':
+        appointments.sort((a, b) => a['appointmentId'].compareTo(b['appointmentId']));
+        break;
+      case 'Client Name':
+        appointments.sort((a, b) => a['clientName'].compareTo(b['clientName']));
+        break;
+      case 'Appointment Date':
+      default:
+        appointments.sort((a, b) => (a['selectedDate'] as Timestamp).toDate().compareTo((b['selectedDate'] as Timestamp).toDate()));
+        break;
+    }
+
     return appointments;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _appointmentsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(
-            child: Text(
-              "No Scheduled Appointments Found",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[600],
-              ),
-            ),
-          );
-        }
-
-        return ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: snapshot.data!.map((data) {
-            return AppointmentCard(
-              appointmentId: data['appointmentId'],
-              date: (data['selectedDate'] as Timestamp).toDate(),
-              time: data['selectedTimeSlot'] ?? 'N/A',
-              appointmentMode: data['appointmentMode'],
-              appointmentStatus: data['appointmentStatus'],
-              service: data['serviceName'],
-              clientName: data['clientName'], 
-              clientProfilePic: data['clientProfilePic'], 
-              amountPaid: data['amountPaid'],               
-              paymentCardUsed: data['paymentCardUsed'], 
-              createdAt: data['createdAt'], 
-              clientId: data['clientId'],
-              specialistName: data['specialistName'],
-              refreshAppointments: refreshAppointments,
-            );
-          }).toList(),
-        );
-      },
-    );
   }
 
   void refreshAppointments() {
     setState(() {
-      _appointmentsFuture = _retrieveAppointmentData();
+      _appointmentsFuture = _retrieveAppointmentData(); // Refresh data
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Sort Dropdown
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30), // Make it circular
+          // border: Border.all(color: Colors.grey.shade400, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.5),
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16), // Padding inside card
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Sort By:",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 90, 113, 243),
+                  ),
+                ),
+                DropdownButton<String>(
+                  value: _selectedSortOption,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedSortOption = newValue!;
+                      refreshAppointments();
+                    });
+                  },
+                  items: <String>[
+                    'Appointment Date',
+                    'Specialist Name',
+                    'Appointment Id',
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _appointmentsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(
+                  child: Text(
+                    "No Scheduled Appointments Found",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                );
+              }
+
+              return ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: snapshot.data!.map((data) {
+                  return AppointmentCard(
+                    appointmentId: data['appointmentId'],
+                    date: (data['selectedDate'] as Timestamp).toDate(),
+                    time: data['selectedTimeSlot'] ?? 'N/A',
+                    appointmentMode: data['appointmentMode'],
+                    appointmentStatus: data['appointmentStatus'],
+                    service: data['serviceName'],
+                    clientName: data['clientName'],
+                    clientProfilePic: data['clientProfilePic'],
+                    amountPaid: data['amountPaid'],
+                    paymentCardUsed: data['paymentCardUsed'],
+                    createdAt: data['createdAt'],
+                    clientId: data['clientId'],
+                    specialistName: data['specialistName'],
+                    refreshAppointments: refreshAppointments,
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -383,69 +436,87 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        ElevatedButton(
-          onPressed: () => _showCancelConfirmationDialog(context),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromARGB(255, 232, 235, 247),
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          child: const Text(
-            "Cancel",
-            style: TextStyle(color: Color.fromARGB(255, 59, 59, 59), fontSize: 16),
-          ),
-        ),
-        const SizedBox(width: 12),
-        ElevatedButton(
-          onPressed: () async {
-            // Get specialistId (current user ID)
-            String specialistId = FirebaseAuth.instance.currentUser!.uid;
-            // Fetch the specialist name
-            DocumentSnapshot specialistDoc = await FirebaseFirestore.instance
-                .collection('specialists')
-                .doc(specialistId)
-                .get();
-            String specialistName = (specialistDoc.data() as Map<String, dynamic>)['name'] ?? 'Unknown';
-            
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RescheduleScreen(
-                  appointmentId: appointmentId,
-                  originalDate: date,
-                  originalTime: time,
-                  appointmentMode: appointmentMode,
-                  specialistId: specialistId, // Pass the specialist ID
-                  specialistName: specialistName, // Pass the specialist name
-                  onRefresh: refreshAppointments, 
-                ),
-              ),
-            ).then((_) {
-              // After going back from the reschedule screen, refresh the appointments
-              refreshAppointments();
-            });
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          child: const Text(
-            "Reschedule",
-            style: TextStyle(color: Colors.white, fontSize: 16),
+ Widget _buildActionButtons(BuildContext context) {
+  // Get the current date
+  final currentDate = DateTime.now();
+
+  // Calculate the difference in days
+  final differenceInDays = date.difference(currentDate).inDays;
+
+  // Check if the appointment is in the past, today, or tomorrow
+  final bool isPastOrTodayOrTomorrow = differenceInDays <= 0; // Adjusted condition
+
+  // Define common styles for inactive buttons
+  final Color inactiveColor = Colors.grey; // Inactive color
+  final Color textColor = isPastOrTodayOrTomorrow ? Colors.grey : Colors.white; 
+
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.end,
+    children: [
+      ElevatedButton(
+        onPressed: isPastOrTodayOrTomorrow
+            ? null // Disable the button
+            : () => _showCancelConfirmationDialog(context),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isPastOrTodayOrTomorrow ? inactiveColor : const Color.fromARGB(255, 232, 235, 247),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
-      ],
-    );
-  }
+        child: Text(
+          "Cancel",
+          style: TextStyle(
+            color: textColor,
+            fontSize: 16,
+          ),
+        ),
+      ),
+      const SizedBox(width: 12),
+      ElevatedButton(
+        onPressed: isPastOrTodayOrTomorrow
+            ? null // Disable the button
+            : () async {
+                String specialistId = FirebaseAuth.instance.currentUser!.uid;
+                DocumentSnapshot specialistDoc =
+                    await FirebaseFirestore.instance
+                        .collection('specialists')
+                        .doc(specialistId)
+                        .get();
+                String specialistName = (specialistDoc.data() as Map<String, dynamic>)['name'] ?? 'Unknown';
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RescheduleScreen(
+                      appointmentId: appointmentId,
+                      originalDate: date,
+                      originalTime: time,
+                      appointmentMode: appointmentMode,
+                      specialistId: specialistId,
+                      specialistName: specialistName,
+                      onRefresh: refreshAppointments,
+                    ),
+                  ),
+                ).then((_) {
+                  refreshAppointments();
+                });
+              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isPastOrTodayOrTomorrow ? inactiveColor : const Color.fromARGB(255, 90, 113, 243),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: Text(
+          "Reschedule",
+          style: TextStyle(color: textColor, fontSize: 16),
+        ),
+      ),
+    ],
+  );
+}
 
   void _showCancelConfirmationDialog(BuildContext context) {
     showDialog(

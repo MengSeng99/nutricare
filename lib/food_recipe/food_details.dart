@@ -18,25 +18,43 @@ class FoodDetailsScreen extends StatefulWidget {
 
 class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   bool isBookmarked = false;
+
+  // State to hold fetched data
+  Map<String, dynamic>? recipe;
+  List<Map<String, dynamic>> ingredients = [];
+  List<Map<String, dynamic>> steps = [];
+  List<Map<String, dynamic>> nutritionalFacts = [];
+
+  // State to track visibility of sections
   bool showIngredients = false;
   bool showSteps = false;
   bool showNutritionalFacts = false;
 
-  // State to hold fetched data for lazy loading
-  List<Map<String, dynamic>>? ingredients;
-  List<Map<String, dynamic>>? steps;
-  List<Map<String, dynamic>>? nutritionalFacts;
-
   @override
   void initState() {
     super.initState();
-    isBookmarked = widget.isBookmarked; // Initialize the bookmark status
+    isBookmarked = widget.isBookmarked;
+    _fetchData(); // Fetch all data when the screen initializes
   }
 
-  // Method to toggle favorite status of a recipe
+  Future<void> _fetchData() async {
+    try {
+      // Fetch recipe data
+      recipe = await _getRecipeData();
+      // Fetch ingredients, steps, and nutritional facts
+      ingredients = await _getIngredients();
+      steps = await _getSteps();
+      nutritionalFacts = await _getNutritionalFacts();
+    } catch (e) {
+      // Handle error appropriately, perhaps log it or show a message
+      print("Error fetching data: $e");
+    }
+    setState(() {}); // Refresh the UI after data is fetched
+  }
+
   Future<void> _toggleFavoriteStatus(String recipeId) async {
     final User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return; // Ensure the user is authenticated
+    if (user == null) return;
 
     final favRecipesRef = FirebaseFirestore.instance
         .collection('users')
@@ -44,33 +62,27 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
         .collection('favorite_recipes_lists')
         .doc(recipeId);
 
-    // First check if the document exists
     DocumentSnapshot docSnapshot = await favRecipesRef.get();
 
     if (docSnapshot.exists) {
-      // If it exists, remove (unbookmark) the recipe
       await favRecipesRef.delete().then((_) {
         setState(() {
-          isBookmarked = false; // Update the local state to reflect the change
+          isBookmarked = false;
         });
       }).catchError((error) {
-        // Error handling: you can log it or show a message
         print("Failed to remove bookmark: $error");
       });
     } else {
-      // If it does not exist, add the recipe to Firestore
       await favRecipesRef.set({'isBookmarked': true}).then((_) {
         setState(() {
-          isBookmarked = true; // Update the local state to reflect the change
+          isBookmarked = true;
         });
       }).catchError((error) {
-        // Error handling: you can log it or show a message
         print("Failed to add bookmark: $error");
       });
     }
   }
 
-  // Fetch basic recipe data
   Future<Map<String, dynamic>> _getRecipeData() async {
     try {
       DocumentSnapshot recipeSnapshot = await FirebaseFirestore.instance
@@ -78,7 +90,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
           .doc(widget.recipeId)
           .get();
 
-      return {'recipe': recipeSnapshot.data()};
+      return recipeSnapshot.data() as Map<String, dynamic>;
     } catch (e) {
       throw Exception("Error fetching recipe data: $e");
     }
@@ -101,7 +113,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
         .collection('recipes')
         .doc(widget.recipeId)
         .collection('steps')
-        .orderBy('number', descending: false) // Order the steps by number
+        .orderBy('number', descending: false)
         .get();
 
     return stepsSnapshot.docs
@@ -120,7 +132,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
       Map<String, dynamic> factData = doc.data() as Map<String, dynamic>;
       return {
         'label': factData['label'],
-        'value': _toDouble(factData['value']), // Ensure proper type conversion
+        'value': _toDouble(factData['value']),
       };
     }).toList();
   }
@@ -138,70 +150,50 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _getRecipeData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text('No data found.'));
-          }
-
-          Map<String, dynamic> recipe = snapshot.data!['recipe'];
-
-          return Stack(
-            children: [
-              // Image at the top
-              Positioned(
-                top: 0, // Fix the image at the top of the page
-                left: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return Dialog(
-                          backgroundColor: Colors.transparent,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius:
-                                  BorderRadius.circular(30), // Rounded corners
-                              image: DecorationImage(
-                                image: NetworkImage(recipe['imageUrl']),
-                                fit: BoxFit.contain, // Adjust as needed
+      body: recipe == null // Check if data is already fetched
+          ? const Center(child: CircularProgressIndicator()) // Show loading indicator while data is being fetched
+          : Stack(
+              children: [
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return Dialog(
+                            backgroundColor: Colors.transparent,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(30),
+                                image: DecorationImage(
+                                  image: NetworkImage(recipe!['imageUrl']),
+                                  fit: BoxFit.contain,
+                                ),
                               ),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                  30), // Ensure the image respects the border radius
-                              child: Stack(
-                                children: [
-                                  // Image background can be set here if needed
-                                  // Adding a GestureDetector to detect taps
-                                  GestureDetector(
-                                    onTap: () => Navigator.of(context)
-                                        .pop(), // Closing on tap
-                                    child: Container(
-                                      child: Image.network(
-                                        recipe['imageUrl'],
-                                        fit: BoxFit.fitWidth,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(30),
+                                child: Stack(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () => Navigator.of(context).pop(),
+                                      child: Container(
+                                        child: Image.network(
+                                          recipe!['imageUrl'],
+                                          fit: BoxFit.fitWidth,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  // Close button
-                                  Positioned(
+                                    Positioned(
                                       top: 16,
                                       right: 16,
                                       child: Container(
                                         decoration: BoxDecoration(
                                           color: const Color.fromARGB(255, 34, 42, 92)
-                                              .withOpacity(
-                                                  0.4),
-                                          borderRadius: BorderRadius.circular(
-                                              30), 
+                                              .withOpacity(0.4),
+                                          borderRadius: BorderRadius.circular(30),
                                         ),
                                         child: IconButton(
                                           icon: Icon(
@@ -209,261 +201,219 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                             color: Colors.white,
                                             size: 30,
                                           ),
-                                          onPressed: () => Navigator.of(context)
-                                              .pop(), // Close on press
+                                          onPressed: () => Navigator.of(context).pop(),
                                         ),
-                                      )),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                  child: Container(
-                    height: MediaQuery.of(context).size.height * 0.5,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: NetworkImage(recipe['imageUrl']),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              DraggableScrollableSheet(
-                initialChildSize: 0.67,
-                minChildSize: 0.5,
-                maxChildSize: 0.85,
-                builder: (context, scrollController) {
-                  return Container(
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(20.0)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        // Gray bar at the top
-                        Container(
-                          height: 4.0, // Height of the bar
-                          width: 40.0, // Width of the bar
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade400, // Gray color
-                            borderRadius:
-                                BorderRadius.circular(2.0), // Rounded edges
-                          ),
-                        ),
-                        const SizedBox(
-                            height: 0.0), // Space between the bar and content
-                        Expanded(
-                          child: ListView(
-                            controller: scrollController,
-                            children: [
-                              // Recipe Title
-                              Text(
-                                recipe['title'],
-                                style: const TextStyle(
-                                  fontSize: 26.0,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8.0),
-                              Text(
-                                recipe['category'],
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                              const SizedBox(height: 5.0),
-
-                              // Info Cards
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: [
-                                    _buildInfoCard(
-                                        "${recipe['cookingTime']} mins",
-                                        Icons.timer),
-                                    _buildInfoCard(
-                                        "${recipe['servings']} Servings",
-                                        Icons.people),
-                                    _buildInfoCard("${recipe['calories']} Cal",
-                                        Icons.local_fire_department),
-                                    _buildInfoCard(recipe['difficulty'],
-                                        Icons.emoji_emotions),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 5.0),
-
-                              // Ingredients Section (Lazy Load)
-                              _buildCollapsibleSection(
-                                "Ingredients",
-                                showIngredients,
-                                () {
-                                  setState(() {
-                                    showIngredients = !showIngredients;
-                                    if (showIngredients &&
-                                        ingredients == null) {
-                                      _getIngredients().then((data) {
-                                        setState(() {
-                                          ingredients = data;
-                                        });
-                                      });
-                                    }
-                                  });
-                                },
-                                showIngredients
-                                    ? ingredients == null
-                                        ? const CircularProgressIndicator()
-                                        : Column(
-                                            children: ingredients!
-                                                .map((ingredient) =>
-                                                    _buildIngredientItem(
-                                                        ingredient['name']))
-                                                .toList(),
-                                          )
-                                    : null,
-                              ),
-
-                              const SizedBox(height: 5.0),
-
-                              // Steps Section (Lazy Load)
-                              _buildCollapsibleSection(
-                                "Steps to Cook",
-                                showSteps,
-                                () {
-                                  setState(() {
-                                    showSteps = !showSteps;
-                                    if (showSteps && steps == null) {
-                                      _getSteps().then((data) {
-                                        setState(() {
-                                          steps = data;
-                                        });
-                                      });
-                                    }
-                                  });
-                                },
-                                showSteps
-                                    ? steps == null
-                                        ? const CircularProgressIndicator()
-                                        : Column(
-                                            children: steps!
-                                                .map((step) => _buildStepCard(
-                                                    step['number'],
-                                                    step['description']))
-                                                .toList(),
-                                          )
-                                    : null,
-                              ),
-
-                              const SizedBox(height: 5.0),
-
-                              // Nutritional Facts Section (Lazy Load)
-                              _buildCollapsibleSection(
-                                "Nutritional Facts",
-                                showNutritionalFacts,
-                                () {
-                                  setState(() {
-                                    showNutritionalFacts =
-                                        !showNutritionalFacts;
-                                    if (showNutritionalFacts &&
-                                        nutritionalFacts == null) {
-                                      _getNutritionalFacts().then((data) {
-                                        setState(() {
-                                          nutritionalFacts = data;
-                                        });
-                                      });
-                                    }
-                                  });
-                                },
-                                showNutritionalFacts
-                                    ? nutritionalFacts == null
-                                        ? const CircularProgressIndicator()
-                                        : Column(
-                                            children: nutritionalFacts!
-                                                .map((fact) =>
-                                                    _buildNutritionalFact(
-                                                        fact['label'],
-                                                        fact['value']))
-                                                .toList(),
-                                          )
-                                    : null,
-                              ),
-                            ],
-                          ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    child: Container(
+                      height: MediaQuery.of(context).size.height * 0.5,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: NetworkImage(recipe!['imageUrl']),
+                          fit: BoxFit.cover,
                         ),
-                      ],
+                      ),
                     ),
-                  );
-                },
-              ),
-
-              // Back and Bookmark Buttons
-              Positioned(
-                top: 40.0,
-                left: 16.0,
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(isBookmarked),
-                  child: Container(
-                    padding: const EdgeInsets.all(10.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    child:
-                        const Icon(Icons.arrow_back, color: Color(0xFF5A71F3)),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 40.0,
-                right: 16.0,
-                child: GestureDetector(
-                  onTap: () async {
-                    await _toggleFavoriteStatus(
-                        widget.recipeId); // Call toggle method
-                    setState(
-                        () {}); // This will force a refresh after the async call.
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isBookmarked
-                              ? 'Added to Bookmarks'
-                              : 'Removed from Bookmarks',
-                        ),
-                        backgroundColor: Colors.green,
-                        duration: const Duration(seconds: 1),
+                DraggableScrollableSheet(
+                  initialChildSize: 0.67,
+                  minChildSize: 0.5,
+                  maxChildSize: 0.85,
+                  builder: (context, scrollController) {
+                    return Container(
+                      padding: const EdgeInsets.all(16.0),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            height: 4.0,
+                            width: 40.0,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade400,
+                              borderRadius: BorderRadius.circular(2.0),
+                            ),
+                          ),
+                          const SizedBox(height: 0.0),
+                          Expanded(
+                            child: ListView(
+                              controller: scrollController,
+                              children: [
+                                // Recipe Title
+                                Text(
+                                  recipe!['title'],
+                                  style: const TextStyle(
+                                    fontSize: 26.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8.0),
+                                Text(
+                                  recipe!['category'],
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                                const SizedBox(height: 5.0),
+
+                                // Info Cards
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      _buildInfoCard(
+                                          "${recipe!['cookingTime']} mins",
+                                          Icons.timer),
+                                      _buildInfoCard(
+                                          "${recipe!['servings']} Servings",
+                                          Icons.people),
+                                      _buildInfoCard("${recipe!['calories']} Cal",
+                                          Icons.local_fire_department),
+                                      _buildInfoCard(recipe!['difficulty'],
+                                          Icons.emoji_emotions),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 5.0),
+
+                                // Ingredients Section
+                                _buildCollapsibleSection(
+                                  "Ingredients",
+                                  showIngredients,
+                                  () {
+                                    setState(() {
+                                      showIngredients = !showIngredients; // toggle the state
+                                    });
+                                  },
+                                  showIngredients
+                                      ? Column(
+                                          children: ingredients
+                                              .map((ingredient) =>
+                                                  _buildIngredientItem(ingredient['name']))
+                                              .toList(),
+                                        )
+                                      : null,
+                                ),
+
+                                const SizedBox(height: 5.0),
+
+                                // Steps Section
+                                _buildCollapsibleSection(
+                                  "Steps to Cook",
+                                  showSteps,
+                                  () {
+                                    setState(() {
+                                      showSteps = !showSteps; // toggle the state
+                                    });
+                                  },
+                                  showSteps
+                                      ? Column(
+                                          children: steps
+                                              .map((step) => _buildStepCard(
+                                                  step['number'],
+                                                  step['description']))
+                                              .toList(),
+                                        )
+                                      : null,
+                                ),
+
+                                const SizedBox(height: 5.0),
+
+                                // Nutritional Facts Section
+                                _buildCollapsibleSection(
+                                  "Nutritional Facts",
+                                  showNutritionalFacts,
+                                  () {
+                                    setState(() {
+                                      showNutritionalFacts = !showNutritionalFacts; // toggle the state
+                                    });
+                                  },
+                                  showNutritionalFacts
+                                      ? Column(
+                                          children: nutritionalFacts
+                                              .map((fact) =>
+                                                  _buildNutritionalFact(fact['label'], fact['value']))
+                                              .toList(),
+                                        )
+                                      : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },
-                  child: Container(
-                    padding: const EdgeInsets.all(10.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    child: Icon(
-                      isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                      color: const Color(0xFF5A71F3),
+                ),
+
+                // Back and Bookmark Buttons
+                Positioned(
+                  top: 40.0,
+                  left: 16.0,
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(isBookmarked),
+                    child: Container(
+                      padding: const EdgeInsets.all(10.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: const Icon(Icons.arrow_back, color: Color(0xFF5A71F3)),
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
-      ),
+                Positioned(
+                  top: 40.0,
+                  right: 16.0,
+                  child: GestureDetector(
+                    onTap: () async {
+                      await _toggleFavoriteStatus(widget.recipeId);
+                      setState(() {});
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            isBookmarked
+                                ? 'Added to Bookmarks'
+                                : 'Removed from Bookmarks',
+                          ),
+                          backgroundColor: Colors.green,
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(10.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Icon(
+                        isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                        color: const Color(0xFF5A71F3),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -484,10 +434,9 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
               title: Text(title,
                   style: const TextStyle(
                       fontSize: 18.0, fontWeight: FontWeight.bold)),
-              trailing:
-                  Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
+              trailing: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
             ),
-            if (isExpanded && content != null) content,
+            if (isExpanded) content ?? const SizedBox(), // Show content only if expanded
           ],
         ),
       ),
@@ -496,8 +445,8 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
 
   Widget _buildInfoCard(String title, IconData icon) {
     return Card(
-      margin: const EdgeInsets.all( 12.0),
-      elevation: 0, // Remove shadow
+      margin: const EdgeInsets.all(12.0),
+      elevation: 0,
       shape: RoundedRectangleBorder(
         side: BorderSide(
             color: const Color.fromARGB(255, 218, 218, 218), width: 1),
@@ -510,22 +459,22 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
           children: [
             CircleAvatar(
               backgroundColor: Color(0xFF5A71F3),
-              radius: 28, // Increased size of the circle
+              radius: 28,
               child: Icon(
                 icon,
                 color: Color.fromARGB(255, 255, 255, 255),
-                size: 28, // Larger icon size
+                size: 28,
               ),
             ),
-            const SizedBox(height: 10.0), // Increased spacing
+            const SizedBox(height: 10.0),
             Text(
               title,
               style: const TextStyle(
-                fontSize: 18.0, // Slightly larger text
-                fontWeight: FontWeight.w600, // Semi-bold text
-                color: Colors.black87, // Darker text color for contrast
+                fontSize: 18.0,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
               ),
-              textAlign: TextAlign.center, // Centered text
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -537,7 +486,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 2.0),
       child: Card(
-        elevation: 0, // Slight shadow for depth
+        elevation: 0,
         shape: RoundedRectangleBorder(
           side: BorderSide(
               color: const Color.fromARGB(255, 218, 218, 218), width: 1),
@@ -545,14 +494,14 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
         ),
         child: ListTile(
           leading: Icon(
-            Icons.check_circle, // Icon to indicate inclusion
-            color: Color(0xFF5A71F3), // Custom color
+            Icons.check_circle,
+            color: Color(0xFF5A71F3),
           ),
           title: Text(
             ingredient,
             style: const TextStyle(
-              fontSize: 16.0, // Larger font size for better readability
-              fontWeight: FontWeight.w500, // Medium weight for the text
+              fontSize: 16.0,
+              fontWeight: FontWeight.w500,
             ),
           ),
           contentPadding: const EdgeInsets.only(left: 16.0, top: 4, bottom: 4),
@@ -565,12 +514,11 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 2.0),
       child: Card(
-        elevation: 0, // No shadow
+        elevation: 0,
         shape: RoundedRectangleBorder(
           side: BorderSide(
-              color: const Color.fromARGB(255, 218, 218, 218),
-              width: 1), // Grey border
-          borderRadius: BorderRadius.circular(12), // Rounded corners
+              color: const Color.fromARGB(255, 218, 218, 218), width: 1),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: ListTile(
           leading: CircleAvatar(
@@ -578,20 +526,19 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
             child: Text(
               "$stepNumber",
               style: const TextStyle(
-                color: Colors.white, // Change text color for contrast
-                fontWeight: FontWeight.bold, // Bold text for emphasis
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
-            ), // Custom background color
+            ),
           ),
           title: Text(
             description,
             style: const TextStyle(
-              fontSize: 16.0, // Font size for readability
-              fontWeight: FontWeight.w500, // Medium weight for text
+              fontSize: 16.0,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          contentPadding: const EdgeInsets.only(
-              left: 16.0, top: 4, bottom: 4), // Padding for space
+          contentPadding: const EdgeInsets.only(left: 16.0, top: 4, bottom: 4),
         ),
       ),
     );

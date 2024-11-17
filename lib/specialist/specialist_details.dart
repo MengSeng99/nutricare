@@ -320,7 +320,7 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
         ),
         const SizedBox(height: 10),
         for (var i = 0; i < services.length; i++)
-          _buildServiceCard(i + 1, services[i]['name'], '\$${services[i]['fee']}'),
+          _buildServiceCard(i + 1, services[i]['name'], 'RM ${services[i]['fee']}'),
       ],
     );
   }

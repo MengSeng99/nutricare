@@ -1,160 +1,30 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:nutricare/specialist_site/client_management/client_details.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ChatDetailScreen extends StatelessWidget {
+class SpecialistChatDetailScreen extends StatelessWidget {
   final String chatId;
   final String currentUserId;
   final String receiverId;
-  final String specialistName;
+  final String clientName; // Changed to clientName
   final String profilePictureUrl;
 
-  ChatDetailScreen({
+  SpecialistChatDetailScreen({
     super.key,
     required this.chatId,
     required this.currentUserId,
     required this.receiverId,
-    required this.specialistName,
+    required this.clientName, // Changed to clientName
     required this.profilePictureUrl,
   });
 
   final TextEditingController _messageController = TextEditingController();
-
-  Future<void> _showSpecialistDetails(BuildContext context) async {
-    try {
-      DocumentSnapshot specialistDoc = await FirebaseFirestore.instance
-          .collection('specialists')
-          .doc(receiverId)
-          .get();
-
-      if (specialistDoc.exists) {
-        var specialistData = specialistDoc.data() as Map<String, dynamic>;
-
-        showDialog(
-          context: context,
-          builder: (context) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.0),
-              ),
-              elevation: 16,
-              child: Container(
-                padding: EdgeInsets.all(20.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircleAvatar(
-                      backgroundImage: NetworkImage(
-                        specialistData['profile_picture_url'] ??
-                            "https://cdn-icons-png.flaticon.com/512/9187/9187532.png",
-                      ),
-                      radius: 40,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      specialistData['name'] ?? "Specialist Details",
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 90, 113, 243),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Divider(color: Colors.grey[300]),
-                    SizedBox(height: 10),
-                    _buildDetailRow("Specialization:",
-                        specialistData['specialization'] ?? 'N/A'),
-                    _buildDetailRow("Organization:",
-                        specialistData['organization'] ?? 'N/A'),
-                    _buildDetailRow("Experience:",
-                        "${specialistData['experience_years'] ?? 'N/A'} years"),
-                    _buildDetailRow(
-                        "Gender:", specialistData['gender'] ?? 'N/A'),
-                    SizedBox(height: 10),
-                    Text(
-                      "About:",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 90, 113, 243),
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Text(
-                      specialistData['about'] ?? 'No information available.',
-                      textAlign: TextAlign.justify,
-                    ),
-                    SizedBox(height: 15),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color.fromARGB(255, 90, 113, 243),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Dismiss the dialog
-                      },
-                      child: const Text(
-                        "Close",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      } else {
-        print("No specialist found");
-      }
-    } catch (e) {
-      print("Error fetching specialist details: $e");
-    }
-  }
-
-  static Widget _buildDetailRow(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 90, 113, 243),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: TextStyle(color: Colors.black54),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +42,7 @@ class ChatDetailScreen extends StatelessWidget {
             ),
             SizedBox(width: 16),
             Text(
-              specialistName,
+              clientName, // Changed to clientName
               style: TextStyle(
                 color: Color.fromARGB(255, 90, 113, 243),
                 fontWeight: FontWeight.bold,
@@ -184,7 +54,14 @@ class ChatDetailScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.info_outline),
             onPressed: () {
-              _showSpecialistDetails(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ClientDetailsScreen(
+                    clientId: receiverId,
+                    clientName: clientName,
+                  ),
+                ),
+              );
             },
           ),
         ],
@@ -216,14 +93,31 @@ class ChatDetailScreen extends StatelessWidget {
 
                 return ListView.builder(
                   itemCount: messages.length,
-                  itemBuilder: (context, index) {
+                       itemBuilder: (context, index) {
                     var messageData =
                         messages[index].data() as Map<String, dynamic>;
                     bool isMe = messageData['senderId'] == currentUserId;
 
-                    bool showProfilePicture = index > 0
-                        ? messages[index - 1]['senderId'] != currentUserId
-                        : true;
+                    // Determine visibility of the profile picture based on the previous message
+                    bool showProfilePicture = true; // Default for first message
+                    if (index > 0) {
+                      var previousMessageData =
+                          messages[index - 1].data() as Map<String, dynamic>;
+                      showProfilePicture = previousMessageData['senderId'] !=
+                          messageData['senderId'];
+                    }
+
+                    if (index == 0) {
+                      showProfilePicture =
+                          true; // Always show for the very first message
+                    } else if (messages[index - 1]['senderId'] ==
+                        currentUserId) {
+                      showProfilePicture =
+                          false; // Hide the profile picture for consecutive messages from the same sender
+                    } else {
+                      showProfilePicture =
+                          true; // Show if this message is from a different sender
+                    }
 
                     DateTime? previousMessageDate = index > 0
                         ? (messages[index - 1].data()
@@ -253,7 +147,7 @@ class ChatDetailScreen extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
-                    maxLines: null, // Allows the TextField to expand as needed
+                    maxLines: null,
                     decoration: InputDecoration(
                       hintText: "Type a message",
                       hintStyle: TextStyle(color: Colors.grey),
@@ -380,13 +274,16 @@ class ChatDetailScreen extends StatelessWidget {
             mainAxisAlignment:
                 isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
             children: [
+              // Only show the client's CircleAvatar for messages not from the sender
               if (!isMe)
                 CircleAvatar(
-                  backgroundImage: NetworkImage(profilePictureUrl),
+                  backgroundImage: NetworkImage(profilePictureUrl.isNotEmpty
+                      ? profilePictureUrl
+                      : 'https://cdn-icons-png.freepik.com/512/3177/3177440.png'), // Provide a default image if empty
                   radius: 18,
                 ),
               SizedBox(width: 8),
-              Expanded( 
+              Expanded(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     maxWidth: MediaQuery.of(context).size.width * 0.75,
@@ -411,7 +308,6 @@ class ChatDetailScreen extends StatelessWidget {
                         messageData['isImage'] == true
                             ? GestureDetector(
                                 onTap: () {
-                                  // Open image details or with an image viewer
                                   launch(messageData['fileUrl']);
                                 },
                                 child: Image.network(messageData['fileUrl'],
@@ -419,6 +315,7 @@ class ChatDetailScreen extends StatelessWidget {
                               )
                             : messageData['fileUrl'] != null
                                 ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Icon(Icons.attach_file,
                                           color: isMe
@@ -464,10 +361,11 @@ class ChatDetailScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 8),
+              // Show the specialist's CircleAvatar for messages from the sender
               if (isMe && showProfilePicture)
                 FutureBuilder<DocumentSnapshot>(
                   future: FirebaseFirestore.instance
-                      .collection('users')
+                      .collection('specialists')
                       .doc(currentUserId)
                       .get(),
                   builder: (context, userSnapshot) {
@@ -489,7 +387,7 @@ class ChatDetailScreen extends StatelessWidget {
                         userSnapshot.data!.data() as Map<String, dynamic>;
                     return CircleAvatar(
                       backgroundImage: NetworkImage(
-                        userData['profile_pic'] ??
+                        userData['profile_picture_url'] ??
                             "https://cdn-icons-png.freepik.com/512/3177/3177440.png",
                       ),
                       radius: 18,

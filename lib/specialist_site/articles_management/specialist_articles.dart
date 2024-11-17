@@ -116,7 +116,7 @@ class SpecialistArticlesScreen extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     side: const BorderSide(
                         color: Color.fromARGB(255, 221, 222, 226), width: 1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(15),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),

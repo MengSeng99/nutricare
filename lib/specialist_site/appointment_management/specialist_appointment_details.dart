@@ -33,15 +33,17 @@ class SpecialistAppointmentDetailsScreen extends StatefulWidget {
     required this.amountPaid,
     required this.paymentCardUsed,
     required this.createdAt,
-    required this.clientId, 
+    required this.clientId,
     required this.onRefresh,
   });
 
   @override
-  _SpecialistAppointmentDetailsScreenState createState() => _SpecialistAppointmentDetailsScreenState();
+  _SpecialistAppointmentDetailsScreenState createState() =>
+      _SpecialistAppointmentDetailsScreenState();
 }
 
-class _SpecialistAppointmentDetailsScreenState extends State<SpecialistAppointmentDetailsScreen> {
+class _SpecialistAppointmentDetailsScreenState
+    extends State<SpecialistAppointmentDetailsScreen> {
   late String appointmentStatus;
 
   @override
@@ -110,7 +112,9 @@ class _SpecialistAppointmentDetailsScreenState extends State<SpecialistAppointme
                         radius: 35,
                         child: widget.clientProfilePic.isEmpty
                             ? Text(
-                                widget.clientName.isNotEmpty ? widget.clientName[0] : '?',
+                                widget.clientName.isNotEmpty
+                                    ? widget.clientName[0]
+                                    : '?',
                                 style: const TextStyle(
                                     fontSize: 24, fontWeight: FontWeight.bold),
                               )
@@ -149,6 +153,12 @@ class _SpecialistAppointmentDetailsScreenState extends State<SpecialistAppointme
                     DateFormat('MMMM dd, yyyy').format(widget.date)),
                 _buildAppointmentInfo(Icons.access_time, "Time", widget.time),
                 _buildAppointmentInfo(
+                    widget.appointmentMode == "Physical"
+                        ? Icons.people_alt_outlined
+                        : Icons.video_call_outlined,
+                    "Appointment Mode",
+                    widget.appointmentMode),
+                _buildAppointmentInfo(
                     Icons.miscellaneous_services, "Service", widget.service),
               ],
             ),
@@ -158,12 +168,13 @@ class _SpecialistAppointmentDetailsScreenState extends State<SpecialistAppointme
               children: [
                 _buildAppointmentInfo(Icons.attach_money, "Amount Paid",
                     "\$${widget.amountPaid.toStringAsFixed(2)}"),
-                _buildAppointmentInfo(Icons.account_balance_wallet_outlined,
-                    "Appointment Mode", widget.appointmentMode),
+                _buildAppointmentInfo(Icons.credit_card, "Payment Card Used",
+                    widget.paymentCardUsed),
                 _buildAppointmentInfo(
-                    Icons.credit_card, "Payment Card Used", widget.paymentCardUsed),
-                _buildAppointmentInfo(Icons.payment, "Pay On",
-                    DateFormat('MMMM dd, yyyy, hh:mm a').format(widget.createdAt)),
+                    Icons.date_range_outlined,
+                    "Pay On",
+                    DateFormat('MMMM dd, yyyy, hh:mm a')
+                        .format(widget.createdAt)),
               ],
             ),
             // At the bottom of the build method
@@ -182,7 +193,7 @@ class _SpecialistAppointmentDetailsScreenState extends State<SpecialistAppointme
                     ),
                   ),
                   child: const Text(
-                    "Mark Appointment as Completed",
+                    "Mark as Completed",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -238,7 +249,7 @@ class _SpecialistAppointmentDetailsScreenState extends State<SpecialistAppointme
       child: Row(
         children: [
           Icon(icon,
-              color: highlight ? Colors.green : Colors.blueAccent, size: 22),
+              color: highlight ? Colors.green : Color.fromARGB(255, 90, 113, 243), size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -267,135 +278,139 @@ class _SpecialistAppointmentDetailsScreenState extends State<SpecialistAppointme
   }
 
   void _showCompleteConfirmationDialog(BuildContext context) {
-  // Convert the appointment time to DateTime
-  String dateTimeString = "${DateFormat("MMMM dd, yyyy").format(widget.date)} ${widget.time}";
+    // Convert the appointment time to DateTime
+    String dateTimeString =
+        "${DateFormat("MMMM dd, yyyy").format(widget.date)} ${widget.time}";
 
-  // Log the complete datetime string to debug
-  print("Complete dateTime string: $dateTimeString");
+    // Log the complete datetime string to debug
+    print("Complete dateTime string: $dateTimeString");
 
-  try {
-    DateTime appointmentDateTime = DateFormat("MMMM dd, yyyy hh:mm a").parse(dateTimeString);
-    DateTime currentDateTime = DateTime.now();
+    try {
+      DateTime appointmentDateTime =
+          DateFormat("MMMM dd, yyyy hh:mm a").parse(dateTimeString);
+      DateTime currentDateTime = DateTime.now();
 
-    // Check if the appointment's time has passed
-    if (appointmentDateTime.isBefore(currentDateTime)) {
-      // Show the dialog if the appointment time has passed
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          title: const Text(
-            "Confirm Completion",
-            style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 90, 113, 243)),
-          ),
-          content: const Text(
-            "Please ensure you have completed the appointment before proceeding. Do you want to mark this appointment as completed?",
-            style: TextStyle(fontSize: 14.0),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+      // Check if the appointment's time has passed
+      if (appointmentDateTime.isBefore(currentDateTime)) {
+        // Show the dialog if the appointment time has passed
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
+            title: const Text(
+              "Confirm Completion",
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 90, 113, 243)),
+            ),
+            content: const Text(
+              "Please ensure you have completed the appointment before proceeding. Do you want to mark this appointment as completed?",
+              style: TextStyle(fontSize: 14.0),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
               ),
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-                _markAppointmentAsComplete(context); // Mark as complete
-              },
-              child: const Text("Yes, Proceed",
-                  style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      );
-    } else {
-      // Show a warning if the appointment time has not passed
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pop(context); // Close the dialog
+                  _markAppointmentAsComplete(context); // Mark as complete
+                },
+                child: const Text("Yes, Proceed",
+                    style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // Show a warning if the appointment time has not passed
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                "You cannot mark this appointment as completed yet. Please wait until the scheduled time has passed."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Log the exception to understand the parsing issue
+      print("Error parsing date and time: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              "You cannot mark this appointment as completed yet. Please wait until the scheduled time has passed."),
-             backgroundColor: Colors.red,
+              "Error parsing appointment date and time. Please check the format."),
         ),
       );
     }
-  } catch (e) {
-    // Log the exception to understand the parsing issue
-    print("Error parsing date and time: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Error parsing appointment date and time. Please check the format."),
-      ),
-    );
   }
-}
 
-   Future<void> _markAppointmentAsComplete(BuildContext context) async {
+  Future<void> _markAppointmentAsComplete(BuildContext context) async {
     try {
-        // First, update the appointment status in the main appointment document
-        final appointmentDocRef = FirebaseFirestore.instance
-            .collection('appointments')
-            .doc(widget.appointmentId);
+      // First, update the appointment status in the main appointment document
+      final appointmentDocRef = FirebaseFirestore.instance
+          .collection('appointments')
+          .doc(widget.appointmentId);
 
-        // Update the appointment status to 'Completed'
-        await appointmentDocRef.update({'appointmentStatus': 'Completed'});
+      // Update the appointment status to 'Completed'
+      await appointmentDocRef.update({'appointmentStatus': 'Completed'});
 
-        // Now, reference the details subcollection of the appointment
-        final detailsCollectionRef = appointmentDocRef.collection('details');
+      // Now, reference the details subcollection of the appointment
+      final detailsCollectionRef = appointmentDocRef.collection('details');
 
-        // Get the details snapshot
-        QuerySnapshot detailsSnapshot = await detailsCollectionRef.get();
+      // Get the details snapshot
+      QuerySnapshot detailsSnapshot = await detailsCollectionRef.get();
 
-        if (detailsSnapshot.docs.isNotEmpty) {
-            // Get the reference to the first document in the details subcollection
-            DocumentReference detailDocRef = detailsSnapshot.docs.first.reference;
+      if (detailsSnapshot.docs.isNotEmpty) {
+        // Get the reference to the first document in the details subcollection
+        DocumentReference detailDocRef = detailsSnapshot.docs.first.reference;
 
-            // Update the appointment status to 'Completed' in the details subcollection
-            await detailDocRef.update({'appointmentStatus': 'Completed'});
+        // Update the appointment status to 'Completed' in the details subcollection
+        await detailDocRef.update({'appointmentStatus': 'Completed'});
 
-            // Update internal state to reflect changes
-            setState(() {
-                appointmentStatus = 'Completed'; // Update status in the UI
-            });
+        // Update internal state to reflect changes
+        setState(() {
+          appointmentStatus = 'Completed'; // Update status in the UI
+        });
 
-            // Show a success message
-            scaffoldMessengerKey.currentState?.showSnackBar(
-                SnackBar(
-                    content: Text('Appointment marked as completed successfully.'),
-                    backgroundColor: Colors.green,
-                    duration: const Duration(seconds: 2),
-                ),
-            );
-            
-            widget.onRefresh(); 
-        } else {
-            print('No appointment details found to update.');
-            scaffoldMessengerKey.currentState?.showSnackBar(
-                SnackBar(
-                    content: Text('No appointment details found.'),
-                    duration: const Duration(seconds: 2),
-                ),
-            );
-        }
-    } catch (e) {
-        print('Error marking appointment as completed: $e');
-
-        // Show an error message in case of failure
+        // Show a success message
         scaffoldMessengerKey.currentState?.showSnackBar(
-            SnackBar(
-                content: Text('Failed to mark appointment as completed. Please try again.'),
-                duration: const Duration(seconds: 2),
-            ),
+          SnackBar(
+            content: Text('Appointment marked as completed successfully.'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
         );
+
+        widget.onRefresh();
+      } else {
+        print('No appointment details found to update.');
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text('No appointment details found.'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error marking appointment as completed: $e');
+
+      // Show an error message in case of failure
+      scaffoldMessengerKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Text(
+              'Failed to mark appointment as completed. Please try again.'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
-}
+  }
 }

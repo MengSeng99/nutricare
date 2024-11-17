@@ -32,7 +32,8 @@ class _AdminAppointmentScreenState extends State<AdminAppointmentScreen>
           elevation: 0,
           actions: [
             IconButton(
-              icon: const Icon(Icons.analytics_outlined, color: Color.fromARGB(255, 90, 113, 243)),
+              icon: const Icon(Icons.analytics_outlined,
+                  color: Color.fromARGB(255, 90, 113, 243)),
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -83,6 +84,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
   String searchKeyword = '';
   List<String?> selectedSpecialists = [];
   List<String> specialists = [];
+  String? sortingOption = 'Appointment ID'; // Default sorting option
 
   @override
   void initState() {
@@ -94,7 +96,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
       });
     });
 
-    _fetchSpecialists(); 
+    _fetchSpecialists();
   }
 
   @override
@@ -128,14 +130,18 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
   }
 
   Stream<List<Map<String, dynamic>>> _retrieveAppointmentData() {
-    return FirebaseFirestore.instance.collection('appointments').snapshots().asyncMap((query) async {
+    return FirebaseFirestore.instance
+        .collection('appointments')
+        .snapshots()
+        .asyncMap((query) async {
       List<Map<String, dynamic>> appointments = [];
 
       for (var doc in query.docs) {
         String appointmentId = doc.id;
         List<dynamic>? usersArray = (doc.data())['users'] as List<dynamic>?;
 
-        QuerySnapshot detailsSnapshot = await doc.reference.collection('details').get();
+        QuerySnapshot detailsSnapshot =
+            await doc.reference.collection('details').get();
 
         for (var detailDoc in detailsSnapshot.docs) {
           final detailData = detailDoc.data() as Map<String, dynamic>;
@@ -166,31 +172,32 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: "Search by Appointment ID",
+                    hintStyle: const TextStyle(color: Colors.grey, fontSize: 13), 
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
-                  fillColor:
-                      const Color.fromARGB(255, 250, 250, 250).withOpacity(0.5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 221, 222, 226),
-                      width: 1.0,
+                    fillColor: const Color.fromARGB(255, 250, 250, 250)
+                        .withOpacity(0.5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                      borderSide: const BorderSide(
+                        color: Color.fromARGB(255, 221, 222, 226),
+                        width: 1.0,
+                      ),
                     ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 221, 222, 226),
-                      width: 1.5,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                      borderSide: const BorderSide(
+                        color: Color.fromARGB(255, 221, 222, 226),
+                        width: 1.5,
+                      ),
                     ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 90, 113, 243),
-                      width: 2.0,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                      borderSide: const BorderSide(
+                        color: Color.fromARGB(255, 90, 113, 243),
+                        width: 2.0,
+                      ),
                     ),
-                  ),
                     suffixIcon: searchKeyword.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear),
@@ -205,8 +212,14 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
               ),
               const SizedBox(width: 8.0),
               IconButton(
-                icon: const Icon(Icons.filter_list, color: Color.fromARGB(255, 90, 113, 243)),
+                icon: const Icon(Icons.filter_list,
+                    color: Color.fromARGB(255, 90, 113, 243)),
                 onPressed: () => _showFilterDialog(),
+              ),
+              IconButton(
+                icon: const Icon(Icons.sort,
+                    color: Color.fromARGB(255, 90, 113, 243)),
+                onPressed: () => _showSortDialog(),
               ),
             ],
           ),
@@ -243,6 +256,21 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                 return startsWithKeyword && matchesSpecialist;
               }).toList();
 
+              // Sort filtered appointments based on selected option
+              filteredAppointments.sort((a, b) {
+                switch (sortingOption) {
+                  case 'Specialist Name':
+                    return a['specialistName'].compareTo(b['specialistName']);
+                  case 'Date':
+                    return (a['selectedDate'] as Timestamp)
+                        .compareTo(b['selectedDate'] as Timestamp);
+                  default: // 'Appointment ID'
+                    return a['appointmentId']
+                        .toString()
+                        .compareTo(b['appointmentId'].toString());
+                }
+              });
+
               return ListView(
                 padding: const EdgeInsets.all(16.0),
                 children: filteredAppointments.map((data) {
@@ -265,77 +293,130 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
     );
   }
 
-  void _showFilterDialog() {
+ void _showFilterDialog() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: const Text(
+                'Filter by Specialists',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 90, 113, 243),
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.grey),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: specialists.map((specialist) {
+              return RadioListTile<String>(
+                value: specialist,
+                groupValue: selectedSpecialists.isNotEmpty ? selectedSpecialists.first : '',
+                title: Text(specialist),
+                onChanged: (String? value) {
+                  setState(() {
+                    if (value != null) {
+                      selectedSpecialists = [value]; // Select the specialist
+                      Navigator.of(context).pop(); // Close the dialog
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() {
+                selectedSpecialists.clear(); // Clear the selections
+              });
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text("Clear Filter"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color.fromARGB(255, 90, 113, 243),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text("Done", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+  void _showSortDialog() {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
           title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Filter by Specialists',
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: const Text(
+                'Sort by',
                 style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 90, 113, 243)),
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 90, 113, 243),
+                ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.grey),
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                },
-              ),
-            ],
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.grey),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        ),
+          content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: specialists.map((specialist) {
-                final isSelected = selectedSpecialists.contains(specialist);
-                return ChoiceChip(
-                  label: Text(specialist),
-                  selected: isSelected,
-                  selectedColor: Color.fromARGB(255, 90, 113, 243),
-                  onSelected: (bool selected) {
+              children: ['Appointment ID', 'Specialist Name', 'Date']
+                  .map((option) {
+                return RadioListTile<String>(
+                  title: Text(option),
+                  value: option,
+                  groupValue: sortingOption,
+                  onChanged: (value) {
                     setState(() {
-                      if (selected) {
-                        selectedSpecialists.add(specialist);
-                      } else {
-                        selectedSpecialists.remove(specialist);
-                      }
+                      sortingOption = value;
                     });
+                    Navigator.of(context).pop(); // Close the dialog
                   },
                 );
               }).toList(),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  selectedSpecialists.clear();
-                });
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text("Clear Filter"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color.fromARGB(255, 90, 113, 243),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text("Done", style: TextStyle(color: Colors.white)),
-            ),
-          ],
         );
       },
     );
@@ -427,9 +508,11 @@ class AppointmentCard extends StatelessWidget {
                           FutureBuilder<String?>(
                             future: _fetchUserName(users![0]),
                             builder: (context, userSnapshot) {
-                              if (userSnapshot.connectionState == ConnectionState.waiting) {
+                              if (userSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
                                 return const CircularProgressIndicator();
-                              } else if (userSnapshot.hasData && userSnapshot.data != null) {
+                              } else if (userSnapshot.hasData &&
+                                  userSnapshot.data != null) {
                                 return Text(
                                   'Client Name: ${userSnapshot.data}',
                                   style: const TextStyle(
@@ -486,7 +569,8 @@ class AppointmentCard extends StatelessWidget {
     }
   }
 
-  Future<Map<String, dynamic>?> _fetchAppointmentDetails(String appointmentId) async {
+  Future<Map<String, dynamic>?> _fetchAppointmentDetails(
+      String appointmentId) async {
     QuerySnapshot detailSnapshot = await FirebaseFirestore.instance
         .collection('appointments')
         .doc(appointmentId)
@@ -502,98 +586,112 @@ class AppointmentCard extends StatelessWidget {
   }
 
   void _showAppointmentDetailsDialog(
-    BuildContext context, Map<String, dynamic> details) async {
-  String? clientName = users != null && users!.isNotEmpty ? await _fetchUserName(users![0]) : "N/A";
+      BuildContext context, Map<String, dynamic> details) async {
+    String? clientName = users != null && users!.isNotEmpty
+        ? await _fetchUserName(users![0])
+        : "N/A";
 
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
-        title: const Text(
-          'Appointment Details',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 90, 113, 243),
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
           ),
-          textAlign: TextAlign.center,
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDetailRow(Icons.calendar_today, 'Appointment ID', details['appointmentId']),
-              _buildDetailRow(Icons.person, 'Specialist', specialistName),
-              _buildDetailRow(Icons.account_circle, 'Client', clientName ?? 'N/A'),
-              _buildDetailRow(Icons.medical_services, 'Service', details['serviceName']),
-              _buildDetailRow(Icons.date_range, 'Date', 
-                  DateFormat('MMMM dd, yyyy').format((details['selectedDate'] as Timestamp).toDate())),
-              _buildDetailRow(Icons.access_time, 'Time', details['selectedTimeSlot']),
-              _buildDetailRow(Icons.verified, 'Status', details['appointmentStatus']),
-              _buildDetailRow(Icons.video_call, 'Mode', details['appointmentMode']),
-              _buildDetailRow(Icons.attach_money, 'Amount Paid', 'RM ${details['amountPaid']}'),
-              _buildDetailRow(Icons.credit_card, 'Payment Card Used', details['paymentCardUsed']),
-              _buildDetailRow(Icons.calendar_today, 'Paid On', 
-                  DateFormat('MMMM dd, yyyy').format((details['createdAt'] as Timestamp).toDate())),
-            ],
-          ),
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text(
-              'Close',
-              style: TextStyle(color: Colors.blue),
+          title: const Text(
+            'Appointment Details',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243),
             ),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDetailRow(Icons.calendar_today, 'Appointment ID',
+                    details['appointmentId']),
+                _buildDetailRow(Icons.person, 'Specialist', specialistName),
+                _buildDetailRow(
+                    Icons.account_circle, 'Client', clientName ?? 'N/A'),
+                _buildDetailRow(
+                    Icons.medical_services, 'Service', details['serviceName']),
+                _buildDetailRow(
+                    Icons.date_range,
+                    'Date',
+                    DateFormat('MMMM dd, yyyy').format(
+                        (details['selectedDate'] as Timestamp).toDate())),
+                _buildDetailRow(
+                    Icons.access_time, 'Time', details['selectedTimeSlot']),
+                _buildDetailRow(
+                    Icons.verified, 'Status', details['appointmentStatus']),
+                _buildDetailRow(
+                    Icons.video_call, 'Mode', details['appointmentMode']),
+                _buildDetailRow(Icons.attach_money, 'Amount Paid',
+                    'RM ${details['amountPaid']}'),
+                _buildDetailRow(Icons.credit_card, 'Payment Card Used',
+                    details['paymentCardUsed']),
+                _buildDetailRow(
+                    Icons.calendar_today,
+                    'Paid On',
+                    DateFormat('MMMM dd, yyyy')
+                        .format((details['createdAt'] as Timestamp).toDate())),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text(
+                'Close',
+                style: TextStyle(color: Color.fromARGB(255, 90, 113, 243)),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: Color.fromARGB(255, 90, 113, 243), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
-      );
-    },
-  );
-}
-
-Widget _buildDetailRow(IconData icon, String label, String value) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: Color.fromARGB(255, 90, 113, 243), size: 20),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
 
   Future<String?> _fetchUserName(String userId) async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get();
+    DocumentSnapshot userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
     if (userDoc.exists) {
       return (userDoc.data() as Map<String, dynamic>)['name'];

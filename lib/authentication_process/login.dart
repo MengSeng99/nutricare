@@ -33,16 +33,17 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
         child: Form(
           key: _formKey, // Attach the form key to the Form widget
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(5),
+                borderRadius: BorderRadius.circular(50),
                 child: Image.asset(
                   'images/Logo-1x1.jpeg',
                   width: MediaQuery.of(context).size.width * 0.5,
@@ -55,9 +56,9 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   children: [
                     Text(
-                      'Welcome Back to NutriCare!',
+                      'NutriCare',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
                         color: Color.fromARGB(255, 90, 113, 243),
                       ),
@@ -135,7 +136,6 @@ class _LoginPageState extends State<LoginPage> {
                   },
                   child: const Text(
                     'Forgot Password?',
-                    style: TextStyle(color: Colors.blueAccent, fontSize: 16),
                   ),
                 ),
               ),
@@ -237,7 +237,6 @@ class _LoginPageState extends State<LoginPage> {
                 },
                 child: const Text(
                   'Don\'t have an account? Sign Up',
-                  style: TextStyle(color: Colors.blueAccent, fontSize: 16),
                 ),
               ),
             ],

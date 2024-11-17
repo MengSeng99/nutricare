@@ -310,7 +310,7 @@ class _AppointmentAnalysisScreenState
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 40,
+                    reservedSize: 20,
                     interval: maxY <= 2 ? 1 : (maxY / 4).ceilToDouble(),
                     getTitlesWidget: (value, meta) {
                       if (value % 1 == 0) {
@@ -398,31 +398,41 @@ class _AppointmentAnalysisScreenState
   }
 
   Future<Map<String, int>> _fetchSpecialistData() async {
-    Map<String, int> specialistCounts = {};
+  Map<String, int> specialistCounts = {};
 
-    Query query = FirebaseFirestore.instance.collection('appointments');
-    QuerySnapshot appointmentSnapshot = await query.get();
+  Query query = FirebaseFirestore.instance.collection('appointments');
+  QuerySnapshot appointmentSnapshot = await query.get();
 
-    for (var appointmentDoc in appointmentSnapshot.docs) {
-      QuerySnapshot detailsSnapshot =
-          await appointmentDoc.reference.collection('details').get();
+  for (var appointmentDoc in appointmentSnapshot.docs) {
+    QuerySnapshot detailsSnapshot =
+        await appointmentDoc.reference.collection('details').get();
 
-      for (var detailDoc in detailsSnapshot.docs) {
-        final detailData = detailDoc.data() as Map<String, dynamic>;
-        String specialistName = detailData['specialistName'] ?? "Unknown Specialist"; 
-        String mode = detailData['appointmentMode'] ?? "Unknown Mode"; // New line
-        if (selectedMode != null && selectedMode != mode) continue; // Apply filter
-        
-        if (specialistCounts.containsKey(specialistName)) {
-          specialistCounts[specialistName] =
-              specialistCounts[specialistName]! + 1;
-        } else {
-          specialistCounts[specialistName] = 1;
-        }
+    for (var detailDoc in detailsSnapshot.docs) {
+      final detailData = detailDoc.data() as Map<String, dynamic>;
+      String specialistName = detailData['specialistName'] ?? "Unknown Specialist"; 
+      String mode = detailData['appointmentMode'] ?? "Unknown Mode"; // New line
+
+      // Apply filters for mode, status, and month
+      if (selectedMode != null && selectedMode != mode) continue; // Filter by mode
+      String status = detailData['appointmentStatus'];
+      if (selectedStatus != null && selectedStatus != status) continue; // Filter by status
+      DateTime date = (detailData['selectedDate'] as Timestamp).toDate();
+
+      // Check month filter
+      if (selectedMonth != null && DateFormat('MMMM').format(date) != selectedMonth) {
+        continue; // Filter by month
+      }
+
+      // Increment specialist count
+      if (specialistCounts.containsKey(specialistName)) {
+        specialistCounts[specialistName] = specialistCounts[specialistName]! + 1;
+      } else {
+        specialistCounts[specialistName] = 1;
       }
     }
-    return specialistCounts;
   }
+  return specialistCounts;
+}
 
   Widget _buildSpecialistChart() {
     return FutureBuilder<Map<String, int>>(

@@ -304,12 +304,15 @@ class _HealthRecordWidgetState extends State<HealthRecordWidget> {
                 const SizedBox(height: 20),
                 Center(
                   child: ElevatedButton.icon(
-                    icon: const Icon(Icons.upload,color: Colors.white,),
+                    icon: const Icon(
+                      Icons.upload,
+                      color: Colors.white,
+                    ),
                     label: const Text('Upload Health Report',
-                    style: TextStyle(color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-                ),
+                        style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+                    ),
                     onPressed: _isUploading ? null : _uploadHealthRecord,
                   ),
                 ),
@@ -335,8 +338,14 @@ class _HealthRecordWidgetState extends State<HealthRecordWidget> {
                       final formattedTime = DateFormat('dd MMM yyyy, hh:mm a')
                           .format(record['uploadTime']);
                       return Card(
-                        elevation: 3,
-                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          side:
+                              BorderSide(color: Colors.grey.shade400, width: 1),
+                        ),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        elevation: 2,
                         child: ListTile(
                           title: Text(
                             record['fileId'],
@@ -390,8 +399,14 @@ class _HealthRecordWidgetState extends State<HealthRecordWidget> {
                   final formattedTime = DateFormat('dd MMM yyyy, hh:mm a')
                       .format(report['uploadTime']);
                   return Card(
-                    elevation: 3,
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                            color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          side:
+                              BorderSide(color: Colors.grey.shade400, width: 1),
+                        ),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        elevation: 2,
                     child: ListTile(
                         title: Text(
                           report['reportId'],

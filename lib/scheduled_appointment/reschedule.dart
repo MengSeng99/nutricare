@@ -33,6 +33,7 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
   String _selectedMode = "Physical"; // Default to "Physical"
   List<String> availableTimeSlots = [];
   bool isLoadingSlots = false;
+  bool noAvailableTimeSlots = false;
 
   @override
   void initState() {
@@ -48,7 +49,7 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
       .collection('specialists')
       .doc(widget.specialistId)
       .collection('appointments')
-      .doc(_selectedMode); // Fetch based on selected mode
+      .doc(_selectedMode);
 
   final docSnapshot = await docRef.get();
 
@@ -56,7 +57,8 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
     final data = docSnapshot.data();
     if (data != null && data['date_slots'] != null) {
       final dateSlots = Map<String, dynamic>.from(data['date_slots']);
-      List<String> slots = List<String>.from(dateSlots[selectedDateString] ?? []);
+      List<String> slots =
+          List<String>.from(dateSlots[selectedDateString] ?? []);
 
       // Sort time slots manually: AM first, then PM
       slots.sort((a, b) {
@@ -65,176 +67,175 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
 
       setState(() {
         availableTimeSlots = slots;
+        noAvailableTimeSlots = slots.isEmpty; // Track if there are no slots
         isLoadingSlots = false;
       });
     }
   } else {
     setState(() {
       availableTimeSlots = [];
+      noAvailableTimeSlots = true; // Track as no slots available
       isLoadingSlots = false;
     });
   }
 }
 
-int _compareTimeSlots(String a, String b) {
-  // Extract AM/PM and time parts
-  final ampmA = a.split(' ').last; // Get AM or PM
-  final ampmB = b.split(' ').last;
+  int _compareTimeSlots(String a, String b) {
+    // Parse time strings into DateTime objects (using a fixed date)
+    final timeA = DateTime.parse("2000-01-01 $a");
+    final timeB = DateTime.parse("2000-01-01 $b");
 
-  // If both are AM, compare times directly
-  if (ampmA == 'AM' && ampmB == 'AM') {
-    return a.compareTo(b);
-  }
-  // If both are PM, compare times directly
-  else if (ampmA == 'PM' && ampmB == 'PM') {
-    return a.compareTo(b);
-  }
-  // If one is AM and the other is PM, place AM before PM
-  else {
-    return ampmA == 'AM' ? -1 : 1; // AM comes before PM
-  }
-}
-Future<void> _rescheduleAppointment() async {
-  if (_selectedDate == null || _selectedTimeSlot == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Please select a date and a time slot."),
-      ),
-    );
-    return;
+    // Compare the DateTime objects
+    return timeA.compareTo(timeB);
   }
 
-  // Reference to the details collection
-  final detailsCollectionRef = FirebaseFirestore.instance
-      .collection('appointments')
-      .doc(widget.appointmentId)
-      .collection('details');
+  Future<void> _rescheduleAppointment() async {
+    if (_selectedDate == null || _selectedTimeSlot == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select a date and a time slot."),
+        ),
+      );
+      return;
+    }
 
-  // Fetch the details document
-  final detailsSnapshot = await detailsCollectionRef.get();
+    // Reference to the details collection
+    final detailsCollectionRef = FirebaseFirestore.instance
+        .collection('appointments')
+        .doc(widget.appointmentId)
+        .collection('details');
 
-  // Check if there are any documents in the details collection
-  if (detailsSnapshot.docs.isNotEmpty) {
-    // Update the first document in the details collection
-    DocumentReference detailDocRef = detailsSnapshot.docs.first.reference;
+    // Fetch the details document
+    final detailsSnapshot = await detailsCollectionRef.get();
 
-    await detailDocRef.update({
-      'appointmentMode': _selectedMode,
-      'selectedDate': _selectedDate,
-      'selectedTimeSlot': _selectedTimeSlot,
-      'appointmentStatus': 'Confirmed',
-    });
+    // Check if there are any documents in the details collection
+    if (detailsSnapshot.docs.isNotEmpty) {
+      // Update the first document in the details collection
+      DocumentReference detailDocRef = detailsSnapshot.docs.first.reference;
 
-    // Call onRefresh after successful reschedule
-    widget.onRefresh();
+      await detailDocRef.update({
+        'appointmentMode': _selectedMode,
+        'selectedDate': _selectedDate,
+        'selectedTimeSlot': _selectedTimeSlot,
+        'appointmentStatus': 'Confirmed',
+      });
 
-    // Check for chat and send a message about rescheduling
-    await _checkForChatAndCreateMessage();
+      // Call onRefresh after successful reschedule
+      widget.onRefresh();
 
-    // Add the original date and time slot back into Firebase Firestore
-    await _addOriginalDateAndTimeSlot();
+      // Check for chat and send a message about rescheduling
+      await _checkForChatAndCreateMessage();
 
-    // Remove the newly selected time slot from the date_slots
-    await _removeNewSelectedTimeSlot();
+      // Add the original date and time slot back into Firebase Firestore
+      await _addOriginalDateAndTimeSlot();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Appointment successfully rescheduled to $_selectedMode on ${DateFormat('yyyy-MM-dd').format(_selectedDate!)} at $_selectedTimeSlot.'),
-        backgroundColor: Colors.green,
-      ),
-    );
+      // Remove the newly selected time slot from the date_slots
+      await _removeNewSelectedTimeSlot();
 
-    Navigator.pop(context); // Go back after rescheduling
-  } else {
-    // Handle case when there are no detail documents
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("No appointment details found."),
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Appointment successfully rescheduled to $_selectedMode on ${DateFormat('yyyy-MM-dd').format(_selectedDate!)} at $_selectedTimeSlot.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context); // Go back after rescheduling
+    } else {
+      // Handle case when there are no detail documents
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No appointment details found."),
+        ),
+      );
+    }
   }
-}
 
-Future<void> _removeNewSelectedTimeSlot() async {
-  // Prepare the selected date string
-  final selectedDateString = _selectedDate!.toIso8601String().split('T')[0];
+  Future<void> _removeNewSelectedTimeSlot() async {
+    // Prepare the selected date string
+    final selectedDateString = _selectedDate!.toIso8601String().split('T')[0];
 
-  // Reference to the date slots collection for the specialist
-  final docRef = FirebaseFirestore.instance
-      .collection('specialists')
-      .doc(widget.specialistId)
-      .collection('appointments')
-      .doc(_selectedMode); // Fetch based on selected mode
+    // Reference to the date slots collection for the specialist
+    final docRef = FirebaseFirestore.instance
+        .collection('specialists')
+        .doc(widget.specialistId)
+        .collection('appointments')
+        .doc(_selectedMode); // Fetch based on selected mode
 
-  // Fetch the document
-  final docSnapshot = await docRef.get();
+    // Fetch the document
+    final docSnapshot = await docRef.get();
 
-  if (docSnapshot.exists) {
-    final data = docSnapshot.data();
-    final dateSlots = Map<String, dynamic>.from(data?['date_slots'] ?? {});
+    if (docSnapshot.exists) {
+      final data = docSnapshot.data();
+      final dateSlots = Map<String, dynamic>.from(data?['date_slots'] ?? {});
 
-    // Check if the selected date exists
-    if (dateSlots.containsKey(selectedDateString)) {
-      List<String> timeSlots = List<String>.from(dateSlots[selectedDateString] ?? []);
+      // Check if the selected date exists
+      if (dateSlots.containsKey(selectedDateString)) {
+        List<String> timeSlots =
+            List<String>.from(dateSlots[selectedDateString] ?? []);
 
-      // Remove the selected time slot from the date's time slots
-      timeSlots.remove(_selectedTimeSlot);
+        // Remove the selected time slot from the date's time slots
+        timeSlots.remove(_selectedTimeSlot);
 
-      // If the timeslots array is empty, remove the date entry
-      if (timeSlots.isEmpty) {
-        dateSlots.remove(selectedDateString);
+        // If the timeslots array is empty, remove the date entry
+        if (timeSlots.isEmpty) {
+          dateSlots.remove(selectedDateString);
+        } else {
+          // Update the time slots for that date
+          dateSlots[selectedDateString] = timeSlots;
+        }
+
+        // Update Firestore document with the modified date slots
+        await docRef.update({'date_slots': dateSlots});
+      }
+    }
+  }
+
+  Future<void> _addOriginalDateAndTimeSlot() async {
+    // Prepare the original date string
+    final originalDateString =
+        widget.originalDate.toIso8601String().split('T')[0];
+
+    // Reference to the date slots collection for the specialist
+    final docRef = FirebaseFirestore.instance
+        .collection('specialists')
+        .doc(widget.specialistId)
+        .collection('appointments')
+        .doc(_selectedMode); // Fetch based on selected mode
+
+    // Fetch the document
+    final docSnapshot = await docRef.get();
+
+    // If the document exists
+    if (docSnapshot.exists) {
+      final data = docSnapshot.data();
+      final dateSlots = Map<String, dynamic>.from(data?['date_slots'] ?? {});
+
+      // Check if the original date exists
+      if (dateSlots.containsKey(originalDateString)) {
+        // Check if the timeslot already exists
+        if (!List<String>.from(dateSlots[originalDateString])
+            .contains(widget.originalTime)) {
+          // Add the original time slot to the existing date
+          dateSlots[originalDateString].add(widget.originalTime);
+        }
       } else {
-        // Update the time slots for that date
-        dateSlots[selectedDateString] = timeSlots;
+        // If the date does not exist, create it and add the original time slot
+        dateSlots[originalDateString] = [widget.originalTime];
       }
 
-      // Update Firestore document with the modified date slots
+      // Update Firestore with the updated date slots
       await docRef.update({'date_slots': dateSlots});
     }
   }
-}
-Future<void> _addOriginalDateAndTimeSlot() async {
-  // Prepare the original date string
-  final originalDateString = widget.originalDate.toIso8601String().split('T')[0];
-
-  // Reference to the date slots collection for the specialist
-  final docRef = FirebaseFirestore.instance
-      .collection('specialists')
-      .doc(widget.specialistId)
-      .collection('appointments')
-      .doc(_selectedMode); // Fetch based on selected mode
-
-  // Fetch the document
-  final docSnapshot = await docRef.get();
-
-  // If the document exists
-  if (docSnapshot.exists) {
-    final data = docSnapshot.data();
-    final dateSlots = Map<String, dynamic>.from(data?['date_slots'] ?? {});
-
-    // Check if the original date exists
-    if (dateSlots.containsKey(originalDateString)) {
-      // Check if the timeslot already exists
-      if (!List<String>.from(dateSlots[originalDateString]).contains(widget.originalTime)) {
-        // Add the original time slot to the existing date
-        dateSlots[originalDateString].add(widget.originalTime);
-      }
-    } else {
-      // If the date does not exist, create it and add the original time slot
-      dateSlots[originalDateString] = [widget.originalTime];
-    }
-
-    // Update Firestore with the updated date slots
-    await docRef.update({'date_slots': dateSlots});
-  }
-}
 
   Future<void> _checkForChatAndCreateMessage() async {
     String currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
     try {
       // Get the reference to the chats collection
-      QuerySnapshot chatSnapshot = await FirebaseFirestore.instance.collection('chats').get();
+      QuerySnapshot chatSnapshot =
+          await FirebaseFirestore.instance.collection('chats').get();
       bool chatFound = false;
       String? chatId;
 
@@ -243,7 +244,8 @@ Future<void> _addOriginalDateAndTimeSlot() async {
         List<dynamic> users = chat['users'] ?? [];
 
         // Check if both the currentUserId and specialistId are in the users array
-        if (users.contains(currentUserId) && users.contains(widget.specialistId)) {
+        if (users.contains(currentUserId) &&
+            users.contains(widget.specialistId)) {
           chatFound = true;
           chatId = chat.id;
 
@@ -256,7 +258,8 @@ Future<void> _addOriginalDateAndTimeSlot() async {
       // If no chat session is found, create a new chat
       if (!chatFound) {
         // Create a new chat document
-        DocumentReference newChatDoc = await FirebaseFirestore.instance.collection('chats').add({
+        DocumentReference newChatDoc =
+            await FirebaseFirestore.instance.collection('chats').add({
           'users': [currentUserId, widget.specialistId],
           'createdAt': FieldValue.serverTimestamp(),
         });
@@ -286,7 +289,11 @@ Please review the details above and let us know if you spot any errors.
 ''';
 
     // Send the message to Firestore
-    await FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').add({
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .add({
       'text': messageText,
       'senderId': widget.specialistId, // Set the sender ID to specialist ID
       'isImage': false,
@@ -295,83 +302,130 @@ Please review the details above and let us know if you spot any errors.
   }
 
   @override
-Widget build(BuildContext context) {
-  DateTime now = DateTime.now();
-  DateTime twoDaysBeforeOriginal = widget.originalDate.subtract(const Duration(days: 2));
-  DateTime endDate = now.add(const Duration(days: 30)); // End date is 30 days from now
+  Widget build(BuildContext context) {
+    DateTime now = DateTime.now();
+    DateTime endDate = now.add(const Duration(days: 30));
 
-  return Scaffold(
-    backgroundColor: Colors.white,
-    appBar: AppBar(
-      title: const Text(
-        "Reschedule Appointment",
-        style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
-      ),
-      bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(1),
-        child: Divider(height: 0.5, color: Color.fromARGB(255, 220, 220, 241)),
-      ),
+    return Scaffold(
       backgroundColor: Colors.white,
-      elevation: 0,
-      iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
-    ),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionTitle("Original Appointment Details"),
-          Text(
-            "Original Appointment Mode: ${widget.appointmentMode}",
-            style: const TextStyle(fontSize: 16, color: Colors.black54),
+      appBar: AppBar(
+        title: const Text(
+          "Reschedule Appointment",
+          style: TextStyle(
+              color: Color.fromARGB(255, 90, 113, 243),
+              fontWeight: FontWeight.bold),
+        ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0.5,
+            color: Color.fromARGB(255, 220, 220, 241),
           ),
-          Text(
-            "Original Date: ${DateFormat('yyyy-MM-dd').format(widget.originalDate)}",
-            style: const TextStyle(fontSize: 16, color: Colors.black54),
-          ),
-          Text(
-            "Original Timeslots: ${widget.originalTime}",
-            style: const TextStyle(fontSize: 16, color: Colors.black54),
-          ),
-          const SizedBox(height: 24),
-          
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme:
+            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Original Appointment Details Modernized
+            _buildSectionTitle("Original Appointment Details"),
+            const SizedBox(height: 16), // Adding spacing
+
+            Card(
+              shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: Colors.grey.shade400, width: 1),
+        ),
+        margin: const EdgeInsets.only(bottom: 16),
+        elevation: 2,
+        color: Colors.white,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: widget.appointmentMode == "Physical"
+                        ? const Icon(Icons.people_alt_outlined,
+                            color: Color.fromARGB(255, 90, 113, 243))
+                        : const Icon(Icons.video_call_outlined,
+                            color: Color.fromARGB(255, 90, 113, 243)),
+                    title: Text(
+                      "Original Appointment Mode: ${widget.appointmentMode}",
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  const Divider(), // Adds a divider between items
+                  ListTile(
+                    leading: const Icon(Icons.date_range,
+                        color: Color.fromARGB(255, 90, 113, 243)),
+                    title: Text(
+                      "Original Date: ${DateFormat('yyyy-MM-dd').format(widget.originalDate)}",
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.access_time,
+                        color: Color.fromARGB(255, 90, 113, 243)),
+                    title: Text(
+                      "Original Timeslot: ${widget.originalTime}",
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+          // Appointment Mode
           _buildSectionTitle("Appointment Mode"),
           const SizedBox(height: 10),
-          _buildModeSelector(), // Physical or Online mode selector
+          _buildModeSelector(),
           const SizedBox(height: 24),
 
           // Calendar for selecting date
           _buildSectionTitle("Select Reschedule Date"),
-          _buildSectionSubtitle(
-            "Reschedule date only allowed for at least 2 days before the original appointment.",
-          ),
+          _buildSectionSubtitle("You can select any date starting from today."),
           const SizedBox(height: 12),
-          _buildCalendar(now, endDate, twoDaysBeforeOriginal),
-          const SizedBox(height: 0),
+          _buildCalendar(now, endDate),
 
           // Time slots section
-          if (isLoadingSlots)
-            const Center(child: CircularProgressIndicator())
-          else if (availableTimeSlots.isEmpty)
-            const Text(
-              "No available time slots for the selected date.",
-              style: TextStyle(fontSize: 16, color: Colors.redAccent),
-            )
-          else
-            _buildTimeSlotSelector(),
+          if (_selectedDate != null) // Show time slots only if date is selected
+            _buildTimeSlotSelector(), // Will automatically show empty if no slots
+
+          // Show message if no available time slots
+          if (noAvailableTimeSlots) 
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                "No available time slots for the selected date. Please select another date.",
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
 
           const SizedBox(height: 30),
 
           // Reschedule button
           Center(
             child: ElevatedButton(
-              onPressed: _rescheduleAppointment,
+              onPressed: (_selectedDate != null && _selectedTimeSlot != null && !noAvailableTimeSlots)
+                  ? _rescheduleAppointment
+                  : null,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
-                backgroundColor: Color.fromARGB(255, 90, 113, 243),
+                backgroundColor: (_selectedDate != null && _selectedTimeSlot != null && !noAvailableTimeSlots)
+                    ? const Color.fromARGB(255, 90, 113, 243)
+                    : Colors.grey,
               ),
               child: const Text(
                 "Reschedule Appointment",
@@ -407,14 +461,24 @@ Widget build(BuildContext context) {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: isSelected ? const Color.fromARGB(255, 90, 113, 243) : Colors.grey[200],
+          color: isSelected
+              ? const Color.fromARGB(255, 90, 113, 243)
+              : Colors.grey[200],
           borderRadius: BorderRadius.circular(20),
-          boxShadow: isSelected ? [BoxShadow(color: Colors.grey.withOpacity(0.5), spreadRadius: 1, blurRadius: 10)] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 1,
+                      blurRadius: 10)
+                ]
+              : [],
         ),
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 10),
         child: Column(
           children: [
-            Icon(icon, color: isSelected ? Colors.white : Colors.black54, size: 30),
+            Icon(icon,
+                color: isSelected ? Colors.white : Colors.black54, size: 30),
             const SizedBox(height: 10),
             Text(
               mode,
@@ -430,36 +494,35 @@ Widget build(BuildContext context) {
     );
   }
 
-  Widget _buildCalendar(DateTime startDate, DateTime endDate, DateTime twoDaysBeforeOriginal) {
-    DateTime initialDate = DateTime.now().isAfter(twoDaysBeforeOriginal) ? DateTime.now() : twoDaysBeforeOriginal;
-
-    return CalendarDatePicker(
-      initialDate: initialDate,
-      firstDate: startDate,
-      lastDate: endDate,
-      selectableDayPredicate: (date) {
-        return date.isAfter(twoDaysBeforeOriginal) || date == twoDaysBeforeOriginal;
-      },
-      onDateChanged: (newSelectedDate) {
-        if (newSelectedDate.isBefore(twoDaysBeforeOriginal)) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("You must reschedule at least 2 days before the appointment."),
-            ),
-          );
-          return;
-        }
-
-        setState(() {
-          _selectedDate = newSelectedDate;
-          isLoadingSlots = true;
-          availableTimeSlots.clear();
-        });
-
-        _fetchAvailableTimeSlots();
-      },
-    );
+  Widget _buildCalendar(DateTime startDate, DateTime endDate) {
+  // Go to the next weekday if the start date is Saturday or Sunday
+  DateTime effectiveStartDate = startDate;
+  if (effectiveStartDate.weekday == DateTime.saturday) {
+    effectiveStartDate = effectiveStartDate.add(Duration(days: 2));
+  } else if (effectiveStartDate.weekday == DateTime.sunday) {
+    effectiveStartDate = effectiveStartDate.add(Duration(days: 1));
   }
+
+  return CalendarDatePicker(
+    initialDate: effectiveStartDate, // Ensure this is a valid starting point
+    firstDate: startDate,
+    lastDate: endDate,
+    selectableDayPredicate: (date) {
+      // Allow only weekdays (Monday to Friday)
+      return date.weekday != DateTime.saturday &&
+          date.weekday != DateTime.sunday;
+    },
+    onDateChanged: (newSelectedDate) {
+      setState(() {
+        _selectedDate = newSelectedDate;
+        isLoadingSlots = true;
+        availableTimeSlots.clear();
+      });
+
+      _fetchAvailableTimeSlots();
+    },
+  );
+}
 
   Widget _buildTimeSlotSelector() {
     return Column(

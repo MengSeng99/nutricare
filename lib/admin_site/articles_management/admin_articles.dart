@@ -51,30 +51,30 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                     decoration: InputDecoration(
                       hintText: "Search by Title", // New hint text
                       prefixIcon: const Icon(Icons.search), // Search icon
-                     filled: true,
-                  fillColor:
-                      const Color.fromARGB(255, 250, 250, 250).withOpacity(0.5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 221, 222, 226),
-                      width: 1.0,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 221, 222, 226),
-                      width: 1.5,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 90, 113, 243),
-                      width: 2.0,
-                    ),
-                  ),
+                      filled: true,
+                      fillColor: const Color.fromARGB(255, 250, 250, 250)
+                          .withOpacity(0.5),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                        borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226),
+                          width: 1.0,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                        borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226),
+                          width: 1.5,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                        borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 90, 113, 243),
+                          width: 2.0,
+                        ),
+                      ),
                       suffixIcon: searchKeyword.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear),
@@ -127,13 +127,13 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
           title: const Text(
             'Filter by Specialists',
             style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 90, 113, 243)),
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243),
+            ),
           ),
           content: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('articles')
-                .snapshots(),
+            stream:
+                FirebaseFirestore.instance.collection('articles').snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -144,7 +144,8 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
 
               final articles = snapshot.data!.docs;
               final specialistIds = articles
-                  .map((doc) => (doc.data() as Map<String, dynamic>)['specialistId'])
+                  .map((doc) =>
+                      (doc.data() as Map<String, dynamic>)['specialistId'])
                   .toSet()
                   .toList(); // Getting unique specialistIds from the articles
 
@@ -155,39 +156,38 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                     .where(FieldPath.documentId, whereIn: specialistIds)
                     .snapshots(),
                 builder: (context, specialistSnapshot) {
-                  if (specialistSnapshot.connectionState == ConnectionState.waiting) {
+                  if (specialistSnapshot.connectionState ==
+                      ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  if (!specialistSnapshot.hasData || specialistSnapshot.data!.docs.isEmpty) {
+                  if (!specialistSnapshot.hasData ||
+                      specialistSnapshot.data!.docs.isEmpty) {
                     return const Center(child: Text('No specialists found'));
                   }
 
                   final specialists = specialistSnapshot.data!.docs;
 
                   return SingleChildScrollView(
-                    child: Wrap(
-                      spacing: 8.0, // Horizontal space between chips
-                      runSpacing: 4.0, // Vertical space between chips
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: specialists.map((doc) {
-                        final specialistData = doc.data() as Map<String, dynamic>;
+                        final specialistData =
+                            doc.data() as Map<String, dynamic>;
                         final specialistId = doc.id;
-                        final specialistName = specialistData['name'] ?? 'Unknown Specialist';
-                        bool isSelected = selectedSpecialistIds.contains(specialistId);
+                        final specialistName =
+                            specialistData['name'] ?? 'Unknown Specialist';
 
-                        return ChoiceChip(
-                          label: Text(specialistName),
-                          selected: isSelected,
-                          selectedColor: Color.fromARGB(255, 90, 113, 243),
-                          backgroundColor: Colors.grey[200],
-                          onSelected: (bool selected) {
+                        return RadioListTile<String>(
+                          value: specialistId,
+                          groupValue: selectedSpecialistIds.isNotEmpty
+                              ? selectedSpecialistIds.first
+                              : '',
+                          title: Text(specialistName),
+                          onChanged: (String? value) {
                             setState(() {
-                              if (selected) {
-                                selectedSpecialistIds.add(specialistId);
-                                Navigator.of(context).pop();
-                              } else {
-                                selectedSpecialistIds.remove(specialistId);
-                                Navigator.of(context).pop();
-                              }
+                              selectedSpecialistIds =
+                                  value != null ? [value] : [];
+                              Navigator.of(context).pop(); // Close the dialog
                             });
                           },
                         );
@@ -253,14 +253,16 @@ class ArticlesListView extends StatelessWidget {
           final articleData = article.data() as Map<String, dynamic>;
           final title = articleData['title']?.toLowerCase() ?? '';
           final matchesSearch = title.startsWith(searchKeyword.toLowerCase());
-          final matchesSpecialist = selectedSpecialistIds.isEmpty || selectedSpecialistIds.contains(articleData['specialistId']);
+          final matchesSpecialist = selectedSpecialistIds.isEmpty ||
+              selectedSpecialistIds.contains(articleData['specialistId']);
 
           return matchesSearch && matchesSpecialist;
         }).toList();
 
         // Show message if no articles match the search keyword
         if (articles.isEmpty) {
-          return Center(child: Text('No articles with the title of "$searchKeyword"'));
+          return Center(
+              child: Text('No articles with the title of "$searchKeyword"'));
         }
 
         return ListView.builder(
@@ -281,15 +283,20 @@ class ArticlesListView extends StatelessWidget {
                   .doc(specialistId)
                   .snapshots(), // Use Stream instead of Future
               builder: (context, specialistSnapshot) {
-                if (specialistSnapshot.connectionState == ConnectionState.waiting) {
+                if (specialistSnapshot.connectionState ==
+                    ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (specialistSnapshot.hasError || !specialistSnapshot.hasData) {
-                  return const ListTile(title: Text('Error loading specialist'));
+                if (specialistSnapshot.hasError ||
+                    !specialistSnapshot.hasData) {
+                  return const ListTile(
+                      title: Text('Error loading specialist'));
                 }
 
-                final specialistData = specialistSnapshot.data!.data() as Map<String, dynamic>;
-                final specialistName = specialistData['name'] ?? 'Unknown Specialist';
+                final specialistData =
+                    specialistSnapshot.data!.data() as Map<String, dynamic>;
+                final specialistName =
+                    specialistData['name'] ?? 'Unknown Specialist';
 
                 return GestureDetector(
                   onTap: () {
@@ -305,11 +312,13 @@ class ArticlesListView extends StatelessWidget {
                     );
                   },
                   child: Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    margin:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                     elevation: 2,
                     color: Colors.white,
                     shape: RoundedRectangleBorder(
-                      side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                      side: BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226), width: 1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Padding(
@@ -318,11 +327,12 @@ class ArticlesListView extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           imageUrl.isNotEmpty
-                              ? Image.network(imageUrl, width: double.infinity, height: 150, fit: BoxFit.cover)
+                              ? Image.network(imageUrl,
+                                  width: double.infinity,
+                                  height: 150,
+                                  fit: BoxFit.cover)
                               : const SizedBox(height: 150),
-
                           const SizedBox(height: 8),
-                          
                           Text(
                             title,
                             style: const TextStyle(
@@ -332,7 +342,6 @@ class ArticlesListView extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 4),
-
                           Text(
                             subtitle,
                             style: const TextStyle(
@@ -341,22 +350,23 @@ class ArticlesListView extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          
-                          Text("Dr. $specialistName", style: const TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold)),
+                          Text("Dr. $specialistName",
+                              style: const TextStyle(
+                                  color: Color.fromARGB(255, 90, 113, 243),
+                                  fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
-                          
                           Text(
                             'Posted on: ${postDate.toLocal().toString().split(' ')[0]}',
                             style: const TextStyle(color: Colors.grey),
                           ),
                           const SizedBox(height: 8),
-                          
                           Align(
                             alignment: Alignment.centerRight,
                             child: IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () {
-                                _showDeleteConfirmationDialog(context, title, articleId);
+                                _showDeleteConfirmationDialog(
+                                    context, title, articleId);
                               },
                             ),
                           ),
@@ -373,7 +383,8 @@ class ArticlesListView extends StatelessWidget {
     );
   }
 
-  void _showDeleteConfirmationDialog(BuildContext context, String? articleTitle, String articleId) {
+  void _showDeleteConfirmationDialog(
+      BuildContext context, String? articleTitle, String articleId) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -426,10 +437,15 @@ class ArticlesListView extends StatelessWidget {
                     .delete();
                 Navigator.of(context).pop(); // Close the dialog
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Article removed successfully',style: TextStyle(backgroundColor: Colors.green),)),
+                  const SnackBar(
+                      content: Text(
+                    'Article removed successfully',
+                    style: TextStyle(backgroundColor: Colors.green),
+                  )),
                 );
               },
-              child: const Text('Delete', style: TextStyle(color: Colors.white)),
+              child:
+                  const Text('Delete', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

@@ -247,25 +247,35 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
   }
 
 
-  // Reusable widget for displaying info rows with an icon, label, and value
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color.fromARGB(255, 90, 113, 243)),
-          const SizedBox(width: 10),
-          Text(
-            '$label: ',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+ // Reusable widget for displaying info rows with an icon, label, and value
+Widget _buildInfoRow(IconData icon, String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start, // Align icons and text
+      children: [
+        Icon(icon, color: const Color.fromARGB(255, 90, 113, 243)),
+        const SizedBox(width: 10),
+        Text(
+          '$label: ',
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+        ),
+        Expanded(
+          child: Tooltip(
+            message: value, // Show full value on hover/tap
+            child: Text(
+              value, // Display the value
+              style: const TextStyle(fontSize: 16), 
+              overflow: TextOverflow.visible, // Allow text to overflow
+              maxLines: 2, // Limit the number of lines to show
+              softWrap: true, // Allow text to wrap to the next line
+            ),
           ),
-          Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 16), overflow: TextOverflow.ellipsis),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   // Reusable widget for section headers
   Widget _buildSectionHeader(IconData icon, String title) {

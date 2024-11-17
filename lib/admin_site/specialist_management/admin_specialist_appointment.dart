@@ -250,52 +250,59 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                       },
                     ),
                     const SizedBox(height: 16),
-                   TextButton(
-  onPressed: () async {
-    DateTime? date = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(Duration(days: 1)),
-      firstDate: DateTime.now().add(Duration(days: 1)),
-      lastDate: DateTime.now().add(Duration(days: 30)),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            primaryColor: Color.fromARGB(255, 90, 113, 243), // Custom color for header
-            hintColor: Color.fromARGB(255, 90, 113, 243), // Custom color for actions
-            colorScheme: ColorScheme.light(primary: Color.fromARGB(255, 90, 113, 243)),
-            buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
-          ),
-          child: child!,
-        );
-      },
-    );
+                    TextButton(
+                      onPressed: () async {
+                        DateTime? date = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now().add(Duration(days: 1)),
+                          firstDate: DateTime.now().add(Duration(days: 1)),
+                          lastDate: DateTime.now().add(Duration(days: 30)),
+                          builder: (BuildContext context, Widget? child) {
+                            return Theme(
+                              data: ThemeData.light().copyWith(
+                                primaryColor: Color.fromARGB(255, 90, 113,
+                                    243), // Custom color for header
+                                hintColor: Color.fromARGB(255, 90, 113,
+                                    243), // Custom color for actions
+                                colorScheme: ColorScheme.light(
+                                    primary: Color.fromARGB(255, 90, 113, 243)),
+                                buttonTheme: ButtonThemeData(
+                                    textTheme: ButtonTextTheme.primary),
+                              ),
+                              child: child!,
+                            );
+                          },
+                        );
 
-    if (date != null) {
-      // Check if the selected date is a weekend, and if so, show a warning
-      if (date.weekday == DateTime.saturday || date.weekday == DateTime.sunday) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Weekends are not allowed. Please select a weekday.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      } else {
-        setState(() {
-          selectedDate = date;
-        });
-      }
-    }
-  },
-  child: Align(
-    alignment: Alignment.centerLeft,
-    child: Text(
-      selectedDate == null
-          ? "Select Date"
-          : DateFormat("yyyy-MM-dd").format(selectedDate!),
-      style: const TextStyle(fontSize: 16, color: Color(0xFF5A71F3)),
-    ),
-  ),
-),
+                        if (date != null) {
+                          // Check if the selected date is a weekend, and if so, show a warning
+                          if (date.weekday == DateTime.saturday ||
+                              date.weekday == DateTime.sunday) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                    'Weekends are not allowed. Please select a weekday.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          } else {
+                            setState(() {
+                              selectedDate = date;
+                            });
+                          }
+                        }
+                      },
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          selectedDate == null
+                              ? "Select Date"
+                              : DateFormat("yyyy-MM-dd").format(selectedDate!),
+                          style: const TextStyle(
+                              fontSize: 16, color: Color(0xFF5A71F3)),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () async {
@@ -431,7 +438,6 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
       if (dateSlots[dateFormatted] != null) {
         List<dynamic> times = dateSlots[dateFormatted] as List<dynamic>;
         times.remove(timeSlot); // Remove the specific time slot
-        
 
         if (times.isEmpty) {
           dateSlots

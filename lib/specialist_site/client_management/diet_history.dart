@@ -12,7 +12,8 @@ class DietHistoryWidget extends StatefulWidget {
 
 class _DietHistoryWidgetState extends State<DietHistoryWidget> {
   List<DietHistory> dietHistories = []; // List to hold all diet history
-  List<DietHistory> filteredHistories = []; // List to hold filtered diet history
+  List<DietHistory> filteredHistories =
+      []; // List to hold filtered diet history
   DateTime? startDate; // Start date for range
   DateTime? endDate; // End date for range
   bool isLoading = true; // Loading state
@@ -74,9 +75,9 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
     }
 
     setState(() {
-      dietHistories = newHistories; 
-      filteredHistories = newHistories; 
-      isLoading = false; 
+      dietHistories = newHistories;
+      filteredHistories = newHistories;
+      isLoading = false;
     });
   }
 
@@ -116,14 +117,15 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             if (isLoading)
-              Center(child: CircularProgressIndicator(color: primaryColor)) 
+              Center(child: CircularProgressIndicator(color: primaryColor))
             else if (dietHistories.isEmpty)
-              Expanded(child: _buildNoDietHistoryWidget()) 
+              Expanded(child: _buildNoDietHistoryWidget())
             else ...[
               // Row for Date Range Button and Reset Button
               Row(
@@ -162,7 +164,8 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: const Text('Reset', style: TextStyle(color: Colors.white)),
+                    child: const Text('Reset',
+                        style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
@@ -170,7 +173,9 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
             ],
 
             // Check if filteredHistories is empty
-            if (filteredHistories.isEmpty && startDate != null && endDate != null)
+            if (filteredHistories.isEmpty &&
+                startDate != null &&
+                endDate != null)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -178,10 +183,9 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                      Icon(Icons.info_outline,
-                          size: 100,
-                          color: primaryColor),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.1),
+                      Icon(Icons.info_outline, size: 100, color: primaryColor),
                       SizedBox(height: 16),
                       Text(
                         'No diet records available for the selected date range!',
@@ -255,95 +259,108 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
   }
 
   Widget _buildHistoryCard(DietHistory history) {
-  int totalCalories = history.meals.fold(0, (sum, meal) => sum + meal.calories);
-  int totalProteins = history.meals.fold(0, (sum, meal) => sum + meal.protein);
-  int totalCarbs = history.meals.fold(0, (sum, meal) => sum + meal.carbs);
-  int totalFats = history.meals.fold(0, (sum, meal) => sum + meal.fat);
+    int totalCalories =
+        history.meals.fold(0, (sum, meal) => sum + meal.calories);
+    int totalProteins =
+        history.meals.fold(0, (sum, meal) => sum + meal.protein);
+    int totalCarbs = history.meals.fold(0, (sum, meal) => sum + meal.carbs);
+    int totalFats = history.meals.fold(0, (sum, meal) => sum + meal.fat);
 
-  return Card(
-    color: Colors.white,
-   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      side: BorderSide(color: Colors.grey.shade400, width: 1),
-                    ),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0), // Internal padding
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Date Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Date: ${history.date}',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800]),
-              ),
-              Icon(Icons.calendar_today, color: primaryColor, size: 24),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Summary Section with Icons
-          if (history.meals.isNotEmpty)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Card(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: Colors.grey.shade400, width: 1),
+      ),
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0), // Internal padding
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Date Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Summary:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildNutrientInfo(Icons.local_fire_department, "Calories", "$totalCalories kcal"),
-                    _buildNutrientInfo(Icons.fitness_center, "Protein", "$totalProteins g"),
-                    _buildNutrientInfo(Icons.grain, "Carbs", "$totalCarbs g"),
-                    _buildNutrientInfo(Icons.bubble_chart, "Fat", "$totalFats g"),
-                  ],
+                Text(
+                  'Date: ${history.date}',
+                  style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800]),
                 ),
-                const SizedBox(height: 20),
+                Icon(Icons.calendar_today, color: primaryColor, size: 24),
               ],
             ),
+            const SizedBox(height: 16),
 
-          // Meals Section
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: history.meals.isEmpty
-                ? [
-                    Text(
-                      'No Meals Logged',
-                      style: TextStyle(color: Colors.redAccent, fontSize: 16),
-                    )
-                  ]
-                : history.meals.map((meal) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildMealCard(meal),
-                        const Divider(thickness: 1, color: Colors.grey),
-                      ],
-                    );
-                  }).toList(),
-          ),
-        ],
+            // Summary Section with Icons
+            if (history.meals.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Summary:',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildNutrientInfo(Icons.local_fire_department,
+                          "Calories", "$totalCalories kcal"),
+                      _buildNutrientInfo(
+                          Icons.fitness_center, "Protein", "$totalProteins g"),
+                      _buildNutrientInfo(Icons.grain, "Carbs", "$totalCarbs g"),
+                      _buildNutrientInfo(
+                          Icons.bubble_chart, "Fat", "$totalFats g"),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+
+            // Meals Section
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: history.meals.isEmpty
+                  ? [
+                      Text(
+                        'No Meals Logged',
+                        style: TextStyle(color: Colors.redAccent, fontSize: 16),
+                      )
+                    ]
+                  : history.meals.map((meal) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildMealCard(meal),
+                          const Divider(thickness: 1, color: Colors.grey),
+                        ],
+                      );
+                    }).toList(),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
 // Helper widget for displaying each nutrient with an icon
-Widget _buildNutrientInfo(IconData icon, String label, String value) {
-  return Column(
-    children: [
-      Icon(icon, color: primaryColor, size: 24),
-      const SizedBox(height: 4),
-      Text(label, style: TextStyle(fontSize: 14, color: Colors.black87)),
-      Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.grey[700])),
-    ],
-  );
-}
-
+  Widget _buildNutrientInfo(IconData icon, String label, String value) {
+    return Column(
+      children: [
+        Icon(icon, color: primaryColor, size: 24),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 14, color: Colors.black87)),
+        Text(value,
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700])),
+      ],
+    );
+  }
 
   Widget _buildMealCard(MealHistory meal) {
     return Padding(
@@ -352,10 +369,12 @@ Widget _buildNutrientInfo(IconData icon, String label, String value) {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(
                 meal.mealType,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 5),
               Text(

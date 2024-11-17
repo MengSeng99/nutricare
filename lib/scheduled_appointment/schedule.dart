@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:nutricare/scheduled_appointment/chat_list.dart';
 import '../main.dart';
 import 'appointment_details.dart';
 import 'package:intl/intl.dart';
@@ -21,6 +20,42 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     super.initState();
   }
 
+
+   void _showCancellationPolicy(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text(
+            "Cancellation and Rescheduling Policy",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243),
+            ),
+          ),
+          content: const Text(
+            "Cancellations and rescheduling can only be done at least one day before the appointment date. "
+            "Please make sure to notify us in advance to avoid any penalties.",
+            style: TextStyle(fontSize: 14.0),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss the dialog
+              },
+              child: const Text(
+                "OK",
+                style: TextStyle(color: Color.fromARGB(255, 90, 113, 243)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,25 +83,18 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               indicatorColor: Color.fromARGB(255, 78, 98, 215),
               indicatorWeight: 3,
               tabs: [
-                Tab(text: "Upcoming"),
-                Tab(text: "Completed"),
-                Tab(text: "Canceled"),
+                Tab(text: "Upcoming", icon: Icon(Icons.schedule_outlined)),
+                Tab(text: "Completed", icon: Icon(Icons.done)),
+                Tab(text: "Canceled", icon: Icon(Icons.cancel_outlined)),
               ],
             ),
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.chat_bubble_outline_rounded,
+              icon: const Icon(Icons.info_outline_rounded,
                   color: Color.fromARGB(255, 90, 113, 243)),
               onPressed: () {
-                // Navigate to chat screen or perform desired action here
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        ChatListScreen(), // Replace with your chat screen
-                  ),
-                );
+                _showCancellationPolicy(context); // Show the policy dialog
               },
             ),
           ],
@@ -102,6 +130,7 @@ class AppointmentsTab extends StatefulWidget {
 
 class _AppointmentsTabState extends State<AppointmentsTab> {
   late Future<List<Map<String, dynamic>>> _appointmentsFuture;
+  String _selectedSortOption = 'Appointment Date';
 
   @override
   void initState() {
@@ -146,6 +175,21 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
         }
       }
     }
+
+    // Sort appointments based on the selected option
+    switch (_selectedSortOption) {
+      case 'Appointment Id':
+        appointments.sort((a, b) => a['appointmentId'].compareTo(b['appointmentId']));
+        break;
+      case 'Specialist Name':
+        appointments.sort((a, b) => a['specialistName'].compareTo(b['specialistName']));
+        break;
+      case 'Appointment Date':
+      default:
+        appointments.sort((a, b) => (a['selectedDate'] as Timestamp).toDate().compareTo((b['selectedDate'] as Timestamp).toDate()));
+        break;
+    }
+
     return appointments;
   }
 
@@ -157,56 +201,113 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _appointmentsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(
-            child: Text(
-              "No Scheduled Appointments Found",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[600],
-              ),
+    return Column(
+      children: [
+        // Circular card for sorting options
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30), // Make it circular
+          // border: Border.all(color: Colors.grey.shade400, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.5),
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
-          );
-        }
+            padding: const EdgeInsets.symmetric(horizontal: 16), // Padding inside card
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Sort By:",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 90, 113, 243),
+                  ),
+                ),
+                DropdownButton<String>(
+                  value: _selectedSortOption,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedSortOption = newValue!;
+                      refreshAppointments();
+                    });
+                  },
+                  items: <String>[
+                    'Appointment Date',
+                    'Specialist Name',
+                    'Appointment Id',
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _appointmentsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-        return ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: snapshot.data!.map((data) {
-            String specialistId = data['specialistId'];
-
-            return FutureBuilder<String?>(
-              future: _getSpecialistAvatar(specialistId),
-              builder: (context, avatarSnapshot) {
-                if (avatarSnapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                return AppointmentCard(
-                  date: (data['selectedDate'] as Timestamp).toDate(),
-                  time: data['selectedTimeSlot'] ?? 'N/A',
-                  specialistName: data['specialistName'],
-                  appointmentStatus: data['appointmentStatus'],
-                  service: data['serviceName'],
-                  showButtons: widget.statusFilter.contains('Confirmed'),
-                  appointmentId: data['appointmentId'].toString(),
-                  appointmentMode: data['appointmentMode'],
-                  specialistId: data['specialistId'],
-                  specialistAvatarUrl: avatarSnapshot.data,
-                  refreshAppointments: refreshAppointments, // Pass the refresh method
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(
+                  child: Text(
+                    "No Scheduled Appointments Found",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[600],
+                    ),
+                  ),
                 );
-              },
-            );
-          }).toList(),
-        );
-      },
+              }
+
+              return ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: snapshot.data!.map((data) {
+                  String specialistId = data['specialistId'];
+
+                  return FutureBuilder<String?>(
+                    future: _getSpecialistAvatar(specialistId),
+                    builder: (context, avatarSnapshot) {
+                      if (avatarSnapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      return AppointmentCard(
+                        date: (data['selectedDate'] as Timestamp).toDate(),
+                        time: data['selectedTimeSlot'] ?? 'N/A',
+                        specialistName: data['specialistName'],
+                        appointmentStatus: data['appointmentStatus'],
+                        service: data['serviceName'],
+                        showButtons: widget.statusFilter.contains('Confirmed'),
+                        appointmentId: data['appointmentId'].toString(),
+                        appointmentMode: data['appointmentMode'],
+                        specialistId: data['specialistId'],
+                        specialistAvatarUrl: avatarSnapshot.data,
+                        refreshAppointments: refreshAppointments,
+                      );
+                    },
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -241,6 +342,15 @@ class AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get the current date
+    final currentDate = DateTime.now();
+
+    // Calculate the difference in days
+    final differenceInDays = date.difference(currentDate).inDays;
+
+    // Check if the appointment is in the past or tomorrow
+    final bool isPastOrTodayOrTomorrow = differenceInDays <= 0; // Adjusted condition
+
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -363,9 +473,9 @@ class AppointmentCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              if (appointmentStatus == "Confirmed" ||
+              if (appointmentStatus == "Confirmed" || 
                   appointmentStatus == "Pending Confirmation")
-                _buildActionButtons(context),
+                _buildActionButtons(context, isPastOrTodayOrTomorrow ), // Pass the condition
             ],
           ),
         ),
@@ -389,30 +499,43 @@ class AppointmentCard extends StatelessWidget {
   }
 
   // Action Buttons for Cancel and Reschedule
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(BuildContext context, bool isPastOrTomorrow) {
+    // Common style for inactive buttons
+    final inactiveStyle = ElevatedButton.styleFrom(
+      backgroundColor: const Color.fromARGB(255, 200, 200, 200), // Gray for disabled
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+    );
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         ElevatedButton(
-          onPressed: () {
-            _showCancelConfirmationDialog(context);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromARGB(255, 232, 235, 247),
+          onPressed: isPastOrTomorrow 
+              ? null  // Disable the button if condition is met
+              : () {
+                  _showCancelConfirmationDialog(context);
+                },
+          style: isPastOrTomorrow ? inactiveStyle : ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 232, 235, 247), // Original button color
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          child: const Text(
+          child: Text(
             "Cancel",
-            style:
-                TextStyle(color: Color.fromARGB(255, 59, 59, 59), fontSize: 16),
+            style: TextStyle(
+              color: isPastOrTomorrow ? Colors.grey : Color.fromARGB(255, 59, 59, 59), // Gray for inactive
+              fontSize: 16,
+            ),
           ),
         ),
         const SizedBox(width: 12),
         ElevatedButton(
-          onPressed: () {
+          onPressed: isPastOrTomorrow ? null : () {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -426,22 +549,23 @@ class AppointmentCard extends StatelessWidget {
                   onRefresh: refreshAppointments, 
                 ),
               ),
-              ).then((_) {
-      // After going back from the reschedule screen, refresh the appointments
-      refreshAppointments();
-    });
- 
+            ).then((_) {
+              refreshAppointments();
+            });
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+          style: isPastOrTomorrow ? inactiveStyle : ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 90, 113, 243), // Original button color
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          child: const Text(
+          child: Text(
             "Reschedule",
-            style: TextStyle(color: Colors.white, fontSize: 16),
+            style: TextStyle(
+              color: isPastOrTomorrow ? Colors.grey : Colors.white, // Gray for inactive
+              fontSize: 16,
+            ),
           ),
         ),
       ],
@@ -469,21 +593,15 @@ class AppointmentCard extends StatelessWidget {
             style: TextStyle(fontSize: 14.0),
           ),
           actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop(); // Dismiss the dialog
-              },
-              child: const Text(
-                "No",
-                style: TextStyle(color: Colors.white),
-              ),
+            TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Dismiss the dialog
+            },
+            child: const Text(
+              "No",
+              style: TextStyle(color: Color.fromARGB(255, 90, 113, 243)), // Optional color for the text
             ),
+          ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -505,7 +623,6 @@ class AppointmentCard extends StatelessWidget {
       },
     );
   }
-
   void _cancelAppointment(BuildContext context, String appointmentId) async {
   try {
     final detailsCollectionRef = FirebaseFirestore.instance

@@ -768,7 +768,7 @@ Widget _buildAddCardButton() {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isFree ? Colors.blue : Colors.black,
+                  color: isFree ? Color.fromARGB(255, 90, 113, 243) : Colors.black,
                 ),
               ),
             ],

@@ -87,7 +87,9 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen>
     return DefaultTabController(
       length: 3,
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
+          backgroundColor: Colors.white,
           title: Text(widget.clientName,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
@@ -100,10 +102,31 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen>
             unselectedLabelColor: Colors.grey,
             indicatorColor: const Color.fromARGB(255, 78, 98, 215),
             indicatorWeight: 3,
-            tabs: const [
-              Tab(text: "Diet History"),
-              Tab(text: "BMI History"),
-              Tab(text: "Health Record"),
+            tabs: [
+              Tab(
+                icon: Icon(Icons.fastfood),
+                child: Text(
+                  "Diet History",
+                  style:
+                      TextStyle(fontSize: 12), // Set the desired font size here
+                ),
+              ),
+              Tab(
+                icon: Icon(Icons.accessibility_new),
+                child: Text(
+                  "BMI History",
+                  style:
+                      TextStyle(fontSize: 12), // Set the desired font size here
+                ),
+              ),
+              Tab(
+                icon: Icon(Icons.healing),
+                child: Text(
+                  "Health Record",
+                  style:
+                      TextStyle(fontSize: 12), // Set the desired font size here
+                ),
+              ),
             ],
           ),
           actions: [
@@ -138,6 +161,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen>
                 borderRadius: BorderRadius.circular(15),
               ),
               insetPadding: const EdgeInsets.all(20),
+              backgroundColor: Colors.white,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: ConstrainedBox(

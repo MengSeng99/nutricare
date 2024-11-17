@@ -210,7 +210,12 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                 children: [
                   // Recipe Image and Info Card
                   Card(
-                    elevation: 4,
+                    elevation: 2,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -377,7 +382,12 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
   // Helper method to build expandable cards
   Widget _buildExpandableCard({required String title, required FutureBuilder<List<Map<String, dynamic>>> futureBuilder}) {
     return Card(
-      elevation: 4,
+              elevation: 2,
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                borderRadius: BorderRadius.circular(8),
+              ),
       child: ExpansionTile(
         title: Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         children: [
@@ -392,8 +402,12 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
 
   Widget _infoCard(IconData icon, String title, String value) {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+         elevation: 2,
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                borderRadius: BorderRadius.circular(8),
+              ),
       child: Container(
         padding: const EdgeInsets.all(8),
         child: Column(

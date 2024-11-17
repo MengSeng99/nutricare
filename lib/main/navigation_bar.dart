@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nutricare/scheduled_appointment/chat_list.dart';
 import 'home.dart'; // Import Home screen
 import '../diet_tracker/diets.dart'; // Import Diets screen
 import '../scheduled_appointment/schedule.dart'; // Import Schedule screen
@@ -27,6 +28,7 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(),
     DietsScreen(),
     ScheduleScreen(),
+    ChatListScreen(),
     MoreScreen(),
   ];
 
@@ -107,29 +109,32 @@ class _MainScreenState extends State<MainScreen> {
                   : BorderSide.none,
             ),
           ),
-          padding: EdgeInsets.symmetric(vertical: 3.0), // Some padding to give the item better touch area
+          padding: EdgeInsets.symmetric(vertical: 3.0), 
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center, // Vertically center the items
+            mainAxisAlignment: MainAxisAlignment.center, 
             children: <Widget>[
               Icon(
                 isSelected 
                     ? (index == 0 ? Icons.home_outlined :
                        index == 1 ? Icons.food_bank_outlined :
                        index == 2 ? Icons.calendar_month_outlined :
-                       Icons.more_horiz_outlined) // Using outlined version when selected
+                       index == 3 ? Icons.chat_outlined : 
+                       Icons.more_horiz_outlined) 
                     : (index == 0 ? Icons.home :
                        index == 1 ? Icons.food_bank :
                        index == 2 ? Icons.calendar_month :
-                       Icons.more_horiz), // Regular icons when unselected
+                       index == 3 ? Icons.chat : 
+                       Icons.more_horiz),
                 color: iconColor,
                 size: 30, // Icon size
               ),
-              SizedBox(height: 4), // Space between icon and text
+              SizedBox(height: 5), 
               Text(
                 index == 0 ? 'Home' :
                 index == 1 ? 'Diets' :
                 index == 2 ? 'Schedule' :
+                index == 3 ? 'Messages' : // Text for new Messages tab
                 'More',
                 style: TextStyle(
                   color: iconColor, // Keep icon color for text

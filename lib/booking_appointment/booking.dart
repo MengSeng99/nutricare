@@ -70,23 +70,13 @@ class _BookingScreenState extends State<BookingScreen>
   }
 
   int _compareTimeSlots(String a, String b) {
-    // Extract AM/PM and time parts
-    final ampmA = a.split(' ').last; // Get AM or PM
-    final ampmB = b.split(' ').last;
+  // Parse time strings into DateTime objects (using a fixed date)
+  final timeA = DateTime.parse("2000-01-01 $a");
+  final timeB = DateTime.parse("2000-01-01 $b");
 
-    // If both are AM, compare times directly
-    if (ampmA == 'AM' && ampmB == 'AM') {
-      return a.compareTo(b);
-    }
-    // If both are PM, compare times directly
-    else if (ampmA == 'PM' && ampmB == 'PM') {
-      return a.compareTo(b);
-    }
-    // If one is AM and the other is PM, place AM before PM
-    else {
-      return ampmA == 'AM' ? -1 : 1; // AM comes before PM
-    }
-  }
+  // Compare the DateTime objects
+  return timeA.compareTo(timeB);
+}
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +132,7 @@ class _BookingScreenState extends State<BookingScreen>
 
   Widget _buildCalendar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -150,8 +140,8 @@ class _BookingScreenState extends State<BookingScreen>
           BoxShadow(
             color: const Color.fromARGB(255, 34, 34, 34).withOpacity(.3),
             spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            blurRadius: 1,
+            // offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -213,7 +203,7 @@ class _BookingScreenState extends State<BookingScreen>
     // Check if availableTimeSlots is empty
     if (availableTimeSlots.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
             Text(

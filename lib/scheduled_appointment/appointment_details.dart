@@ -191,12 +191,18 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                     children: [
                       _buildAppointmentInfo(Icons.confirmation_number_outlined,
                           "Appointment ID", widget.appointmentId),
-                      _buildAppointmentInfo(Icons.check_circle_outline,
-                          "Status", widget.status),
+                      _buildAppointmentInfo(
+                          Icons.check_circle_outline, "Status", widget.status),
                       _buildAppointmentInfo(Icons.calendar_today, "Date",
                           DateFormat('MMMM dd, yyyy').format(widget.date)),
                       _buildAppointmentInfo(
                           Icons.access_time, "Time", widget.time),
+                      _buildAppointmentInfo(
+                          widget.appointmentMode == "Physical"
+                              ? Icons.people_alt_outlined
+                              : Icons.video_call_outlined,
+                          "Appointment Mode",
+                          widget.appointmentMode),
                       _buildAppointmentInfo(Icons.miscellaneous_services,
                           "Service", widget.service),
                     ],
@@ -205,12 +211,12 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                   _buildInfoCard(
                     title: "Payment Details",
                     children: [
-                      _buildAppointmentInfo(Icons.attach_money,"Amount Paid", "RM $amountPaid"),
                       _buildAppointmentInfo(
-                          Icons.account_balance_wallet_outlined,"Appointment Mode", widget.appointmentMode),
+                          Icons.attach_money, "Amount Paid", "RM $amountPaid"),
+                      _buildAppointmentInfo(Icons.credit_card,
+                          "Payment Card Used", paymentCardUsed),
                       _buildAppointmentInfo(
-                          Icons.credit_card,"Payment Card Used", paymentCardUsed),
-                      _buildAppointmentInfo(Icons.payment,
+                          Icons.date_range_outlined,
                           "Pay On",
                           DateFormat('MMMM dd, yyyy, hh:mm a')
                               .format(createdAt.toDate())),
@@ -218,9 +224,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                   ),
                   const SizedBox(height: 5),
                   if (reviews.isNotEmpty)
-                    ...reviews
-                        .map((review) => _buildReviewCard(review))
-                        
+                    ...reviews.map((review) => _buildReviewCard(review))
                   else
                     const SizedBox.shrink(),
                   const SizedBox(height: 10),
@@ -291,153 +295,152 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     }
   }
 
-  Future<void> _showRatingDialog(BuildContext context, String specialistId,
-      String reviewerName, String appointmentId) {
-    int? selectedRating;
-    final reviewController = TextEditingController();
-    bool isSubmitted = false;
+Future<void> _showRatingDialog(BuildContext context, String specialistId,
+    String reviewerName, String appointmentId) {
+  int? selectedRating;
+  final reviewController = TextEditingController();
+  bool isSubmitted = false;
 
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Rate Your Appointment",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Rating stars with a modern touch
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(5, (index) {
-                        return IconButton(
-                          icon: Icon(
-                            index < (selectedRating ?? 0)
-                                ? Icons.star
-                                : Icons.star_border,
-                            color: Colors.amber,
-                            size: 36,
-                          ),
-                          splashColor: Colors.amberAccent,
-                          onPressed: () {
-                            setState(() {
-                              selectedRating = index + 1;
-                            });
-                          },
-                        );
-                      }),
-                    ),
-                    const SizedBox(height: 12),
-                    // Review TextField with rounded corners
-                    TextField(
-                      controller: reviewController,
-                      decoration: InputDecoration(
-                        labelText: "Write your review",
-                        labelStyle: const TextStyle(color: Colors.grey),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 15, horizontal: 10),
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: const [
+            Text(
+              "Rate Your Appointment",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite, // Makes content width adapt to the dialog
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Rating stars with a modern touch
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    return IconButton(
+                      icon: Icon(
+                        index < (selectedRating ?? 0)
+                            ? Icons.star
+                            : Icons.star_border,
+                        color: Colors.amber,
+                        size: 25,
                       ),
-                      maxLines: 3,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    // Validation message with a modern style
-                    if (isSubmitted &&
-                        (selectedRating == null ||
-                            reviewController.text.isEmpty))
-                      const Padding(
-                        padding: EdgeInsets.only(top: 10),
-                        child: Text(
-                          'Please fill out both rating and review.',
-                          style: TextStyle(color: Colors.red, fontSize: 14),
-                        ),
-                      ),
-                  ],
+                      splashColor: Colors.amberAccent,
+                      onPressed: () {
+                        setState(() {
+                          selectedRating = index + 1;
+                        });
+                      },
+                    );
+                  }),
                 ),
-              ),
-              actionsPadding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-              actions: <Widget>[
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromARGB(255, 90, 113, 243),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 30),
-                    shape: RoundedRectangleBorder(
+                const SizedBox(height: 12),
+                // Review TextField with rounded corners
+                TextField(
+                  controller: reviewController,
+                  decoration: InputDecoration(
+                    labelText: "Write your review",
+                    labelStyle: const TextStyle(color: Colors.grey),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide.none,
                     ),
-                    elevation: 2,
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 15, horizontal: 10),
                   ),
-                  onPressed: () async {
-                    setState(() {
-                      isSubmitted = true;
-                    });
-                    if (selectedRating != null &&
-                        reviewController.text.isNotEmpty) {
-                      final currentDate =
-                          DateFormat('yyyy-MM-dd').format(DateTime.now());
-
-                      // Prepare review data with appointmentId
-                      final reviewData = {
-                        'date': currentDate,
-                        'rating': selectedRating,
-                        'review': reviewController.text,
-                        'reviewer_name': reviewerName,
-                        'appointment_id': appointmentId,
-                      };
-
-                      // Save to Firestore in specialists -> specialistId -> reviews array
-                      await FirebaseFirestore.instance
-                          .collection('specialists')
-                          .doc(specialistId)
-                          .set(
-                              {
-                            'reviews': FieldValue.arrayUnion([reviewData])
-                          },
-                              SetOptions(
-                                  merge:
-                                      true)); // Create `reviews` array if it doesn't exist
-
-                      // Print confirmation
-                      print('Review submitted: $reviewData');
-
-                      // Close the dialog
-                      Navigator.of(dialogContext).pop();
-                    }
-                  },
-                  child: const Text(
-                    'Submit',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  maxLines: 3,
+                  style: const TextStyle(fontSize: 16),
                 ),
+                // Validation message with a modern style
+                if (isSubmitted &&
+                    (selectedRating == null ||
+                        reviewController.text.isEmpty))
+                  const Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Text(
+                      'Please fill out both rating and review.',
+                      style: TextStyle(color: Colors.red, fontSize: 14),
+                    ),
+                  ),
               ],
-            );
-          },
-        );
-      },
-    );
-  }
+            ),
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+        actions: <Widget>[
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                  vertical: 12, horizontal: 30),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              elevation: 2,
+            ),
+            onPressed: () async {
+              setState(() {
+                isSubmitted = true;
+              });
+              if (selectedRating != null &&
+                  reviewController.text.isNotEmpty) {
+                final currentDate =
+                    DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+                // Prepare review data with appointmentId
+                final reviewData = {
+                  'date': currentDate,
+                  'rating': selectedRating,
+                  'review': reviewController.text,
+                  'reviewer_name': reviewerName,
+                  'appointment_id': appointmentId,
+                };
+
+                // Save to Firestore in specialists -> specialistId -> reviews array
+                await FirebaseFirestore.instance
+                    .collection('specialists')
+                    .doc(specialistId)
+                    .set(
+                    {
+                      'reviews': FieldValue.arrayUnion([reviewData])
+                    },
+                    SetOptions(
+                        merge:
+                        true)); // Create `reviews` array if it doesn't exist
+
+                // Print confirmation
+                print('Review submitted: $reviewData');
+
+                // Close the dialog
+                Navigator.of(dialogContext).pop();
+              }
+            },
+            child: const Text(
+              'Submit',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   Future<void> _checkForChatSession(
       BuildContext context, String specialistId) async {
@@ -531,7 +534,9 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
       child: Row(
         children: [
           Icon(icon,
-              color: highlight ? Colors.green : Colors.blueAccent, size: 22),
+              color:
+                  highlight ? Colors.green : Color.fromARGB(255, 90, 113, 243),
+              size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -577,7 +582,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     int rating = review['rating'] ?? 0;
     String reviewText = review['review'] ?? '';
 
-     return Card(
+    return Card(
       color: Colors.white,
       margin: const EdgeInsets.symmetric(vertical: 8),
       elevation: 2,

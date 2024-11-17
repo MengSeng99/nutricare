@@ -299,72 +299,90 @@ Please review the details above and let us know if you spot any errors.
   }
 
   Widget _buildDoneButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () async {
-          // Invoke the function to delete the selected time slot before creating the appointment.
-          await _deleteSelectedTimeSlot();
-
-          // Invoke the function to check for chat and create a message.
-          await _checkForChatAndCreateMessage(context);
-
-          User? currentUser = FirebaseAuth.instance.currentUser;
-
-          if (currentUser != null) {
-            String userId = currentUser.uid;
-
-            // Create the appointment data to save to Firestore
-            Map<String, dynamic> appointmentData = {
-              'appointmentId': appointmentId, // Add the appointment ID
-              'specialistId': widget.specialistId,
-              'specialistName': widget.specialistName,
-              'selectedDate': widget.selectedDate,
-              'selectedTimeSlot': widget.selectedTimeSlot,
-              'appointmentMode': widget.appointmentMode,
-              'amountPaid': widget.amountPaid,
-              'serviceName': widget.serviceName,
-              'paymentCardUsed': widget.paymentCardUsed,
-              'appointmentStatus': widget.appointmentStatus,
-              'createdAt': DateTime.now(), // Add a timestamp
-            };
-
-            // Save the appointment data to Firestore
-            // 1. Save the appointment data into the appointments collection with appointmentId as document ID.
-            // 2. Create a sub-collection named 'details' under the appointment document.
-            await FirebaseFirestore.instance
-                .collection('appointments')   // Main collection for appointments
-                .doc(appointmentId)           // Document ID is the appointmentId
-                .set({
-                  'users': [userId, widget.specialistId], // Add user IDs to the main appointment document
-                });
-
-            // Add appointment details to a subcollection called 'details'
-            await FirebaseFirestore.instance
-                .collection('appointments')
-                .doc(appointmentId)
-                .collection('details')
-                .add(appointmentData); // Append details to subcollection
-
-            // Navigate back to the schedule screen
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 2)), // Assuming index 2 is the schedule screen
+  return SizedBox(
+    width: double.infinity,
+    child: ElevatedButton(
+      onPressed: () async {
+        // Show loading indicator dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,  // Prevent dismissal of dialog by tapping outside
+          builder: (BuildContext context) {
+            return AlertDialog(
+              content: Row(
+                children: [
+                  CircularProgressIndicator(),  // Loading indicator
+                  SizedBox(width: 20),          // Add some spacing
+                  Text("Processing, please wait..."), // Loading message
+                ],
+              ),
             );
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-        ),
-        child: const Text(
-          "Done",
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          },
+        );
+
+        // Invoke the function to delete the selected time slot before creating the appointment.
+        await _deleteSelectedTimeSlot();
+
+        // Invoke the function to check for chat and create a message.
+        await _checkForChatAndCreateMessage(context);
+
+        User? currentUser = FirebaseAuth.instance.currentUser;
+
+        if (currentUser != null) {
+          String userId = currentUser.uid;
+
+          // Create the appointment data to save to Firestore
+          Map<String, dynamic> appointmentData = {
+            'appointmentId': appointmentId, // Add the appointment ID
+            'specialistId': widget.specialistId,
+            'specialistName': widget.specialistName,
+            'selectedDate': widget.selectedDate,
+            'selectedTimeSlot': widget.selectedTimeSlot,
+            'appointmentMode': widget.appointmentMode,
+            'amountPaid': widget.amountPaid,
+            'serviceName': widget.serviceName,
+            'paymentCardUsed': widget.paymentCardUsed,
+            'appointmentStatus': widget.appointmentStatus,
+            'createdAt': DateTime.now(), // Add a timestamp
+          };
+
+          // Save the appointment data to Firestore
+          await FirebaseFirestore.instance
+              .collection('appointments')   // Main collection for appointments
+              .doc(appointmentId)           // Document ID is the appointmentId
+              .set({
+                'users': [userId, widget.specialistId], // Add user IDs to the main appointment document
+              });
+
+          // Add appointment details to a subcollection called 'details'
+          await FirebaseFirestore.instance
+              .collection('appointments')
+              .doc(appointmentId)
+              .collection('details')
+              .add(appointmentData); // Append details to subcollection
+
+          // Dismiss loading dialog before navigating
+          Navigator.of(context).pop(); // This will close the loading dialog
+          
+          // Navigate back to the schedule screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 2)), // Assuming index 2 is the schedule screen
+          );
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
         ),
       ),
-    );
-  }
+      child: const Text(
+        "Done",
+        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+    ),
+  );
+}
 }

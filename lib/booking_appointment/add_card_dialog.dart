@@ -70,6 +70,7 @@ class AddCardDialog {
     context: context,
     builder: (BuildContext context) {
       return Dialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
         child: Container(
           width: MediaQuery.of(context).size.width * 0.85, // Width takes 85% of the screen

@@ -103,7 +103,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
         filteredRecords = bmiRecords.where((record) {
           DateTime recordDate = DateTime.parse(record.date);
           return recordDate.isAfter(startDate!.subtract(Duration(days: 1))) &&
-                 recordDate.isBefore(endDate!.add(Duration(days: 1)));
+              recordDate.isBefore(endDate!.add(Duration(days: 1)));
         }).toList();
       });
     }
@@ -120,6 +120,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -165,7 +166,8 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: const Text('Reset', style: TextStyle(color: Colors.white)),
+                    child: const Text('Reset',
+                        style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
@@ -243,7 +245,10 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
             SizedBox(height: 16),
             Text(
               'No BMI History Available Yet!',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 8),
@@ -268,7 +273,10 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
           SizedBox(height: 16),
           Text(
             'No BMI records available for the selected date range!',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 8),
@@ -284,7 +292,13 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
 
   Widget _buildBmiCard(BmiRecord record) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 10),
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: Colors.grey.shade400, width: 1),
+      ),
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
       child: ListTile(
         title: Text('BMI: ${record.bmi.toStringAsFixed(1)}',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
@@ -295,107 +309,111 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
   }
 
   Widget _buildBmiChart(List<BmiRecord> records) {
-  List<FlSpot> chartData = records.map((record) {
-    final DateTime date = DateTime.parse(record.date);
-    return FlSpot(date.millisecondsSinceEpoch.toDouble(), record.bmi);
-  }).toList();
+    List<FlSpot> chartData = records.map((record) {
+      final DateTime date = DateTime.parse(record.date);
+      return FlSpot(date.millisecondsSinceEpoch.toDouble(), record.bmi);
+    }).toList();
 
-  return Container(
-    height: MediaQuery.of(context).size.height * 0.45,
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(15),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.1),
-          blurRadius: 10,
-          offset: const Offset(0, 5),
-        ),
-      ],
-    ),
-    child: LineChart(
-      LineChartData(
-        gridData: FlGridData(show: false),
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 30,
-              getTitlesWidget: (value, meta) {
-                DateTime date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                // Show only the first and last dates
-                if (value == chartData.first.x || value == chartData.last.x) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.45,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey.shade400, width: 1),  
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(show: false),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) {
+                  DateTime date =
+                      DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                  // Show only the first and last dates
+                  if (value == chartData.first.x || value == chartData.last.x) {
+                    return SideTitleWidget(
+                      axisSide: meta.axisSide,
+                      child: Text(
+                        '${date.month}/${date.day}',
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                    );
+                  }
+                  return const SizedBox();
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (value, meta) {
                   return SideTitleWidget(
                     axisSide: meta.axisSide,
                     child: Text(
-                      '${date.month}/${date.day}',
+                      value.toString(),
                       style: const TextStyle(color: Colors.black54),
                     ),
                   );
-                }
-                return const SizedBox();
-              },
+                },
+              ),
+            ),
+            topTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
             ),
           ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 40,
-              getTitlesWidget: (value, meta) {
-                return SideTitleWidget(
-                  axisSide: meta.axisSide,
-                  child: Text(
-                    value.toString(),
-                    style: const TextStyle(color: Colors.black54),
-                  ),
-                );
+          borderData:
+              FlBorderData(show: true, border: Border.all(color: primaryColor)),
+          minX: chartData.isNotEmpty ? chartData.last.x : 0,
+          maxX: chartData.isNotEmpty
+              ? chartData.first.x
+              : DateTime.now().millisecondsSinceEpoch.toDouble(),
+          minY: 10,
+          maxY: 40,
+          lineBarsData: [
+            LineChartBarData(
+              spots: chartData,
+              isCurved: true,
+              color: Colors.blueAccent,
+              dotData: FlDotData(show: true),
+              belowBarData: BarAreaData(show: false),
+              aboveBarData:
+                  BarAreaData(show: true, color: Colors.blue.withOpacity(0.2)),
+            ),
+          ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (touchedSpots) {
+                return touchedSpots.map((spot) {
+                  DateTime date =
+                      DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                  return LineTooltipItem(
+                    '${date.month}/${date.day}\nBMI: ${spot.y.toStringAsFixed(1)}',
+                    const TextStyle(color: Colors.white),
+                  );
+                }).toList();
               },
             ),
-          ),
-          topTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-        ),
-        borderData: FlBorderData(show: true, border: Border.all(color: primaryColor)),
-        minX: chartData.isNotEmpty ? chartData.last.x : 0,
-        maxX: chartData.isNotEmpty
-            ? chartData.first.x
-            : DateTime.now().millisecondsSinceEpoch.toDouble(),
-        minY: 10,
-        maxY: 40,
-        lineBarsData: [
-          LineChartBarData(
-            spots: chartData,
-            isCurved: true,
-            color: Colors.blueAccent,
-            dotData: FlDotData(show: true),
-            belowBarData: BarAreaData(show: false),
-            aboveBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.2)),
-          ),
-        ],
-        lineTouchData: LineTouchData(
-          touchTooltipData: LineTouchTooltipData(
-            getTooltipItems: (touchedSpots) {
-              return touchedSpots.map((spot) {
-                DateTime date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
-                return LineTooltipItem(
-                  '${date.month}/${date.day}\nBMI: ${spot.y.toStringAsFixed(1)}',
-                  const TextStyle(color: Colors.white),
-                );
-              }).toList();
-            },
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
-}
-
 
 class BmiRecord {
   final String date;
