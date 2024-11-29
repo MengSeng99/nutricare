@@ -90,11 +90,16 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                     style: const TextStyle(color: Colors.black),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.filter_list),
-                  color: const Color.fromARGB(255, 90, 113, 243),
-                  onPressed: () => _showFilterDialog(),
-                ),
+                 Column(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.filter_list,
+                        color: Color.fromARGB(255, 90, 113, 243)),
+                    onPressed: () => _showFilterDialog(),
+                  ),
+                  const Text("Filter", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
+              ),
               ],
             ),
           ),
@@ -319,7 +324,7 @@ class ArticlesListView extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       side: BorderSide(
                           color: Color.fromARGB(255, 221, 222, 226), width: 1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(15),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),

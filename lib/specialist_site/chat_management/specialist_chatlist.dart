@@ -144,6 +144,7 @@ class _SpecialistChatListScreenState extends State<SpecialistChatListScreen> {
             color: Color.fromARGB(255, 220, 220, 241),
           ),
         ),
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),

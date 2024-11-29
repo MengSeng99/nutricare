@@ -122,17 +122,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // const Padding(
-        //   padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        //   child: Text(
-        //     'Articles and Blogs',
-        //     style: TextStyle(
-        //       fontSize: 22,
-        //       fontWeight: FontWeight.bold,
-        //       color: Color.fromARGB(255, 73, 73, 73),
-        //     ),
-        //   ),
-        // ),
         Container(
           height: MediaQuery.of(context).size.height *
               0.25, // Adjust height to fit your design
@@ -266,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
   // List of services with icons and descriptions
   final List<Map<String, dynamic>> _services = const [
-    {'icon': Icons.fastfood_rounded, 'label': 'Food Recipe'},
+    {'icon': Icons.restaurant_outlined, 'label': 'Food Recipe'},
     {'icon': Icons.calendar_today_rounded, 'label': 'Book an Appointment'},
     {'icon': Icons.monitor_weight_rounded, 'label': 'BMI Tracker'},
     {'icon': Icons.book_rounded, 'label': 'Health Records'},

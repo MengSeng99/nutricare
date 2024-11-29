@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nutricare/authentication_process/login.dart';
 import 'client_info.dart'; // Import the ClientInfoScreen
 import 'help.dart';
-import 'language.dart';
+import 'feedback.dart';
 import 'payment_methods.dart'; // Import the HelpScreen
 import 'package:firebase_auth/firebase_auth.dart'; // Assuming you're using Firebase Auth
 
@@ -34,7 +34,7 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSettingOption(context, Icons.person, 'Personal Details', () {
+            _buildSettingOption(context, Icons.person_outlined, 'Personal Details', () {
               // Navigate to ClientInfoScreen
               Navigator.push(context, MaterialPageRoute(builder: (context) => const ClientInfoScreen()));
             }),
@@ -44,12 +44,12 @@ class SettingsScreen extends StatelessWidget {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentMethodsScreen()));
             }),
             const SizedBox(height: 10),
-            _buildSettingOption(context, Icons.language, 'Language', () {
+            _buildSettingOption(context, Icons.feedback_outlined, 'Feedback', () {
               // Navigate to LanguageScreen
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const LanguageScreen()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const FeedbackScreen()));
             }),
             const SizedBox(height: 10),
-            _buildSettingOption(context, Icons.help, 'Help and FAQs', () {
+            _buildSettingOption(context, Icons.help_outline_outlined, 'Help and FAQs', () {
               // Navigate to HelpScreen
               Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpScreen()));
             }),
@@ -168,7 +168,7 @@ void _showLogoutConfirmationDialog(BuildContext context) {
                 duration: Duration(seconds: 1),
               ));
             },
-            child: const Text("Log Out", style: TextStyle(color: Colors.white)),
+            child: const Text("Yes, Log Out", style: TextStyle(color: Colors.white)),
           ),
         ],
       );

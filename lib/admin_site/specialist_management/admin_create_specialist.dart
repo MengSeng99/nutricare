@@ -289,7 +289,10 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Card(
           elevation: 2,
+          color: Colors.white,
           shape: RoundedRectangleBorder(
+            side:
+                BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
             borderRadius: BorderRadius.circular(15),
           ),
           child: Padding(

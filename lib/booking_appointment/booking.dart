@@ -299,8 +299,8 @@ class _BookingScreenState extends State<BookingScreen>
           title: const Text("Appointment Modes",
           style: TextStyle(color: Color.fromARGB(255, 90, 113, 243),fontWeight: FontWeight.bold)),
           content: const Text(
-              "Physical Appointment: \nPlease arrive at the clinic 30 minutes before your scheduled time.\n\n"
-              "Online Appointment: \nYou will receive a virtual consultation at the scheduled time."),
+              "Physical Appointment: \nPlease arrive at the clinic 30 minutes before your scheduled time. Kindly contact your specialist via Chat if you have any doubt after your booking.\n\n"
+              "Online Appointment: \nYou will receive a virtual consultation at the scheduled time. The specialist will contact you via Chat.\n\n"),
           actions: [
             ElevatedButton(
             style: ElevatedButton.styleFrom(

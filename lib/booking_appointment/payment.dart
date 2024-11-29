@@ -572,6 +572,7 @@ Future<void> _showAddCardDialog() async {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
         title: const Text("Add Payment Method", style: TextStyle(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
@@ -680,7 +681,9 @@ Future<void> _showAddCardDialog() async {
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: const Text("Cancel", style: TextStyle(color: Colors.red)),
+            child: const Text("Cancel", 
+            // style: TextStyle(color: Colors.red)
+            ),
           ),
           ElevatedButton(
             onPressed: () {

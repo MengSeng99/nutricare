@@ -93,6 +93,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       child: Card(
+                        elevation: 2,
+                        color: Colors.blueAccent[80],
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
                           side: const BorderSide(
@@ -117,6 +119,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                 context: context,
                                 builder: (BuildContext context) {
                                   return AlertDialog(
+                                    backgroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(15),
                                     ),

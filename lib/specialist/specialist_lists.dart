@@ -54,6 +54,7 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
   TextEditingController searchController = TextEditingController();
   String _searchQuery = '';
   final List<String> _selectedGenders = [];
+  bool _showFavoritesOnly = false; // New variable to track filter option
 
   @override
   void initState() {
@@ -81,7 +82,7 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
         return specialist;
       }).toList();
     }).map((specialists) {
-      return specialists.where((specialist) {
+      List<Specialist> filteredSpecialists = specialists.where((specialist) {
         final matchesGender = _selectedGenders.isEmpty ||
             _selectedGenders.contains(specialist.gender);
         final matchesSearch =
@@ -90,8 +91,21 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
             ? specialist.specialization.toLowerCase() == 'dietitian'
             : widget.title == 'Nutritionist' &&
                 specialist.specialization.toLowerCase() == 'nutritionist';
+
         return matchesGender && matchesSearch && matchesTitle;
       }).toList();
+
+      // Sort to show favorites first
+      filteredSpecialists.sort((a, b) {
+        if (a.isFavorite == b.isFavorite) return 0;
+        return a.isFavorite ? -1 : 1;
+      });
+
+      return _showFavoritesOnly
+          ? filteredSpecialists
+              .where((specialist) => specialist.isFavorite)
+              .toList()
+          : filteredSpecialists; // Return all specialists or favorite ones
     });
   }
 
@@ -265,16 +279,17 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                         ),
                       ),
                       suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            setState(() {
-                              searchController.clear(); // Clear the search field
-                              _searchQuery = ""; // Clear the search query
-                            });
-                          },
-                        )
-                      : null,
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                setState(() {
+                                  searchController
+                                      .clear(); // Clear the search field
+                                  _searchQuery = ""; // Clear the search query
+                                });
+                              },
+                            )
+                          : null,
                     ),
                     style: const TextStyle(
                         color: Color.fromARGB(255, 74, 60, 137)),
@@ -282,6 +297,63 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 16.0),
+            // Choice chips for filtering
+Row(
+  mainAxisAlignment: MainAxisAlignment.start,
+  children: [
+    Padding(
+      padding: const EdgeInsets.only(right: 12.0),
+      child: ChoiceChip(
+        label: const Text('All'),
+        selected: !_showFavoritesOnly,
+        onSelected: (isSelected) {
+          setState(() {
+            _showFavoritesOnly = false; // Handle selection
+          });
+        },
+        selectedColor: const Color.fromARGB(255, 90, 113, 243),
+        backgroundColor: Colors.grey[200],
+        labelStyle: TextStyle(
+          color: !_showFavoritesOnly ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
+          fontWeight: FontWeight.bold,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(100), // 100px border radius
+          side: BorderSide(
+            color: !_showFavoritesOnly ? const Color.fromARGB(255, 90, 113, 243) : Colors.transparent,
+            width: 2.0,
+          ),
+        ),
+      ),
+    ),
+    Padding(
+      padding: const EdgeInsets.only(right: 12.0),
+      child: ChoiceChip(
+        label: const Text('Favorites'),
+        selected: _showFavoritesOnly,
+        onSelected: (isSelected) {
+          setState(() {
+            _showFavoritesOnly = true; // Handle selection
+          });
+        },
+        selectedColor: const Color.fromARGB(255, 90, 113, 243),
+        backgroundColor: Colors.grey[200],
+        labelStyle: TextStyle(
+          color: _showFavoritesOnly ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
+          fontWeight: FontWeight.bold,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(100), // 100px border radius
+          side: BorderSide(
+            color: _showFavoritesOnly ? const Color.fromARGB(255, 90, 113, 243) : Colors.transparent,
+            width: 2.0,
+          ),
+        ),
+      ),
+    ),
+  ],
+),
             const SizedBox(height: 16.0),
             Expanded(child: _buildSpecialistList()),
           ],

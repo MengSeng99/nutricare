@@ -98,7 +98,7 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -107,6 +107,8 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
               _buildWeightInputBox(),
               const SizedBox(height: 12),
               _buildAgeInputBox(),
+              const SizedBox(height: 12),
+              _buildGenderSelection(),
               const SizedBox(height: 12),
 
               Text(
@@ -142,8 +144,9 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                    fillColor: Colors.white, // Set the background to white
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12), // Adjust padding
                   ),
                   isExpanded: true,
                 ),
@@ -176,6 +179,74 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildGenderSelection() {
+    return Container(
+      padding: const EdgeInsets.all(5.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: Colors.grey, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            'Gender',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.male,
+                      color: Colors.blue, size: 30), // Blue Icon for Male
+                  const Text(
+                    'Male',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Radio<String>(
+                    value: 'Male',
+                    groupValue: gender,
+                    activeColor: Color.fromARGB(255, 90, 113, 243),
+                    onChanged: (value) {
+                      setState(() {
+                        gender = value!;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.female,
+                      color: Colors.red, size: 30), // Red Icon for Female
+                  const Text(
+                    'Female',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Radio<String>(
+                    value: 'Female',
+                    groupValue: gender,
+                    activeColor: Color.fromARGB(255, 90, 113, 243),
+                    onChanged: (value) {
+                      setState(() {
+                        gender = value!;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -258,7 +329,7 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
     required VoidCallback onDecrease,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(7),
@@ -350,52 +421,78 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
   }
 
   void _showCaloricGoalDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      backgroundColor: Colors.white,
+      title: const Text(
+        'Caloric Goal',
+        style: TextStyle(
+          color: Color.fromARGB(255, 90, 113, 243),
+          fontWeight: FontWeight.bold,
+          fontSize: 24, // Increased font size for the title
         ),
-        title: const Text('Caloric Goal',
-            style: TextStyle(
-                color: Color.fromARGB(255, 90, 113, 243),
-                fontWeight: FontWeight.bold)),
-        content: Text(
-          'Your Daily Caloric Goal: ${caloricGoal.toStringAsFixed(0)} kcal',
-          style: const TextStyle(fontSize: 18),
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-            ),
-            child: const Text('Set as Calorie Goal',
-                style: TextStyle(color: Colors.white)),
-            onPressed: () async {
-              await _setCalorieGoal();
-              Navigator.pop(context, caloricGoal.toInt()); // Pass the goal back
-            },
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min, // Ensure the dialog doesn't take too much height
+        children: [
+          const Icon(
+            Icons.local_fire_department_outlined, // Icon representing food
+            size: 60, // Large icon size
+            color: Color.fromARGB(255, 90, 113, 243),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
+          const SizedBox(height: 15), // Spacer
+          Text(
+            'Your Daily Caloric Goal:',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
             ),
-            child: const Text('Close',
-                style: TextStyle(color: Color.fromARGB(255, 90, 113, 243))),
-            onPressed: () {
-              Navigator.of(context).pop(); // Just close the dialog
-            },
+          ),
+          const SizedBox(height: 5), // Spacer
+          Text(
+            '${caloricGoal.toStringAsFixed(0)} kcal',
+            style: const TextStyle(
+              fontSize: 36, // Larger font for the goal
+              fontWeight: FontWeight.w600,
+              color: Color.fromARGB(255, 90, 113, 243), // Consistent color with the title
+            ),
           ),
         ],
       ),
-    );
-  }
+      actions: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
+          ),
+          child: const Text(
+            'Set as Calorie Goal',
+            style: TextStyle(color: Colors.white),
+          ),
+          onPressed: () async {
+            await _setCalorieGoal();
+            Navigator.pop(context, caloricGoal.toInt()); // Pass the goal back
+          },
+        ),
+        TextButton(
+          child: const Text(
+            'Close',
+          ),
+          onPressed: () {
+            Navigator.of(context).pop(); // Just close the dialog
+          },
+        ),
+      ],
+    ),
+  );
+}
 
   Future<void> _setCalorieGoal() async {
     User? user = _auth.currentUser; // Get the current user
@@ -429,6 +526,7 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
         ),
+        backgroundColor: Colors.white,
         title: const Text('Incomplete Data',
             style: TextStyle(
                 color: Color.fromARGB(255, 90, 113, 243),
@@ -463,6 +561,7 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
         ),
+        backgroundColor: Colors.white,
         title: const Text('How to Calculate Calories',
             style: TextStyle(
                 color: Color.fromARGB(255, 90, 113, 243),

@@ -574,9 +574,9 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
               isCurved: true,
               color: Colors.blueAccent,
               dotData: FlDotData(show: true), // Show markers
-              belowBarData: BarAreaData(show: false),
+              belowBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.2)),
               aboveBarData:
-                  BarAreaData(show: true, color: Colors.blue.withOpacity(0.2)),
+                  BarAreaData(show: false, color: Colors.blue.withOpacity(0.2)),
             ),
           ],
           lineTouchData: LineTouchData(

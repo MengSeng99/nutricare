@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'admin_edit_recipe.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class AdminRecipeDetailsScreen extends StatefulWidget {
   final String recipeId;
@@ -8,7 +10,8 @@ class AdminRecipeDetailsScreen extends StatefulWidget {
   const AdminRecipeDetailsScreen({super.key, required this.recipeId});
 
   @override
-  _AdminRecipeDetailsScreenState createState() => _AdminRecipeDetailsScreenState();
+  _AdminRecipeDetailsScreenState createState() =>
+      _AdminRecipeDetailsScreenState();
 }
 
 class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
@@ -67,7 +70,10 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
 
     return nutritionalFactsSnapshot.docs.map((doc) {
       final factData = doc.data() as Map<String, dynamic>;
-      return {'label': factData['label'], 'value': factData['value']?.toDouble() ?? 0.0};
+      return {
+        'label': factData['label'],
+        'value': factData['value']?.toDouble() ?? 0.0
+      };
     }).toList();
   }
 
@@ -84,6 +90,7 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
           calories: recipe['calories'] ?? 0,
           difficulty: recipe['difficulty'] ?? '',
           imageUrl: recipe['imageUrl'] ?? '',
+          youtubeLink: recipe['youtubeLink'] ?? '',
         ),
       ),
     );
@@ -104,17 +111,21 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
         ),
         title: const Text(
           'Confirm Deletion',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243)),
         ),
         content: RichText(
           text: TextSpan(
-            style: const TextStyle(fontSize: 16, color: Colors.black), // General text style
+            style: const TextStyle(
+                fontSize: 16, color: Colors.black), // General text style
             children: [
-             const TextSpan(text: 'Are you sure you want to remove\n'),
+              const TextSpan(text: 'Are you sure you want to remove\n'),
               TextSpan(
                 text: recipeName,
                 style: const TextStyle(
-                  color: Color.fromARGB(255, 90, 113, 243), // Specific color for the name
+                  color: Color.fromARGB(
+                      255, 90, 113, 243), // Specific color for the name
                   fontWeight: FontWeight.bold, // Bold for emphasis
                 ),
               ),
@@ -123,7 +134,9 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -131,7 +144,7 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                 borderRadius: BorderRadius.circular(30),
               ),
             ),
-            onPressed: () => Navigator.of(context).pop(true), 
+            onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -140,16 +153,20 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
 
     if (shouldDelete == true) {
       try {
-        await FirebaseFirestore.instance.collection('recipes').doc(widget.recipeId).delete();
+        await FirebaseFirestore.instance
+            .collection('recipes')
+            .doc(widget.recipeId)
+            .delete();
         ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Recipe deleted successfully!'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
+          SnackBar(
+            content: const Text('Recipe deleted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
         Navigator.pop(context);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting recipe: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error deleting recipe: $e')));
       }
     }
   }
@@ -161,14 +178,18 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
       appBar: AppBar(
         title: const Text(
           "Recipe Details",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243)),
         ),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(height: 0.5, color: Color.fromARGB(255, 220, 220, 241)),
+          child:
+              Divider(height: 0.5, color: Color.fromARGB(255, 220, 220, 241)),
         ),
         backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        iconTheme:
+            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -180,10 +201,11 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.delete),
-            color:  Colors.red,
+            color: Colors.red,
             onPressed: () async {
               final recipe = await _recipeFuture; // Fetch current recipe data
-              String recipeName = recipe['title'] ?? 'this recipe'; // Use recipe title or a default message
+              String recipeName = recipe['title'] ??
+                  'this recipe'; // Use recipe title or a default message
               _deleteRecipe(recipeName);
             },
           ),
@@ -213,7 +235,8 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                     elevation: 2,
                     color: Colors.white,
                     shape: RoundedRectangleBorder(
-                      side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                      side: BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226), width: 1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Padding(
@@ -235,12 +258,15 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                           // Recipe Title
                           Text(
                             recipe['title'] ?? 'No Title',
-                            style: const TextStyle(fontSize: 28.0, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                fontSize: 28.0, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8.0),
 
                           // Recipe Category
-                          Text('Category: ${recipe['category'] ?? 'Uncategorized'}', style: const TextStyle(fontSize: 16.0)),
+                          Text(
+                              'Category: ${recipe['category'] ?? 'Uncategorized'}',
+                              style: const TextStyle(fontSize: 16.0)),
                           const SizedBox(height: 8.0),
 
                           // Recipe Details in a Grid
@@ -249,10 +275,14 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             children: [
-                              _infoCard(Icons.access_time, 'Cooking Time', '${recipe['cookingTime']} mins'),
-                              _infoCard(Icons.group, 'Servings', '${recipe['servings']}'),
-                              _infoCard(Icons.local_fire_department, 'Calories', '${recipe['calories']} Cal'),
-                              _infoCard(Icons.star, 'Difficulty', recipe['difficulty'] ?? 'N/A'),
+                              _infoCard(Icons.access_time, 'Cooking Time',
+                                  '${recipe['cookingTime']} mins'),
+                              _infoCard(Icons.group, 'Servings',
+                                  '${recipe['servings']}'),
+                              _infoCard(Icons.local_fire_department, 'Calories',
+                                  '${recipe['calories']} Cal'),
+                              _infoCard(Icons.star, 'Difficulty',
+                                  recipe['difficulty'] ?? 'N/A'),
                             ],
                           ),
                         ],
@@ -268,11 +298,16 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                     futureBuilder: FutureBuilder<List<Map<String, dynamic>>>(
                       future: _getIngredients(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
-                        } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        } else if (!snapshot.hasData ||
+                            snapshot.data == null ||
+                            snapshot.data!.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.all(8.0),
                             child: Text('No ingredients found.'),
@@ -284,9 +319,11 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: snapshot.data!.length,
                           itemBuilder: (context, index) {
-                            var ingredient = snapshot.data![index]['name'] ?? 'Unnamed Ingredient';
+                            var ingredient = snapshot.data![index]['name'] ??
+                                'Unnamed Ingredient';
                             return ListTile(
-                              leading: const Icon(Icons.check_circle, color: Color(0xFF5A71F3)),
+                              leading: const Icon(Icons.check_circle,
+                                  color: Color(0xFF5A71F3)),
                               title: Text(ingredient),
                             );
                           },
@@ -303,11 +340,16 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                     futureBuilder: FutureBuilder<List<Map<String, dynamic>>>(
                       future: _getSteps(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
-                        } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        } else if (!snapshot.hasData ||
+                            snapshot.data == null ||
+                            snapshot.data!.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.all(8.0),
                             child: Text('No steps found.'),
@@ -319,12 +361,16 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: snapshot.data!.length,
                           itemBuilder: (context, index) {
-                            var step = snapshot.data![index]['description'] ?? 'Unnamed Step';
-                            var stepNumber = snapshot.data![index]['number'] ?? 0;
+                            var step = snapshot.data![index]['description'] ??
+                                'Unnamed Step';
+                            var stepNumber =
+                                snapshot.data![index]['number'] ?? 0;
                             return ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: const Color(0xFF5A71F3),
-                                child: Text('$stepNumber', style: const TextStyle(color: Colors.white)),
+                                child: Text('$stepNumber',
+                                    style:
+                                        const TextStyle(color: Colors.white)),
                               ),
                               title: Text(step),
                             );
@@ -342,11 +388,16 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                     futureBuilder: FutureBuilder<List<Map<String, dynamic>>>(
                       future: _getNutritionalFacts(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
-                        } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        } else if (!snapshot.hasData ||
+                            snapshot.data == null ||
+                            snapshot.data!.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.all(8.0),
                             child: Text('No nutritional facts found.'),
@@ -358,8 +409,11 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: snapshot.data!.length,
                           itemBuilder: (context, index) {
-                            var fact = snapshot.data![index]['label'] ?? 'Unnamed Fact';
-                            var value = snapshot.data![index]['value']?.toString() ?? 'N/A';
+                            var fact = snapshot.data![index]['label'] ??
+                                'Unnamed Fact';
+                            var value =
+                                snapshot.data![index]['value']?.toString() ??
+                                    'N/A';
                             return ListTile(
                               title: Text('$fact: $value g'),
                             );
@@ -368,7 +422,71 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
                       },
                     ),
                   ),
+                  const SizedBox(height: 20.0),
+// YouTube Video Section
+                  if (recipe['youtubeLink'] != null &&
+                      recipe['youtubeLink']!.isNotEmpty)
+                    _buildExpandableCard(
+                      title: "Tutorial Video",
+                      futureBuilder: FutureBuilder<String>(
+                        future: Future.value(recipe['youtubeLink']),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Center(
+                                child: Text('Error: ${snapshot.error}'));
+                          } else if (!snapshot.hasData ||
+                              snapshot.data == null) {
+                            return const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text('No video link found.'),
+                            );
+                          }
 
+                          final String videoUrl =
+                              snapshot.data!; // Get the YT URL
+
+                          // Extract the video ID from the URL
+                          final videoId =
+                              YoutubePlayer.convertUrlToId(videoUrl);
+
+                          // Check whether we got a valid video ID
+                          if (videoId == null) {
+                            return const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text('Invalid video URL'),
+                            );
+                          }
+
+                          // Generate the thumbnail URL
+                          String thumbnailUrl =
+                              'https://img.youtube.com/vi/$videoId/0.jpg';
+
+                          return GestureDetector(
+                            onTap: () {
+                              // Open the YouTube video link in a browser
+                              launch(videoUrl);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8.0),
+                                child: Image.network(
+                                  thumbnailUrl,
+                                  height:
+                                      200, // Set a fixed height for the thumbnail
+                                  width: double.infinity, // Make it responsive
+                                  fit: BoxFit.cover, // Cover the area
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   const SizedBox(height: 20.0),
                 ],
               ),
@@ -380,16 +498,18 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
   }
 
   // Helper method to build expandable cards
-  Widget _buildExpandableCard({required String title, required FutureBuilder<List<Map<String, dynamic>>> futureBuilder}) {
+  Widget _buildExpandableCard(
+      {required String title, required FutureBuilder<dynamic> futureBuilder}) {
     return Card(
-              elevation: 2,
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
-                borderRadius: BorderRadius.circular(8),
-              ),
+      elevation: 2,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: ExpansionTile(
-        title: Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        title: Text(title,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -402,27 +522,29 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
 
   Widget _infoCard(IconData icon, String title, String value) {
     return Card(
-         elevation: 2,
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 25,
-              backgroundColor: const Color(0xFF5A71F3),
-              child: Icon(icon, color: Colors.white, size: 25),
-            ),
-            const SizedBox(height: 4),
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text(value, style: const TextStyle(fontSize: 18)),
-          ],
+        elevation: 2,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
+          borderRadius: BorderRadius.circular(8),
         ),
-    ));
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: const Color(0xFF5A71F3),
+                child: Icon(icon, color: Colors.white, size: 25),
+              ),
+              const SizedBox(height: 4),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(value, style: const TextStyle(fontSize: 18)),
+            ],
+          ),
+        ));
   }
 }

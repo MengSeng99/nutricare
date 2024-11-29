@@ -6,12 +6,15 @@ class HelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'Help and FAQs',
-          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: Color.fromARGB(255, 90, 113, 243),
+              fontWeight: FontWeight.bold),
         ),
-         bottom: const PreferredSize(
+        bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(
             height: 0.5,
@@ -19,13 +22,17 @@ class HelpScreen extends StatelessWidget {
           ),
         ),
         backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        iconTheme:
+            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
         elevation: 0,
       ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 255, 255, 255), Color.fromARGB(255, 240, 240, 250)],
+            colors: [
+              Color.fromARGB(255, 255, 255, 255),
+              Color.fromARGB(255, 240, 240, 250)
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -37,18 +44,24 @@ class HelpScreen extends StatelessWidget {
             children: [
               const Text(
                 'Frequently Asked Questions',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+                style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 90, 113, 243)),
               ),
               const SizedBox(height: 15),
-              _buildFaqItem('How can I update my personal details?', 'Navigate to Personal Details in the Settings menu.'),
+              _buildFaqItem('How can I update my personal details?',
+                  'Navigate to Personal Details in the Settings menu.'),
               const SizedBox(height: 10),
-              _buildFaqItem('How do I add a new payment method?', 'Go to Payment Methods in the Settings menu.'),
-              const SizedBox(height: 10),
-              _buildFaqItem('How can I change the language?', 'Select your preferred option under Language in the Settings menu.'),
+              _buildFaqItem('How do I add a new payment method?',
+                  'Go to Payment Methods in the Settings menu.'),
               const SizedBox(height: 30),
               const Text(
                 'Contact Us',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+                style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 90, 113, 243)),
               ),
               const SizedBox(height: 10),
               const Text(
@@ -69,9 +82,10 @@ class HelpScreen extends StatelessWidget {
   // Function to build each FAQ item with a modern card layout
   Widget _buildFaqItem(String question, String answer) {
     return Card(
-      elevation: 5,
+       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: Colors.grey.shade400, width: 1),
       ),
       margin: const EdgeInsets.symmetric(vertical: 5),
       child: Padding(
@@ -81,7 +95,10 @@ class HelpScreen extends StatelessWidget {
           children: [
             Text(
               question,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 90, 113, 243)),
             ),
             const SizedBox(height: 5),
             Text(
@@ -97,10 +114,13 @@ class HelpScreen extends StatelessWidget {
   // Function to build contact info with an icon
   Widget _buildContactInfo(String title, String info) {
     return Card(
-      elevation: 3,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: Colors.grey.shade400, width: 1),
       ),
+      margin: EdgeInsets.symmetric(vertical: 8),
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(

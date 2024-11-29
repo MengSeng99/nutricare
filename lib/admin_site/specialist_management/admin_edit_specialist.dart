@@ -70,23 +70,33 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
   }
 
   Future<void> updateProfilePicture() async {
-    if (_imageFile != null) {
-      try {
-        FirebaseStorage storage = FirebaseStorage.instance;
-        String fileName = _imageFile!.name;
-        Reference ref = storage.ref().child('profile_pictures/$fileName');
-        await ref.putFile(File(_imageFile!.path));
-        String downloadUrl = await ref.getDownloadURL();
-        setState(() {
-          profilePictureUrl = downloadUrl;
-        });
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error uploading image: $e')),
-        );
+  if (_imageFile != null) {
+    try {
+      FirebaseStorage storage = FirebaseStorage.instance;
+
+      // Delete the previous profile picture if it exists
+      if (profilePictureUrl != null) {
+        Reference previousRef = storage.refFromURL(profilePictureUrl!);
+        await previousRef.delete();
       }
+      
+      // Upload the new image
+      String fileName = _imageFile!.name;
+      Reference ref = storage.ref().child('profile_pictures/$fileName');
+      await ref.putFile(File(_imageFile!.path));
+      String downloadUrl = await ref.getDownloadURL();
+      
+      // Update the state with the new image URL
+      setState(() {
+        profilePictureUrl = downloadUrl;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error uploading image: $e')),
+      );
     }
   }
+}
 
   Future<void> updateSpecialist() async {
     try {

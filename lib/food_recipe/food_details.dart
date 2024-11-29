@@ -3,6 +3,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class FoodDetailsScreen extends StatefulWidget {
   final String recipeId;
@@ -31,6 +33,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   bool showIngredients = false;
   bool showSteps = false;
   bool showNutritionalFacts = false;
+  bool showYTThumbnail = false; // New state for YouTube thumbnail
 
   @override
   void initState() {
@@ -48,8 +51,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
       steps = await _getSteps();
       nutritionalFacts = await _getNutritionalFacts();
     } catch (e) {
-      // Handle error appropriately, perhaps log it or show a message
-      // print("Error fetching data: $e");
+      // Handle error appropriately
     }
     setState(() {}); // Refresh the UI after data is fetched
   }
@@ -71,16 +73,12 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
         setState(() {
           isBookmarked = false;
         });
-      }).catchError((error) {
-        // print("Failed to remove bookmark: $error");
       });
     } else {
       await favRecipesRef.set({'isBookmarked': true}).then((_) {
         setState(() {
           isBookmarked = true;
         });
-      }).catchError((error) {
-        // print("Failed to add bookmark: $error");
       });
     }
   }
@@ -147,6 +145,41 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
     } else {
       throw Exception('Unsupported value type');
     }
+  }
+
+  // Add this method to build the YouTube thumbnail
+  Widget _buildYouTubeThumbnail(String? youtubeLink) {
+    if (youtubeLink == null || youtubeLink.isEmpty) {
+      return const SizedBox(); // Don't show anything if the link is not valid
+    }
+
+    final videoId = YoutubePlayer.convertUrlToId(youtubeLink);
+    if (videoId == null) {
+      return const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Text('Invalid video URL'),
+      );
+    }
+
+    final thumbnailUrl = 'https://img.youtube.com/vi/$videoId/0.jpg';
+
+    return GestureDetector(
+      onTap: () {
+        launch(youtubeLink); // Open YouTube link
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8.0),
+          child: Image.network(
+            thumbnailUrl,
+            height: 200, // Set a fixed height
+            width: double.infinity, // Make it responsive
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -340,7 +373,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
 
                                 // Nutritional Facts Section
                                 _buildCollapsibleSection(
-                                  "Nutritional Facts",
+                                  "Nutritional Facts (g)",
                                   showNutritionalFacts,
                                   () {
                                     setState(() {
@@ -356,6 +389,23 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                         )
                                       : null,
                                 ),
+
+                                const SizedBox(height: 5.0),
+
+                                // YouTube Thumbnail Section - Only build if a valid link exists
+                                if (recipe?['youtubeLink'] != null && recipe!['youtubeLink'].isNotEmpty)
+                                  _buildCollapsibleSection(
+                                    "Tutorial Video",
+                                    showYTThumbnail,
+                                    () {
+                                      setState(() {
+                                        showYTThumbnail = !showYTThumbnail; // toggle the state
+                                      });
+                                    },
+                                    showYTThumbnail
+                                        ? _buildYouTubeThumbnail(recipe!['youtubeLink'])
+                                        : null,
+                                  ),
                               ],
                             ),
                           ),
@@ -555,7 +605,6 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
         ),
       ),
       trailing: Text(value.toStringAsFixed(2),
-          style: const TextStyle(fontSize: 16.0)),
-    );
+          style: const TextStyle(fontSize: 16.0)));
   }
 }

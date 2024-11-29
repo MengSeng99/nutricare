@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'appointment_management/admin_appointment.dart';
-import 'admin_settings.dart';
+import 'settings/admin_settings.dart';
 import 'articles_management/admin_articles.dart';
 import 'recipe_management/admin_recipe.dart';
 import 'specialist_management/admin_specialist.dart';

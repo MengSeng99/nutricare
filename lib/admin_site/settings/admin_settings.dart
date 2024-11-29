@@ -1,13 +1,10 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:nutricare/specialist_site/specialist_earning.dart';
-import '../authentication_process/login.dart';
-import '../food_recipe/food_recipe.dart';
-import '../settings/feedback.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:nutricare/admin_site/settings/admin_feedback.dart';
+import 'package:nutricare/authentication_process/login.dart';
 
-
-class SpecialistMoreScreen extends StatelessWidget {
-  const SpecialistMoreScreen({super.key});
+class AdminSettingsScreen extends StatelessWidget {
+  const AdminSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,10 +13,13 @@ class SpecialistMoreScreen extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text(
-          'More Services',
-          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
+          'Settings',
+          style: TextStyle(
+            color: Color.fromARGB(255, 90, 113, 243),
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        bottom: const PreferredSize(
+          bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(
             height: 0.5,
@@ -35,21 +35,19 @@ class SpecialistMoreScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSettingOption(context, Icons.restaurant, 'Food Recipe', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const FoodRecipeScreen()));
+            _buildSettingOption(context, Icons.feedback_outlined, 'Feedback', () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminFeedbackScreen()));
+              // Replace with actual route when implemented
             }),
             const SizedBox(height: 10),
-            _buildSettingOption(context, Icons.feedback_outlined, 'Feedback', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const FeedbackScreen()));
-            }),
-             const SizedBox(height: 10),
-            _buildSettingOption(context, Icons.attach_money_outlined, 'Earning', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const EarningsScreen()));
+            _buildSettingOption(context, Icons.question_answer, 'Specialist Enquiry', () {
+              // Navigate to Specialist Enquiry Screen (if implemented)
+              // Replace with actual route when implemented
             }),
             const SizedBox(height: 60),
             const Divider(height: 1, color: Colors.grey),
             const SizedBox(height: 20),
-            _buildLogoutOption(context), // Add the logout option
+            _buildLogoutOption(context),
           ],
         ),
       ),
@@ -132,8 +130,10 @@ class SpecialistMoreScreen extends StatelessWidget {
           ),
           title: const Text(
             "Confirm Logout",
-            style: TextStyle(fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 90, 113, 243),) 
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243),
+            )
           ),
           content: const Text(
             "Are you sure you want to log out?",
@@ -156,10 +156,6 @@ class SpecialistMoreScreen extends StatelessWidget {
               onPressed: () async {
                 Navigator.of(context).pop(); // Dismiss the dialog
                 await _handleLogout(context); // Proceed to logout
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text("You have been logged out successfully."),
-                  duration: Duration(seconds: 1),
-                ));
               },
               child: const Text("Yes, Log Out", style: TextStyle(color: Colors.white)),
             ),
@@ -173,8 +169,15 @@ class SpecialistMoreScreen extends StatelessWidget {
   Future<void> _handleLogout(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signOut();
-      // Navigate to login or home screen after logging out
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LoginPage()));
+      // Navigate to login after logging out
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+        (route) => false, // This removes all previous routes
+      );
+      // Optional snack bar
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Logged out successfully')),
+      );
     } catch (e) {
       // Handle error if necessary
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(

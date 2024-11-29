@@ -168,166 +168,317 @@ class SpecialistsListView extends StatelessWidget {
 
         final specialists = snapshot.data!.docs;
 
-        final filteredSpecialists = specialists.where((specialist) {
+        final activeSpecialists = specialists.where((specialist) {
           final specialistData = specialist.data() as Map<String, dynamic>;
           final name = specialistData['name'] ?? '';
-          return name.toLowerCase().startsWith(searchKeyword); // Filter by name
+          final status = specialistData['status'] ?? '';
+          return name.toLowerCase().startsWith(searchKeyword) &&
+              status != 'inactive'; 
         }).toList();
 
-        // Check if no specialists match the search criteria
-        if (filteredSpecialists.isEmpty) {
+        final inactiveSpecialists = specialists.where((specialist) {
+          final specialistData = specialist.data() as Map<String, dynamic>;
+          final name = specialistData['name'] ?? '';
+          final status = specialistData['status'] ?? '';
+          return name.toLowerCase().startsWith(searchKeyword) &&
+              status == 'inactive'; 
+        }).toList();
+
+        if (activeSpecialists.isEmpty) {
           return Center(
-              child: Text("Specialist named with '$searchKeyword' not found"));
+              child: Text("No active specialists found matching '$searchKeyword'"));
         }
 
-        return ListView.builder(
-          itemCount: filteredSpecialists.length,
-          itemBuilder: (context, index) {
-            final specialistData =
-                filteredSpecialists[index].data() as Map<String, dynamic>;
-            final profilePictureUrl = specialistData['profile_picture_url'] ??
-                ''; // Retrieve profile picture URL
-            final email =
-                specialistData['email'] ?? 'No Email'; // Retrieve email
-            final specialistId =
-                filteredSpecialists[index].id; // Get the specialist ID
+        return Column(
+          children: [
+            // Active Specialists List
+            Expanded(
+              child: ListView.builder(
+                itemCount: activeSpecialists.length,
+                itemBuilder: (context, index) {
+                  final specialistData =
+                      activeSpecialists[index].data() as Map<String, dynamic>;
+                  final profilePictureUrl =
+                      specialistData['profile_picture_url'] ?? ''; 
+                  final email =
+                      specialistData['email'] ?? 'No Email'; 
+                  final specialistId =
+                      activeSpecialists[index].id;
 
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              elevation: 2,
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: profilePictureUrl.isNotEmpty
-                      ? NetworkImage(profilePictureUrl)
-                      : const AssetImage('assets/images/default_profile.png')
-                          as ImageProvider,
-                ),
-                title: RichText(
-                  text: TextSpan(
-                    children: <TextSpan>[
-                      const TextSpan(
-                        text: 'Dr. ',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Color.fromARGB(255, 90, 113, 243),
-                        ),
-                      ),
-                      TextSpan(
-                        text: specialistData['name'] ?? 'No Name',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Color.fromARGB(255, 90, 113, 243),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(specialistData['specialization'] ??
-                        'No Specialization'),
-                    const SizedBox(height: 4),
-                    Text(email, style: const TextStyle(color: Colors.grey)),
-                  ],
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    _showDeleteConfirmationDialog(
-                        context, specialistData['name'], specialistId);
-                  },
-                ),
-                onTap: () {
-                  Navigator.push(
+                  return _buildActiveSpecialistCard(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => AdminSpecialistsDetailsScreen(
-                          specialistId: specialistId),
-                    ),
+                    specialistData,
+                    profilePictureUrl,
+                    email,
+                    specialistId,
                   );
                 },
               ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showDeleteConfirmationDialog(
-      BuildContext context, String? specialistName, String specialistId) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          title: const Text('Delete Specialist',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 90, 113, 243))),
-          content: RichText(
-            text: TextSpan(
-              style: const TextStyle(
-                  fontSize: 16, color: Colors.black), // General text style
-              children: [
-                const TextSpan(text: 'Are you sure you want to remove\n'),
-                TextSpan(
-                  text: 'Dr. ${specialistName ?? "this specialist"}',
-                  style: const TextStyle(
-                    color: Color.fromARGB(
-                        255, 90, 113, 243), // Specific color for the name
-                    fontWeight: FontWeight.bold, // Bold for emphasis
-                  ),
-                ),
-                const TextSpan(text: '?'),
-              ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+            if (inactiveSpecialists.isNotEmpty) ...[
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                child: Text(
+                  'Inactive Specialists',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
-              onPressed: () async {
-                Navigator.of(context).pop(); // Close the dialog
-                // Delete the specialist from Firestore
-                await FirebaseFirestore.instance
-                    .collection('specialists')
-                    .doc(specialistId)
-                    .delete();
-                // Optionally, show a snackbar or a toast to confirm deletion
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Specialist removed successfully!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              },
-              child:
-                  const Text('Delete', style: TextStyle(color: Colors.white)),
-            ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: inactiveSpecialists.length,
+                  itemBuilder: (context, index) {
+                    final specialistData =
+                        inactiveSpecialists[index].data() as Map<String, dynamic>;
+                    final profilePictureUrl =
+                        specialistData['profile_picture_url'] ?? ''; 
+                    final email =
+                        specialistData['email'] ?? 'No Email'; 
+                    final specialistId =
+                        inactiveSpecialists[index].id;
+
+                    return _buildInactiveSpecialistCard(
+                      context,
+                      specialistData,
+                      profilePictureUrl,
+                      email,
+                      specialistId,
+                    );
+                  },
+                ),
+              ),
+            ],
           ],
         );
       },
     );
   }
+
+  Widget _buildActiveSpecialistCard(
+    BuildContext context,
+    Map<String, dynamic> specialistData,
+    String profilePictureUrl,
+    String email,
+    String specialistId,
+  ) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      elevation: 2,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundImage: profilePictureUrl.isNotEmpty
+              ? NetworkImage(profilePictureUrl)
+              : const AssetImage('assets/images/default_profile.png')
+                  as ImageProvider,
+        ),
+        title: RichText(
+          text: TextSpan(
+            children: <TextSpan>[
+              const TextSpan(
+                text: 'Dr. ',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Color.fromARGB(255, 90, 113, 243),
+                ),
+              ),
+              TextSpan(
+                text: specialistData['name'] ?? 'No Name',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Color.fromARGB(255, 90, 113, 243),
+                ),
+              ),
+            ],
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(specialistData['specialization'] ?? 'No Specialization'),
+            const SizedBox(height: 4),
+            Text(email, style: const TextStyle(color: Colors.grey)),
+          ],
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.stop_circle_outlined, color: Colors.red),
+          onPressed: () {
+            _showDeactivateConfirmationDialog(
+                context, specialistData['name'], specialistId);
+          },
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  AdminSpecialistsDetailsScreen(specialistId: specialistId),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInactiveSpecialistCard(
+    BuildContext context,
+    Map<String, dynamic> specialistData,
+    String profilePictureUrl,
+    String email,
+    String specialistId,
+  ) {
+    // Get the deactivation date time
+    final Timestamp? deactivationTimeStamp = 
+        specialistData['deactivation_datetime'] as Timestamp?;
+    
+    // Format the date if the timestamp is not null
+    final String deactivationDate = deactivationTimeStamp != null 
+        ? "${deactivationTimeStamp.toDate()}".split(' ')[0] // Formatting to only get the date part
+        : 'Unknown';
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      elevation: 2,
+      color: const Color(0xFFFFF0F0), 
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: Colors.redAccent, width: 1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundImage: profilePictureUrl.isNotEmpty
+              ? NetworkImage(profilePictureUrl)
+              : const AssetImage('assets/images/default_profile.png')
+                  as ImageProvider,
+        ),
+        title: RichText(
+          text: TextSpan(
+            children: <TextSpan>[
+              const TextSpan(
+                text: 'Dr. ',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.redAccent,
+                ),
+              ),
+              TextSpan(
+                text: specialistData['name'] ?? 'No Name',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.redAccent,
+                ),
+              ),
+              const TextSpan(text: ' (Inactive)', style: TextStyle(color: Colors.red)),
+            ],
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(specialistData['specialization'] ?? 'No Specialization'),
+            const SizedBox(height: 4),
+            Text(email, style: const TextStyle(color: Colors.grey)),
+            const SizedBox(height: 4),
+            Text('Deactivated on: $deactivationDate', // Displaying deactivation date
+                style: const TextStyle(color: Colors.redAccent)),
+          ],
+        ),
+        trailing: SizedBox.shrink(), // Hiding the deactivate button
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AdminSpecialistsDetailsScreen(specialistId: specialistId),
+            ),
+          );
+        },
+      ),
+    );
+  }
+  void _showDeactivateConfirmationDialog(
+    BuildContext context, String? specialistName, String specialistId) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: const Text('Deactivate Specialist',
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(255, 90, 113, 243))),
+        content: RichText(
+          text: TextSpan(
+            style: const TextStyle(
+                fontSize: 16, color: Colors.black), // General text style
+            children: [
+              const TextSpan(text: 'Are you sure you want to deactivate\n'),
+              TextSpan(
+                text: 'Dr. ${specialistName ?? "this specialist"}',
+                style: const TextStyle(
+                  color: Color.fromARGB(
+                      255, 90, 113, 243), // Specific color for the name
+                  fontWeight: FontWeight.bold, // Bold for emphasis
+                ),
+              ),
+              const TextSpan(text: '?'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            onPressed: () async {
+              // Deactivate the specialist in Firestore
+              await FirebaseFirestore.instance
+                  .collection('specialists')
+                  .doc(specialistId)
+                  .update({
+                'status': 'inactive',
+                'deactivation_datetime': FieldValue.serverTimestamp(),
+              }).then((_) {
+                Navigator.of(context).pop(); // Close the dialog
+                // Optionally, show a confirmation message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Specialist deactivated successfully'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }).catchError((error) {
+                // Handle any errors that occur during the update
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error deactivating specialist: $error'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              });
+            },
+            child: const Text('Yes, Deactivate', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      );
+    },
+  );
+}
 }

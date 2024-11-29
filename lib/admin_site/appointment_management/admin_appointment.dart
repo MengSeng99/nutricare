@@ -60,7 +60,8 @@ class _AdminAppointmentScreenState extends State<AdminAppointmentScreen>
         ),
         body: const TabBarView(
           children: [
-            AppointmentsTab(statusFilter: ['Confirmed', 'Pending Confirmation']),
+            AppointmentsTab(
+                statusFilter: ['Confirmed', 'Pending Confirmation']),
             AppointmentsTab(statusFilter: ['Completed']),
             AppointmentsTab(statusFilter: ['Canceled']),
           ],
@@ -172,7 +173,8 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: "Search by Appointment ID",
-                    hintStyle: const TextStyle(color: Colors.grey, fontSize: 13), 
+                    hintStyle:
+                        const TextStyle(color: Colors.grey, fontSize: 13),
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
                     fillColor: const Color.fromARGB(255, 250, 250, 250)
@@ -211,15 +213,26 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                 ),
               ),
               const SizedBox(width: 8.0),
-              IconButton(
-                icon: const Icon(Icons.filter_list,
-                    color: Color.fromARGB(255, 90, 113, 243)),
-                onPressed: () => _showFilterDialog(),
+              Column(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.filter_list,
+                        color: Color.fromARGB(255, 90, 113, 243)),
+                    onPressed: () => _showFilterDialog(),
+                  ),
+                  const Text("Filter", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.sort,
-                    color: Color.fromARGB(255, 90, 113, 243)),
-                onPressed: () => _showSortDialog(),
+              const SizedBox(width: 8.0),
+              Column(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.sort,
+                        color: Color.fromARGB(255, 90, 113, 243)),
+                    onPressed: () => _showSortDialog(),
+                  ),
+                  const Text("Sort", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
               ),
             ],
           ),
@@ -293,82 +306,84 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
     );
   }
 
- void _showFilterDialog() {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: const Text(
-                'Filter by Specialists',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 90, 113, 243),
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: const Text(
+                  'Filter by Specialists',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 90, 113, 243),
+                  ),
                 ),
               ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.grey),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: specialists.map((specialist) {
+                return RadioListTile<String>(
+                  value: specialist,
+                  groupValue: selectedSpecialists.isNotEmpty
+                      ? selectedSpecialists.first
+                      : '',
+                  title: Text(specialist),
+                  onChanged: (String? value) {
+                    setState(() {
+                      if (value != null) {
+                        selectedSpecialists = [value]; // Select the specialist
+                        Navigator.of(context).pop(); // Close the dialog
+                      }
+                    });
+                  },
+                );
+              }).toList(),
             ),
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.grey),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  selectedSpecialists.clear(); // Clear the selections
+                });
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text("Clear Filter"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color.fromARGB(255, 90, 113, 243),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
               },
+              child: const Text("Done", style: TextStyle(color: Colors.white)),
             ),
           ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: specialists.map((specialist) {
-              return RadioListTile<String>(
-                value: specialist,
-                groupValue: selectedSpecialists.isNotEmpty ? selectedSpecialists.first : '',
-                title: Text(specialist),
-                onChanged: (String? value) {
-                  setState(() {
-                    if (value != null) {
-                      selectedSpecialists = [value]; // Select the specialist
-                      Navigator.of(context).pop(); // Close the dialog
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              setState(() {
-                selectedSpecialists.clear(); // Clear the selections
-              });
-              Navigator.of(context).pop(); // Close the dialog
-            },
-            child: const Text("Clear Filter"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color.fromARGB(255, 90, 113, 243),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
-            },
-            child: const Text("Done", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   void _showSortDialog() {
     showDialog(
@@ -379,30 +394,30 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
             borderRadius: BorderRadius.circular(15),
           ),
           title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: const Text(
-                'Sort by',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 90, 113, 243),
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: const Text(
+                  'Sort by',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 90, 113, 243),
+                  ),
                 ),
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.grey),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-            ),
-          ],
-        ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.grey),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+              ),
+            ],
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: ['Appointment ID', 'Specialist Name', 'Date']
-                  .map((option) {
+              children:
+                  ['Appointment ID', 'Specialist Name', 'Date'].map((option) {
                 return RadioListTile<String>(
                   title: Text(option),
                   value: option,

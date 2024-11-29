@@ -19,6 +19,123 @@ class BmiResultScreen extends StatelessWidget {
     required this.isMale,
   });
 
+  void _showBmiClassification(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: Colors.white,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'BMI Classification',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: Color.fromARGB(255, 90, 113, 243),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              
+              const Divider(thickness: 1, color: Colors.grey),
+              
+              // Make the DataTable scrollable
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(
+                      label: Text(
+                        'Category',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'BMI Range',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                  rows: const [
+                    DataRow(cells: [
+                      DataCell(Text('Underweight')),
+                      DataCell(Text('< 18.5')),
+                    ]),
+                    DataRow(cells: [
+                      DataCell(Text('Normal weight')),
+                      DataCell(Text('18.5 - 24.9')),
+                    ]),
+                    DataRow(cells: [
+                      DataCell(Text('Pre-obesity')),
+                      DataCell(Text('25.0 - 29.9')),
+                    ]),
+                    DataRow(cells: [
+                      DataCell(Text('Obesity class I')),
+                      DataCell(Text('30.0 - 34.9')),
+                    ]),
+                    DataRow(cells: [
+                      DataCell(Text('Obesity class II')),
+                      DataCell(Text('35.0 - 39.9')),
+                    ]),
+                    DataRow(cells: [
+                      DataCell(Text('Obesity class III')),
+                      DataCell(Text('>= 40.0')),
+                    ]),
+                  ],
+                  dataRowHeight: 50, // Adjust row height for better spacing
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Close Button
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 24,
+                  ),
+                ),
+                child: const Text(
+                  'Close',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     // Determine the BMI category and color based on the BMI value
@@ -73,6 +190,12 @@ class BmiResultScreen extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Color.fromARGB(255, 90, 113, 243)),
+            onPressed: () => _showBmiClassification(context), // Show classification on press
+          ),
+        ],
       ),
       body: Center(
         child: Padding(

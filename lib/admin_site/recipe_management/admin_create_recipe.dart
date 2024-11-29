@@ -20,6 +20,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   int? _servings;
   int? _calories;
   String? _difficulty;
+  String? _youtubeLink;
   File? _imageFile;
   final List<TextEditingController> _ingredientControllers = [];
   final List<TextEditingController> _stepControllers = [];
@@ -30,6 +31,12 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   final List<Map<String, dynamic>> _nutritionalFacts = [];
 
   final List<String> _difficultyOptions = ['Easy', 'Medium', 'Hard'];
+  final List<String> _categoryOptions = [
+    'Breakfast',
+    'Lunch',
+    'Dinner',
+    'Snack',
+  ];
 
   Future<void> _pickImage() async {
     final imagePicker = ImagePicker();
@@ -44,7 +51,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   Future<String?> _uploadImage() async {
     if (_imageFile != null) {
       try {
-        final storageRef = FirebaseStorage.instance.ref().child('recipe_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
+        final storageRef = FirebaseStorage.instance.ref().child(
+            'recipe_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
         await storageRef.putFile(_imageFile!);
         String downloadUrl = await storageRef.getDownloadURL();
         return downloadUrl;
@@ -61,12 +69,16 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
       String? imageUrl = await _uploadImage();
       if (imageUrl == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Image upload failed"),backgroundColor: Colors.red,));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("Image upload failed"),
+          backgroundColor: Colors.red,
+        ));
         return;
       }
 
       // Create the main recipe document
-      DocumentReference recipeRef = await FirebaseFirestore.instance.collection('recipes').add({
+      DocumentReference recipeRef =
+          await FirebaseFirestore.instance.collection('recipes').add({
         'title': _title,
         'category': _category,
         'cookingTime': _cookingTime,
@@ -74,31 +86,59 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         'calories': _calories,
         'difficulty': _difficulty,
         'imageUrl': imageUrl,
+        'youtubeLink': _youtubeLink,
       });
 
       // Add ingredients, steps, and nutritional facts into respective subcollections
-      await _addSubcollectionItems(recipeRef, 'ingredients', _ingredients, _ingredientControllers);
-      await _addSubcollectionItems(recipeRef, 'steps', _steps, _stepControllers);
-      await _addSubcollectionItems(recipeRef, 'nutritionalFacts', _nutritionalFacts, _nutritionalFactControllers, _nutritionalValueControllers);
+      await _addSubcollectionItems(
+          recipeRef, 'ingredients', _ingredients, _ingredientControllers);
+      await _addSubcollectionItems(
+          recipeRef, 'steps', _steps, _stepControllers);
+      await _addSubcollectionItems(
+          recipeRef,
+          'nutritionalFacts',
+          _nutritionalFacts,
+          _nutritionalFactControllers,
+          _nutritionalValueControllers);
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recipe created successfully!'),backgroundColor: Colors.green,));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Recipe created successfully!'),
+        backgroundColor: Colors.green,
+      ));
       Navigator.pop(context); // Navigate back to previous screen
     }
   }
 
-  Future<void> _addSubcollectionItems(DocumentReference recipeRef, String collectionName,
-      List<Map<String, dynamic>> items, List<TextEditingController> controllers, [List<TextEditingController>? valueControllers]) async {
-    final batch = FirebaseFirestore.instance.batch();
-    for (var i = 0; i < items.length; i++) {
-      Map<String, dynamic> item = items[i];
-      item['name'] = controllers[i].text;
+  Future<void> _addSubcollectionItems(
+    DocumentReference recipeRef,
+    String collectionName,
+    List<Map<String, dynamic>> items,
+    List<TextEditingController> controllers,
+    [List<TextEditingController>? valueControllers]) async {
+  final batch = FirebaseFirestore.instance.batch();
+  for (var i = 0; i < items.length; i++) {
+    Map<String, dynamic> item = items[i];
+    
+    if (collectionName == 'steps') {
+      // Ensure the right key is used for steps
+      item['description'] = controllers[i].text;
+      item['number'] = item['number']; // Or however you previously set step number
+    } else if (collectionName == 'nutritionalFacts') {
+      // Ensure the right key is used for nutritional facts
+      item['label'] = controllers[i].text;
       if (valueControllers != null) {
         item['value'] = int.tryParse(valueControllers[i].text) ?? 0;
       }
-      batch.set(recipeRef.collection(collectionName).doc(), item);
+    } else {
+      // Handle other collection items if necessary (like ingredients)
+      item['name'] = controllers[i].text; // For ingredients
     }
-    await batch.commit();
+    
+    // Set the item in the Firestore batch write
+    batch.set(recipeRef.collection(collectionName).doc(), item);
   }
+  await batch.commit();
+}
 
   void _addIngredient() {
     setState(() {
@@ -134,7 +174,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             Expanded(
               child: TextFormField(
                 controller: _ingredientControllers[index],
-                decoration: InputDecoration(labelText: "Ingredient ${index + 1}"),
+                decoration:
+                    InputDecoration(labelText: "Ingredient ${index + 1}"),
               ),
             ),
             IconButton(
@@ -198,7 +239,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             Expanded(
               child: TextFormField(
                 controller: _nutritionalFactControllers[index],
-                decoration: InputDecoration(labelText: "Nutritional Fact ${index + 1}"),
+                decoration:
+                    InputDecoration(labelText: "Nutritional Fact ${index + 1}"),
               ),
             ),
             const SizedBox(width: 8),
@@ -232,17 +274,22 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           "Create Recipe",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243)),
         ),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(height: 0.5, color: Color.fromARGB(255, 220, 220, 241)),
+          child:
+              Divider(height: 0.5, color: Color.fromARGB(255, 220, 220, 241)),
         ),
         backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        iconTheme:
+            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -263,7 +310,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                         color: Colors.grey[300],
                         borderRadius: BorderRadius.circular(8.0),
                         image: _imageFile != null
-                            ? DecorationImage(image: FileImage(_imageFile!), fit: BoxFit.cover)
+                            ? DecorationImage(
+                                image: FileImage(_imageFile!),
+                                fit: BoxFit.cover)
                             : null,
                       ),
                       alignment: Alignment.center,
@@ -280,51 +329,79 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
                 // Card for Recipe Details
                 Card(
-                  elevation: 4,
+                  elevation: 2,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(
+                        color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
                         TextFormField(
-                          decoration: const InputDecoration(labelText: "Food Recipe Name"),
-                          validator: (value) => value!.isEmpty ? 'Please enter a title.' : null,
+                          decoration: const InputDecoration(
+                              labelText: "Food Recipe Name"),
+                          validator: (value) =>
+                              value!.isEmpty ? 'Please enter a title.' : null,
                           onSaved: (value) => _title = value,
                         ),
                         const SizedBox(height: 16.0),
-
-                        TextFormField(
-                          decoration: const InputDecoration(labelText: "Category"),
-                          onSaved: (value) => _category = value,
+                        // Updated category dropdown
+                        DropdownButtonFormField<String>(
+                          value: _category,
+                          decoration:
+                              const InputDecoration(labelText: "Category"),
+                          items: _categoryOptions.map((String option) {
+                            return DropdownMenuItem<String>(
+                              value: option,
+                              child: Text(option),
+                            );
+                          }).toList(),
+                          onChanged: (value) => setState(() {
+                            _category = value;
+                          }),
+                          validator: (value) => value == null
+                              ? 'Please select a category.'
+                              : null,
                         ),
                         const SizedBox(height: 16.0),
-
                         TextFormField(
-                          decoration: const InputDecoration(labelText: "Cooking Time (mins)"),
+                          decoration: const InputDecoration(
+                              labelText: "Cooking Time (mins)"),
                           keyboardType: TextInputType.number,
-                          validator: (value) => value!.isEmpty ? 'Please enter cooking time.' : null,
-                          onSaved: (value) => _cookingTime = int.tryParse(value!),
+                          validator: (value) => value!.isEmpty
+                              ? 'Please enter cooking time.'
+                              : null,
+                          onSaved: (value) =>
+                              _cookingTime = int.tryParse(value!),
                         ),
                         const SizedBox(height: 16.0),
-
                         TextFormField(
-                          decoration: const InputDecoration(labelText: "Servings (person)"),
+                          decoration: const InputDecoration(
+                              labelText: "Servings (person)"),
                           keyboardType: TextInputType.number,
-                          validator: (value) => value!.isEmpty ? 'Please enter the number of servings.' : null,
+                          validator: (value) => value!.isEmpty
+                              ? 'Please enter the number of servings.'
+                              : null,
                           onSaved: (value) => _servings = int.tryParse(value!),
                         ),
                         const SizedBox(height: 16.0),
-
                         TextFormField(
-                          decoration: const InputDecoration(labelText: "Calories"),
+                          decoration:
+                              const InputDecoration(labelText: "Calories"),
                           keyboardType: TextInputType.number,
-                          validator: (value) => value!.isEmpty ? 'Please enter calorie count.' : null,
+                          validator: (value) => value!.isEmpty
+                              ? 'Please enter calorie count.'
+                              : null,
                           onSaved: (value) => _calories = int.tryParse(value!),
                         ),
                         const SizedBox(height: 16.0),
-
                         DropdownButtonFormField<String>(
                           value: _difficulty,
-                          decoration: const InputDecoration(labelText: "Difficulty"),
+                          decoration:
+                              const InputDecoration(labelText: "Difficulty"),
                           items: _difficultyOptions.map((String option) {
                             return DropdownMenuItem<String>(
                               value: option,
@@ -334,8 +411,17 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                           onChanged: (value) => setState(() {
                             _difficulty = value;
                           }),
-                          validator: (value) => value == null ? 'Please select a difficulty.' : null,
+                          validator: (value) => value == null
+                              ? 'Please select a difficulty.'
+                              : null,
                         ),
+                        TextFormField(
+                          decoration: const InputDecoration(
+                              labelText: "YouTube Link (Optional)"),
+                          keyboardType: TextInputType.url,
+                          onSaved: (value) => _youtubeLink = value,
+                        ),
+                        const SizedBox(height: 16.0),
                       ],
                     ),
                   ),
@@ -344,19 +430,28 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
                 // Ingredients Card
                 Card(
-                  elevation: 4,
+                  elevation: 2,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(
+                        color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        const Text("Ingredients", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                        const Text("Ingredients",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 20)),
                         const SizedBox(height: 8.0),
                         _buildIngredientInputFields(),
                         const SizedBox(height: 16.0),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            backgroundColor: Color.fromARGB(255, 90, 113, 243), // Text color
+                            backgroundColor:
+                                Color.fromARGB(255, 90, 113, 243), // Text color
                           ),
                           onPressed: _addIngredient,
                           child: const Text("Add Ingredient"),
@@ -370,19 +465,28 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
                 // Steps Card
                 Card(
-                  elevation: 4,
+                  elevation: 2,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(
+                        color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        const Text("Steps", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                        const Text("Steps",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 20)),
                         const SizedBox(height: 8.0),
                         _buildStepInputFields(),
                         const SizedBox(height: 16.0),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            backgroundColor: Color.fromARGB(255, 90, 113, 243), // Text color
+                            backgroundColor:
+                                Color.fromARGB(255, 90, 113, 243), // Text color
                           ),
                           onPressed: _addStep,
                           child: const Text("Add Step"),
@@ -396,19 +500,28 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
                 // Nutritional Facts Card
                 Card(
-                  elevation: 4,
+                  elevation: 2,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(
+                        color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        const Text("Nutritional Facts", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                        const Text("Nutritional Facts",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 20)),
                         const SizedBox(height: 8.0),
                         _buildNutritionalFactInputFields(),
                         const SizedBox(height: 16.0),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            backgroundColor: Color.fromARGB(255, 90, 113, 243), // Text color
+                            backgroundColor:
+                                Color.fromARGB(255, 90, 113, 243), // Text color
                           ),
                           onPressed: _addNutritionalFact,
                           child: const Text("Add Nutritional Fact"),
@@ -418,23 +531,24 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 16.0),
+                const SizedBox(height: 32.0),
 
                 // Save Recipe Button
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Color.fromARGB(255, 90, 113, 243),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16.0, horizontal: 16.0),
-                      minimumSize: const Size(150, 50),
+                    foregroundColor: Colors.white,
+                    backgroundColor: Color.fromARGB(255, 90, 113, 243),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16.0, horizontal: 32.0),
+                    minimumSize: const Size(150, 50),
+                  ),
                   onPressed: _saveRecipe,
-                  icon: const Icon(Icons.add, color: Colors.white),
-                  label: const Text("Add Recipe", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  label: const Text("Create Recipe",
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(height: 8.0),
               ],

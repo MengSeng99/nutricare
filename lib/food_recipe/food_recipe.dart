@@ -314,7 +314,7 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
 
         // Check if there's data in the snapshot
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text('No recipes available.'));
+          return const Center(child: Text('You never add any recipe into favourite yet.'));
         }
 
         // Extract recipes

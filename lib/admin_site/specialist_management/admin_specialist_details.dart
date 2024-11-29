@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'admin_edit_specialist.dart';
-import 'admin_specialist_appointment.dart'; // Include the new file for appointments
+import 'admin_specialist_appointment.dart';
 
 class AdminSpecialistsDetailsScreen extends StatefulWidget {
   final String specialistId;
@@ -14,11 +14,12 @@ class AdminSpecialistsDetailsScreen extends StatefulWidget {
 
 class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsScreen> with SingleTickerProviderStateMixin {
   bool isLoading = true;
-  late Map<String, dynamic> specialistData = {}; // Initialize to avoid null exception
+  late Map<String, dynamic> specialistData = {};
   late TabController _tabController;
   List<dynamic> services = [];
   List<dynamic> reviews = [];
-  bool showEditIcon = true; // Track the visibility of the edit icon
+  bool showEditIcon = true;
+  String deactivationDate = '';
 
   @override
   void initState() {
@@ -29,7 +30,7 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
     // Listen to tab changes
     _tabController.addListener(() {
       setState(() {
-        showEditIcon = _tabController.index == 0; // Show edit icon only on the first tab
+        showEditIcon = _tabController.index == 0 && specialistData['status'] != 'inactive';
       });
     });
   }
@@ -45,12 +46,20 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
         specialistData = snapshot.data() as Map<String, dynamic>;
         services = specialistData['services'] ?? [];
         reviews = specialistData['reviews'] ?? [];
+        
+        // Check if the specialist is inactive and get the deactivation date
+        if (specialistData['status'] == 'inactive') {
+          Timestamp? deactivationTimestamp = specialistData['deactivation_datetime'] as Timestamp?;
+          if (deactivationTimestamp != null) {
+            deactivationDate = deactivationTimestamp.toDate().toLocal().toString().split(' ')[0];
+          }
+        }
+
         isLoading = false; 
       });
     } else {
-      // If specialist does not exist, handle appropriately
       setState(() {
-        specialistData = {}; // Or handle this case as needed
+        specialistData = {};
         services = [];
         reviews = [];
       });
@@ -65,6 +74,9 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
 
   @override
   Widget build(BuildContext context) {
+    // Check for inactive status
+    bool isInactive = specialistData['status'] == 'inactive';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -77,9 +89,9 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
           controller: _tabController,
           indicatorColor: Color.fromARGB(255, 90, 113, 243),
           labelColor: Color.fromARGB(255, 90, 113, 243),
-          tabs: const [
-            Tab(text: 'Details'),
-            Tab(text: 'Appointment Slots'),
+          tabs: [
+            const Tab(text: 'Details'),
+            Tab(text: isInactive ? 'Appointment Slots (Inactive)' : 'Appointment Slots'),
           ],
         ),
         leading: IconButton(
@@ -90,7 +102,7 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
           },
         ),
         actions: [
-          if (showEditIcon) // Conditionally render the edit icon
+          if (!isInactive && showEditIcon) // Show edit icon only for active specialists
             IconButton(
               icon: const Icon(Icons.edit, color: Color.fromARGB(255, 90, 113, 243)),
               onPressed: () {
@@ -113,22 +125,20 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
         controller: _tabController,
         children: [
           // First Tab for Specialist Details
-          _buildDetailsTab(),
+          _buildDetailsTab(isInactive), // Pass inactive status to details tab
           // Second Tab for Appointments
-          SpecialistAppointmentsScreen(specialistId: widget.specialistId), // Pass the specialistId to the appointments screen
+          isInactive ? _buildInactiveAppointmentMessage() : SpecialistAppointmentsScreen(specialistId: widget.specialistId),
         ],
       ),
     );
   }
 
-   // Method to build the details tab view
-  Widget _buildDetailsTab() {
-    // Show the loading indicator only while data is fetching
+  // Method to build the details tab view
+  Widget _buildDetailsTab(bool isInactive) {
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // After loading is done, display the details
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Card(
@@ -155,6 +165,12 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
                       'Dr. ${specialistData['name'] ?? 'No Name'}',
                       style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
+                    if (isInactive) // Show inactive message if applicable
+                      Text(
+                        'This specialist is no longer serving starting from $deactivationDate.',
+                        style: const TextStyle(fontSize: 16, color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
                   ],
                 ),
               ),
@@ -246,38 +262,49 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
     );
   }
 
-
- // Reusable widget for displaying info rows with an icon, label, and value
-Widget _buildInfoRow(IconData icon, String label, String value) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start, // Align icons and text
-      children: [
-        Icon(icon, color: const Color.fromARGB(255, 90, 113, 243)),
-        const SizedBox(width: 10),
-        Text(
-          '$label: ',
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+  // Method to build a message when appointment slots are inactive
+  Widget _buildInactiveAppointmentMessage() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Text(
+          'This specialist is inactive and cannot accept new appointments.',
+          style: const TextStyle(fontSize: 18, color: Colors.grey),
+          textAlign: TextAlign.center,
         ),
-        Expanded(
-          child: Tooltip(
-            message: value, // Show full value on hover/tap
-            child: Text(
-              value, // Display the value
-              style: const TextStyle(fontSize: 16), 
-              overflow: TextOverflow.visible, // Allow text to overflow
-              maxLines: 2, // Limit the number of lines to show
-              softWrap: true, // Allow text to wrap to the next line
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: const Color.fromARGB(255, 90, 113, 243)),
+          const SizedBox(width: 10),
+          Text(
+            '$label: ',
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
+          Expanded(
+            child: Tooltip(
+              message: value,
+              child: Text(
+                value,
+                style: const TextStyle(fontSize: 16),
+                overflow: TextOverflow.visible,
+                maxLines: 2,
+                softWrap: true,
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
-  // Reusable widget for section headers
   Widget _buildSectionHeader(IconData icon, String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),

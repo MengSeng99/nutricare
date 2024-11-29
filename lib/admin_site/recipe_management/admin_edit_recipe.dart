@@ -13,6 +13,7 @@ class EditRecipeDetailsScreen extends StatefulWidget {
   final int calories;
   final String difficulty;
   final String? imageUrl;
+  final String? youtubeLink;
 
   const EditRecipeDetailsScreen({
     super.key,
@@ -24,6 +25,7 @@ class EditRecipeDetailsScreen extends StatefulWidget {
     required this.calories,
     required this.difficulty,
     this.imageUrl,
+    this.youtubeLink,
   });
 
   @override
@@ -39,6 +41,7 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
   int? _calories;
   String? _difficulty;
   String? _imageUrl;
+  String? _youtubeLink;
   File? _imageFile;
   List<TextEditingController> _ingredientControllers = [];
   List<TextEditingController> _stepControllers = [];
@@ -49,6 +52,15 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
   List<Map<String, dynamic>> _nutritionalFacts = [];
 
   final List<String> _difficultyOptions = ['Easy', 'Medium', 'Hard'];
+  final List<String> _categoryOptions = [
+    'Breakfast',
+    'Lunch',
+    'Dinner',
+    'Snack',
+  ];
+
+  static const Color _primaryColor = Color.fromARGB(255, 90, 113, 243);
+  static const Color _errorColor = Colors.red;
 
   @override
   void initState() {
@@ -60,6 +72,7 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
     _calories = widget.calories;
     _difficulty = widget.difficulty;
     _imageUrl = widget.imageUrl;
+    _youtubeLink = widget.youtubeLink;
 
     _loadIngredients();
     _loadSteps();
@@ -91,7 +104,10 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
         .get();
 
     setState(() {
-      _steps = snapshot.docs.map((doc) => {'description': doc['description'], 'number': doc['number']}).toList();
+      _steps = snapshot.docs.map((doc) => {
+        'description': doc['description'],
+        'number': doc['number']
+      }).toList();
       _stepControllers = List.generate(
         _steps.length,
         (index) => TextEditingController(text: _steps[index]['description']),
@@ -139,12 +155,13 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
     if (_imageFile != null) {
       try {
         final storageRef = FirebaseStorage.instance.ref().child('recipe_images/${widget.recipeId}.jpg');
-
         await storageRef.putFile(_imageFile!);
-
-        String downloadUrl = await storageRef.getDownloadURL();
-        return downloadUrl;
+        return await storageRef.getDownloadURL();
       } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Image upload failed: $e'),
+          backgroundColor: _errorColor,
+        ));
         return null;
       }
     }
@@ -155,28 +172,17 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save(); // Save the form fields
 
-      // Validate if any ingredients, steps, and nutritional facts have been added
-      bool isValid = true;
-      String errorMessage = '';
-
-      if (!hasValidIngredients()) {
-        errorMessage = 'Please enter at least one valid ingredient.';
-        isValid = false;
-      } else if (!hasValidSteps()) {
-        errorMessage = 'Please enter at least one valid step.';
-        isValid = false;
-      } else if (!hasValidNutritionalFacts()) {
-        errorMessage = 'Please enter at least one valid nutritional fact.';
-        isValid = false;
-      }
-
-      if (!isValid) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+      // Validate ingredients, steps, and nutritional facts
+      if (!hasValidIngredients() || !hasValidSteps() || !hasValidNutritionalFacts()) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Please fill all required fields.'),
+          backgroundColor: _errorColor,
+        ));
         return; // Prevent saving if invalid
       }
 
       String? newImageUrl = await _uploadImage();
-      
+
       // Update the main recipe document
       await FirebaseFirestore.instance.collection('recipes').doc(widget.recipeId).update({
         'title': _title,
@@ -186,26 +192,18 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
         'calories': _calories,
         'difficulty': _difficulty,
         'imageUrl': newImageUrl,
+        'youtubeLink': _youtubeLink, // Ensure youtubeLink is saved
       });
 
-      // Prepare lists to update subcollections
-      List<Map<String, dynamic>> ingredientsList = _ingredientControllers.map((controller) => {'name': controller.text}).toList();
-      List<Map<String, dynamic>> stepsList = _stepControllers.asMap().entries.map((entry) => {
-            'description': entry.value.text,
-            'number': entry.key + 1,
-          }).toList();
+      // Update subcollections
+      await _updateSubcollections('ingredients', _getUpdatedIngredients());
+      await _updateSubcollections('steps', _getUpdatedSteps());
+      await _updateSubcollections('nutritionalFacts', _getUpdatedNutritionalFacts());
 
-      List<Map<String, dynamic>> nutritionalFactsList = _nutritionalFactControllers.asMap().entries.map((entry) => {
-        'label': entry.value.text,
-        'value': int.tryParse(_nutritionalValueControllers[entry.key].text) ?? 0,
-      }).toList();
-
-      // Only update the subcollections
-      await _updateSubcollections('ingredients', ingredientsList);
-      await _updateSubcollections('steps', stepsList);
-      await _updateSubcollections('nutritionalFacts', nutritionalFactsList);
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Recipe updated successfully!'),backgroundColor: Colors.green,));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Recipe updated successfully!'),
+        backgroundColor: Colors.green,
+      ));
 
       final updatedData = {
         'title': _title,
@@ -215,6 +213,7 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
         'calories': _calories,
         'difficulty': _difficulty,
         'imageUrl': newImageUrl,
+        'youtubeLink': _youtubeLink,
       };
 
       Navigator.pop(context, updatedData); // Pass back the updated data
@@ -231,6 +230,24 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
 
   bool hasValidNutritionalFacts() {
     return _nutritionalFactControllers.any((controller) => controller.text.isNotEmpty);
+  }
+
+  List<Map<String, dynamic>> _getUpdatedIngredients() {
+    return _ingredientControllers.map((controller) => {'name': controller.text}).toList();
+  }
+
+  List<Map<String, dynamic>> _getUpdatedSteps() {
+    return _stepControllers.asMap().entries.map((entry) => {
+      'description': entry.value.text,
+      'number': entry.key + 1,
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> _getUpdatedNutritionalFacts() {
+    return _nutritionalFactControllers.asMap().entries.map((entry) => {
+      'label': entry.value.text,
+      'value': int.tryParse(_nutritionalValueControllers[entry.key].text) ?? 0,
+    }).toList();
   }
 
   Future<void> _updateSubcollections(String collectionName, List<Map<String, dynamic>> items) async {
@@ -265,7 +282,7 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
 
   void _removeIngredient(int index) {
     setState(() {
-      _ingredients.removeAt(index); // Remove ingredient at index
+      _ingredients.removeAt(index); // Remove ingredient
       _ingredientControllers[index].dispose(); // Dispose the controller
       _ingredientControllers.removeAt(index); // Remove the controller
     });
@@ -273,18 +290,18 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
 
   void _addStep() {
     setState(() {
-      int newNumber = _steps.length + 1; // Make sure to get the next number
-      _steps.add({'description': '', 'number': newNumber}); // Add a step with a number
-      _stepControllers.add(TextEditingController(text: '')); // Add a new controller
+      int newNumber = _steps.length + 1; // Assign the next number
+      _steps.add({'description': '', 'number': newNumber}); // Add step
+      _stepControllers.add(TextEditingController(text: '')); // Add new controller
     });
   }
 
   void _removeStep(int index) {
     setState(() {
-      _steps.removeAt(index); // Remove step at index
+      _steps.removeAt(index); // Remove step
       _stepControllers[index].dispose(); // Dispose the controller
       _stepControllers.removeAt(index); // Remove the controller
-      
+
       // Update the numbers for the remaining steps
       for (int i = index; i < _steps.length; i++) {
         _steps[i]['number'] = i + 1; // Reassign numerical values
@@ -295,14 +312,14 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
   void _addNutritionalFact() {
     setState(() {
       _nutritionalFacts.add({'label': '', 'value': 0}); // Add an empty nutritional fact
-      _nutritionalFactControllers.add(TextEditingController(text: '')); // Add a controller for the new nutritional fact
+      _nutritionalFactControllers.add(TextEditingController(text: '')); // Add a controller
       _nutritionalValueControllers.add(TextEditingController(text: '')); // Add a controller for the value
     });
   }
 
   void _removeNutritionalFact(int index) {
     setState(() {
-      _nutritionalFacts.removeAt(index); // Remove nutritional fact at index
+      _nutritionalFacts.removeAt(index); // Remove nutritional fact
       _nutritionalFactControllers[index].dispose(); // Dispose the controller
       _nutritionalFactControllers.removeAt(index); // Remove the controller
       _nutritionalValueControllers[index].dispose(); // Dispose the value controller
@@ -369,13 +386,13 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
             Expanded(
               child: TextFormField(
                 controller: _nutritionalFactControllers[index],
-                decoration: InputDecoration(labelText: "Nutritional Fact${index + 1}"),
+                decoration: InputDecoration(labelText: "Nutritional Fact ${index + 1}"),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: TextFormField(
-                controller: _nutritionalValueControllers[index], // Use the value controller
+                controller: _nutritionalValueControllers[index],
                 decoration: InputDecoration(labelText: "Value (g)"),
                 keyboardType: TextInputType.number,
               ),
@@ -395,16 +412,13 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          "Edit Recipe Details",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
-        ),
+        title: const Text("Edit Recipe Details", style: TextStyle(fontWeight: FontWeight.bold, color: _primaryColor)),
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: _primaryColor),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(height: 0.5, color: Color.fromARGB(255, 220, 220, 241)),
+          child: Divider(height: 0.5, color: Colors.grey),
         ),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -412,10 +426,17 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
+              
               children: [
                 // Image Upload Card
                 Card(
-                  elevation: 4,
+                  elevation: 2,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -453,14 +474,26 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
                         ),
                         const SizedBox(height: 16.0),
 
-                        // Category Field
-                        TextFormField(
-                          initialValue: _category,
+                        // Updated category dropdown
+                        DropdownButtonFormField<String>(
+                          value: _category,
                           decoration: const InputDecoration(labelText: "Category"),
-                          onSaved: (value) => _category = value,
+                          items: _categoryOptions.map((String option) {
+                            return DropdownMenuItem<String>(
+                              value: option,
+                              child: Text(option),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _category = value;
+                            });
+                          },
+                          validator: (value) => value == null ? 'Please select a category.' : null,
                         ),
-                        const SizedBox(height: 16.0),
 
+                        const SizedBox(height: 16.0),
+                        
                         // Cooking Time Field
                         TextFormField(
                           initialValue: _cookingTime?.toString(),
@@ -494,7 +527,7 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
                         // Difficulty Field as Dropdown
                         DropdownButtonFormField<String>(
                           value: _difficulty,
-                          decoration: InputDecoration(labelText: "Difficulty"),
+                          decoration: const InputDecoration(labelText: "Difficulty"),
                           items: _difficultyOptions.map((String option) {
                             return DropdownMenuItem<String>(
                               value: option,
@@ -508,6 +541,15 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
                           },
                           validator: (value) => value == null ? 'Please select a difficulty.' : null,
                         ),
+                        const SizedBox(height: 16.0),
+
+                        // YouTube Link Field
+                        TextFormField(
+                          initialValue: _youtubeLink,
+                          decoration: const InputDecoration(labelText: "YouTube Link (Optional)"),
+                          keyboardType: TextInputType.url,
+                          onSaved: (value) => _youtubeLink = value,
+                        ),
                       ],
                     ),
                   ),
@@ -517,7 +559,13 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
 
                 // Ingredients Card
                 Card(
-                  elevation: 4,
+                  elevation: 2,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -529,7 +577,7 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            backgroundColor: Color.fromARGB(255, 90, 113, 243), // Text color
+                            backgroundColor: _primaryColor,
                           ),
                           onPressed: _addIngredient,
                           child: const Text("Add Ingredient"),
@@ -543,7 +591,13 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
 
                 // Steps Card
                 Card(
-                  elevation: 4,
+                       elevation: 2,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -555,7 +609,7 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            backgroundColor: Color.fromARGB(255, 90, 113, 243), // Text color
+                            backgroundColor: _primaryColor,
                           ),
                           onPressed: _addStep,
                           child: const Text("Add Step"),
@@ -569,7 +623,13 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
 
                 // Nutritional Facts Card
                 Card(
-                  elevation: 4,
+                       elevation: 2,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -581,7 +641,7 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            backgroundColor: Color.fromARGB(255, 90, 113, 243), // Text color
+                            backgroundColor: _primaryColor,
                           ),
                           onPressed: _addNutritionalFact,
                           child: const Text("Add Nutritional Fact"),
@@ -596,15 +656,14 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
                 // Save Button
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Color.fromARGB(255, 90, 113, 243),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8.0, horizontal: 8.0),
-                      minimumSize: const Size(150, 50),
+                    foregroundColor: Colors.white,
+                    backgroundColor: _primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
+                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+                    minimumSize: const Size(150, 50),
+                  ),
                   onPressed: _saveRecipe,
                   icon: const Icon(Icons.save, color: Colors.white),
                   label: const Text("Save", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
@@ -617,4 +676,4 @@ class _EditRecipeDetailsScreenState extends State<EditRecipeDetailsScreen> {
       ),
     );
   }
-}
+}  

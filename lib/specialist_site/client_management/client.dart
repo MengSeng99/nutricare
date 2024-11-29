@@ -11,11 +11,12 @@ class Client {
   final String email;
   final String profilePic;
 
-  Client(
-      {required this.id,
-      required this.name,
-      required this.email,
-      required this.profilePic});
+  Client({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.profilePic,
+  });
 }
 
 class SpecialistClientScreen extends StatefulWidget {
@@ -43,8 +44,7 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
       await _fetchClients(); // Fetch clients once the ID is retrieved
     } else {
       // Handle the case when no user is signed in
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('No user is signed in')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No user is signed in')));
     }
   }
 
@@ -53,8 +53,7 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
     clients.clear();
 
     // Fetch appointments
-    var appointmentsSnapshot =
-        await FirebaseFirestore.instance.collection('appointments').get();
+    var appointmentsSnapshot = await FirebaseFirestore.instance.collection('appointments').get();
 
     // Filter client IDs from appointments
     List<String> clientIds = [];
@@ -72,18 +71,14 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
 
     // Fetch client details
     for (String clientId in clientIds) {
-      var clientDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(clientId)
-          .get();
+      var clientDoc = await FirebaseFirestore.instance.collection('users').doc(clientId).get();
       if (clientDoc.exists) {
         var clientData = clientDoc.data()!;
         clients.add(Client(
           id: clientId,
           name: clientData['name'] ?? 'Unknown',
           email: clientData['email'] ?? 'No email',
-          profilePic: clientData['profile_pic'] ??
-              '', // Assuming this is the URL to the profile pic
+          profilePic: clientData['profile_pic'] ?? '', // Assuming this is the URL to the profile pic
         ));
       }
     }
@@ -91,6 +86,94 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
     // Refresh the UI
     setState(() {});
   }
+
+  Future<void> _showAppointmentDialog(Client client) async {
+  // Searching for existing appointments
+  QuerySnapshot appointmentsSnapshot = await FirebaseFirestore.instance
+      .collection('appointments')
+      .where('users', arrayContains: currentUserId)
+      .get();
+
+  // To hold the list of appointment information
+  List<Map<String, String>> appointmentDetails = []; // Store both ID and status
+
+  for (var doc in appointmentsSnapshot.docs) {
+    List<dynamic> users = doc['users'];
+    if (users.contains(client.id)) {
+      String appointmentId = doc.id; // Collect the appointment document ID
+
+      // Fetch the appointment status from the subcollection
+      var statusSnapshot = await FirebaseFirestore.instance
+          .collection('appointments')
+          .doc(appointmentId)
+          .collection('details') // Assuming your subcollection is named 'details'
+          .limit(1) // Limit to 1 document
+          .get();
+
+      if (statusSnapshot.docs.isNotEmpty) {
+        String appointmentStatus = statusSnapshot.docs[0].data()['appointmentStatus'] ?? 'No status'; // Replace with your actual field name
+        appointmentDetails.add({
+          'id': appointmentId,
+          'status': appointmentStatus,
+        });
+      }
+    }
+  }
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: Text(
+          'Appointments with ${client.name}',
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243)),
+        ),
+        content: SizedBox(
+          width: double.maxFinite, // Maximum width
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Fit content
+            children: [
+              if (appointmentDetails.isNotEmpty)
+                Column(
+                  children: appointmentDetails
+                      .map((appointment) => Card(
+                            color: Color.fromARGB(255, 220, 220, 241),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                'Appointment ID: ${appointment['id']}\nStatus: ${appointment['status']}',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                )
+              else
+                Text(
+                  'No existing appointments with ${client.name}.',
+                  style: const TextStyle(fontSize: 16),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text('Close'),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +205,6 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
               itemBuilder: (context, index) {
                 final client = clients[index];
                 return GestureDetector(
-                  // Wrap the Card with GestureDetector to handle taps
                   onTap: () {
                     // Navigate to ClientDetailsScreen and pass client details
                     Navigator.push(
@@ -151,16 +233,14 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
                           client.profilePic.isNotEmpty
                               ? CircleAvatar(
                                   radius: 30, // Custom radius for the avatar
-                                  backgroundImage:
-                                      NetworkImage(client.profilePic),
+                                  backgroundImage: NetworkImage(client.profilePic),
                                 )
                               : CircleAvatar(
                                   radius: 30,
                                   backgroundColor: Colors.grey.shade200,
                                   child: const Icon(Icons.person, size: 30),
                                 ),
-                          const SizedBox(
-                              width: 16), // Space between the avatar and text
+                          const SizedBox(width: 16), // Space between the avatar and text
                           // Client details
                           Expanded(
                             child: Column(
@@ -173,8 +253,7 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
                                     fontSize: 18,
                                   ),
                                 ),
-                                const SizedBox(
-                                    height: 4), // Space between name and email
+                                const SizedBox(height: 4), // Space between name and email
                                 Text(
                                   client.email,
                                   style: const TextStyle(
@@ -184,6 +263,13 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
                                 ),
                               ],
                             ),
+                          ),
+                          // Appointment icon
+                          IconButton(
+                            icon: const Icon(Icons.calendar_today, color: Color.fromARGB(255, 90, 113, 243)),
+                            onPressed: () {
+                              _showAppointmentDialog(client); // Show dialog on icon press
+                            },
                           ),
                         ],
                       ),
