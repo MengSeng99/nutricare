@@ -48,6 +48,7 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Edit Article',
             style: TextStyle(
@@ -56,6 +57,13 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
         backgroundColor: Colors.white,
         iconTheme:
             const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+            bottom: const PreferredSize(
+        preferredSize: Size.fromHeight(1),
+        child: Divider(
+          height: 0.5,
+          color: Color.fromARGB(255, 220, 220, 241),
+        ),
+      ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

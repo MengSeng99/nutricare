@@ -5,13 +5,13 @@ import 'package:intl/intl.dart';
 
 class MealSelectionScreen extends StatefulWidget {
   final String mealType;
-  final DateTime selectedDate; // Add selectedDate here
+  final DateTime selectedDate;
 
   const MealSelectionScreen({
-    super.key,
+    Key? key,
     required this.mealType,
-    required this.selectedDate, // Make it required in constructor
-  });
+    required this.selectedDate,
+  }) : super(key: key);
 
   @override
   _MealSelectionScreenState createState() => _MealSelectionScreenState();
@@ -28,7 +28,7 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
   void initState() {
     super.initState();
     _fetchCategories();
-    _loadFavoriteRecipes(); // Load favorites on init
+    _loadFavoriteRecipes();
   }
 
   @override
@@ -93,199 +93,93 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
     }
   }
 
+  int _parseStringToInt(dynamic value) {
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    } else if (value is int) {
+      return value;
+    } else if (value is double) {
+      return value.toInt();
+    }
+    return 0;
+  }
+
   void _showRecipeDialog(
       BuildContext context, String title, String imageUrl, String recipeId) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return FutureBuilder<QuerySnapshot>(
-          future: FirebaseFirestore.instance
-              .collection('recipes')
-              .doc(recipeId)
-              .collection('nutritionalFacts')
-              .get(), // Get nutritional facts
-          builder: (context, factsSnapshot) {
-            if (factsSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (factsSnapshot.hasError || !factsSnapshot.hasData) {
-              return AlertDialog(
-                title: Text('Error'),
-                content: Text('No nutritional facts available.'),
-                actions: [
-                  TextButton(
-                    child: const Text('Close'),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              );
-            }
-
-            var nutritionalDocuments = factsSnapshot.data!.docs;
-            Map<String, String> nutritionalValues = {
-              'Calories': '0',
-              'Proteins': '0',
-              'Carbohydrates': '0',
-              'Fats': '0',
-            };
-
-            for (var doc in nutritionalDocuments) {
-              var data = doc.data() as Map<String, dynamic>;
-              nutritionalValues[data['label']] = data['value'].toString();
-            }
-
-            int calories = int.parse(nutritionalValues['Calories'] ?? '0');
-            int proteins = int.parse(nutritionalValues['Proteins'] ?? '0');
-            int carbohydrates =
-                int.parse(nutritionalValues['Carbohydrates'] ?? '0');
-            int fats = int.parse(nutritionalValues['Fats'] ?? '0');
-
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              contentPadding: const EdgeInsets.all(0),
-              content: SizedBox(
-                width: MediaQuery.of(context).size.width *
-                    0.9, // Set to 90% of screen width
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Stack(
-                      children: [
-                        // Full-size image
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(15.0)),
-                          child: Image.network(
-                            imageUrl,
-                            fit: BoxFit.contain,
-                            width: double.infinity,
-                          ),
-                        ),
-                        // Close button
-                        Positioned(
-                          top: 16,
-                          right: 16,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 34, 42, 92)
-                                  .withOpacity(0.4),
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: IconButton(
-                              icon: Icon(Icons.close,
-                                  color: Colors.white, size: 30),
-                              onPressed: () =>
-                                  Navigator.of(context).pop(), // Close on press
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20.0,
-                        color: Color.fromARGB(255, 90, 113, 243),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Add to Log button
-                    ElevatedButton(
-                      onPressed: () {
-                        addToLog(
-                          title, // Pass the food name
-                          calories, // Pass the calories
-                          proteins, // Pass the proteins
-                          carbohydrates, // Pass the carbohydrates
-                          fats, // Pass the fats
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color.fromARGB(255, 90, 113, 243),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
-                      ),
-                      child: const Text('Add to Log',
-                          style: TextStyle(color: Colors.white)),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
-            );
+        return RecipeDialog(
+          title: title,
+          imageUrl: imageUrl,
+          recipeId: recipeId,
+          defaultServings: 1,
+          addToLog:
+              (String title, int calories, int protein, int carbs, int fat) {
+            addToLog(title, calories, protein, carbs, fat);
           },
         );
       },
     );
   }
 
- void addToLog(String title, int calories, int protein, int carbs, int fat) async {
-  final User? user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
+  void addToLog(
+      String title, int calories, int protein, int carbs, int fat) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  String userId = user.uid;
-  String mealType = widget.mealType; // e.g., "Breakfast", "Lunch", or "Dinner"
-  String dateKey = DateFormat('yyyyMMdd').format(widget.selectedDate);
+    String userId = user.uid;
+    String mealType = widget.mealType;
+    String dateKey = DateFormat('yyyyMMdd').format(widget.selectedDate);
 
-  // Prepare the data to store
-  Map<String, dynamic> mealData = {
-    'name': title,
-    'Calories': calories,
-    'Proteins': protein,
-    'Carbohydrates': carbs,
-    'Fats': fat,
-  };
+    Map<String, dynamic> mealData = {
+      'name': title,
+      'Calories': calories,
+      'Protein': protein,
+      'Carbohydrate': carbs,
+      'Fat': fat,
+    };
 
-  try {
-    // Create or update the corresponding meal type field in the dietHistory document
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('dietHistory')
-        .doc(dateKey)
-        .set({
-      mealType: mealData,
-    }, SetOptions(merge: true)); // This merges the new meal type
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('dietHistory')
+          .doc(dateKey)
+          .set({
+        mealType: mealData,
+      }, SetOptions(merge: true));
 
-    // Show a successful message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$title added to log! You may view it in the Diet History.'),
-        duration: const Duration(seconds: 4),
-        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('$title added to log! You may view it in the Diet History.'),
+          duration: const Duration(seconds: 4),
+          backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+        ),
+      );
 
-    Navigator.pop(context, true); 
-  } catch (e) {
-    // Handle any errors that may occur
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Error adding to log.'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.red,
-      ),
-    );
-    // print(e); // Print errors for debugging
+      Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Error adding to log.'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
-    // You can access selectedDate here
     DateTime currentSelectedDate = widget.selectedDate;
 
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         title: Text(
-          '${widget.mealType} on ${DateFormat('yyyy-MM-dd').format(currentSelectedDate)}', // Format the date
+          '${widget.mealType} on ${DateFormat('yyyy-MM-dd').format(currentSelectedDate)}',
           style: const TextStyle(
             color: Color.fromARGB(255, 90, 113, 243),
             fontWeight: FontWeight.bold,
@@ -295,7 +189,7 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
           icon: const Icon(Icons.arrow_back,
               color: Color.fromARGB(255, 90, 113, 243)),
           onPressed: () {
-            Navigator.pop(context,true);
+            Navigator.pop(context, true);
           },
         ),
         bottom: const PreferredSize(
@@ -320,7 +214,6 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Search Field
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
@@ -333,17 +226,17 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                   decoration: InputDecoration(
                     hintText: "Search any recipe",
                     prefixIcon: const Icon(Icons.search),
-                  suffixIcon: searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear(); // Clear the text field
-                            setState(() {
-                              searchQuery = ""; // Reset the search query
-                            });
-                          },
-                        )
-                      : null,
+                    suffixIcon: searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                searchQuery = "";
+                              });
+                            },
+                          )
+                        : null,
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
@@ -365,14 +258,12 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                   ),
                 ),
               ),
-              // Category Chips Row
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      // All category chip
                       Padding(
                         padding: const EdgeInsets.only(right: 12.0),
                         child: ChoiceChip(
@@ -403,7 +294,6 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                           ),
                         ),
                       ),
-                      // Favorites category chip
                       Padding(
                         padding: const EdgeInsets.only(right: 12.0),
                         child: ChoiceChip(
@@ -413,10 +303,9 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                             setState(() {
                               if (isSelected) {
                                 selectedCategory = 'Favorites';
-                                _loadFavoriteRecipes(); // Load favorites when selected
+                                _loadFavoriteRecipes();
                               } else {
-                                selectedCategory =
-                                    'All'; // Switch back to All when deselected
+                                selectedCategory = 'All';
                               }
                             });
                           },
@@ -440,7 +329,6 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                           ),
                         ),
                       ),
-                      // Regular category chips
                       ...categories.map((category) {
                         return Padding(
                           padding: const EdgeInsets.only(right: 12.0),
@@ -449,9 +337,8 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                             selected: selectedCategory == category,
                             onSelected: (isSelected) {
                               setState(() {
-                                selectedCategory = isSelected
-                                    ? category
-                                    : 'All'; // Deselect to 'All'
+                                selectedCategory =
+                                    isSelected ? category : 'All';
                               });
                             },
                             selectedColor:
@@ -479,7 +366,6 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                   ),
                 ),
               ),
-              // Fetch and Display Recipes
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('recipes')
@@ -497,7 +383,6 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                     return const Center(child: Text('No recipes available.'));
                   }
 
-                  // Filter the recipes based on selected category, favorite status, and search query
                   final recipes = snapshot.data!.docs.where((doc) {
                     var data = doc.data() as Map<String, dynamic>;
                     bool matchesSearchQuery = data['title']
@@ -507,10 +392,8 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
 
                     bool matchesCategory;
                     if (selectedCategory == 'All') {
-                      // If 'All' is selected, don't filter by category
                       matchesCategory = true;
                     } else {
-                      // Apply category and favorites filtering
                       matchesCategory = (selectedCategory == 'Favorites'
                           ? favoriteRecipeIds.contains(doc.id)
                           : data['category'] == selectedCategory);
@@ -519,7 +402,6 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                     return matchesSearchQuery && matchesCategory;
                   }).toList();
 
-                  // Display found recipes
                   return Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -560,7 +442,6 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Recipe Image with bookmark button
               Stack(
                 children: [
                   ClipRRect(
@@ -596,8 +477,7 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                               : Colors.grey,
                         ),
                         onPressed: () {
-                          _toggleFavoriteStatus(
-                              recipeId); // Toggle favorite status
+                          _toggleFavoriteStatus(recipeId);
                         },
                       ),
                     ),
@@ -614,11 +494,33 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                 ),
               ),
               const SizedBox(height: 8),
+              // Display servings here
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('recipes')
+                    .doc(recipeId)
+                    .snapshots(),
+                builder: (context, servingsSnapshot) {
+                  if (servingsSnapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const Text('Loading servings...');
+                  }
+                  if (servingsSnapshot.hasError || !servingsSnapshot.hasData) {
+                    return const Text('Error fetching servings.');
+                  }
+                  var servingsData =
+                      servingsSnapshot.data!.data() as Map<String, dynamic>;
+                  int servings = servingsData['servings'] ?? 1;
+                  return Text('Servings: $servings',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w500));
+                },
+              ),
+              const SizedBox(height: 8),
               const Text(
                 'Nutritional Facts:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              // Nutritional facts retrieval
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('recipes')
@@ -640,15 +542,13 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                     return const Text('No nutritional facts available.');
                   }
 
-                  // Map to hold the values in a predefined order
                   Map<String, String> nutritionalValues = {
                     'Calories': '0',
-                    'Proteins': '0',
-                    'Carbohydrates': '0',
-                    'Fats': '0',
+                    'Protein': '0',
+                    'Carbohydrate': '0',
+                    'Fat': '0',
                   };
 
-                  // Populate the map with values from Firestore
                   for (var doc in nutritionalDocuments) {
                     var data = doc.data() as Map<String, dynamic>;
                     nutritionalValues[data['label']] = data['value'].toString();
@@ -659,12 +559,12 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
                     children: [
                       Text('Calories: ${nutritionalValues['Calories']} kcal',
                           style: const TextStyle(fontSize: 14)),
-                      Text('Proteins: ${nutritionalValues['Proteins']} g',
+                      Text('Protein: ${nutritionalValues['Protein']} g',
                           style: const TextStyle(fontSize: 14)),
                       Text(
-                          'Carbohydrates: ${nutritionalValues['Carbohydrates']} g',
+                          'Carbohydrate: ${nutritionalValues['Carbohydrate']} g',
                           style: const TextStyle(fontSize: 14)),
-                      Text('Fats: ${nutritionalValues['Fats']} g',
+                      Text('Fat: ${nutritionalValues['Fat']} g',
                           style: const TextStyle(fontSize: 14)),
                     ],
                   );
@@ -675,5 +575,239 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
         ),
       ),
     );
+  }
+}
+
+class RecipeDialog extends StatefulWidget {
+  final String title;
+  final String imageUrl;
+  final String recipeId;
+  final int defaultServings;
+  final Function(String, int, int, int, int) addToLog; // Callback for addToLog
+
+  const RecipeDialog({
+    super.key,
+    required this.title,
+    required this.imageUrl,
+    required this.recipeId,
+    this.defaultServings = 1,
+    required this.addToLog, // Accept the callback in constructor
+  });
+
+  @override
+  _RecipeDialogState createState() => _RecipeDialogState();
+}
+
+class _RecipeDialogState extends State<RecipeDialog> {
+  final ValueNotifier<int> selectedServingCountNotifier =
+      ValueNotifier<int>(1); // Initialize ValueNotifier
+  int totalServings = 1; // To hold the total servings from Firestore
+  int caloriesPerServing = 0;
+  int proteinPerServing = 0;
+  int carbohydratePerServing = 0;
+  int fatPerServing = 0;
+
+  @override
+  void dispose() {
+    selectedServingCountNotifier.dispose(); // Dispose notifier
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('recipes')
+          .doc(widget.recipeId)
+          .get(),
+      builder: (context, recipeSnapshot) {
+        if (recipeSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (recipeSnapshot.hasError || !recipeSnapshot.hasData) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Recipe not found.'),
+            actions: [
+              TextButton(
+                child: const Text('Close'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          );
+        }
+
+        var recipeData = recipeSnapshot.data!.data() as Map<String, dynamic>;
+        totalServings =
+            recipeData['servings'] ?? 1; // Get total servings from Firestore
+
+        return FutureBuilder<QuerySnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('recipes')
+              .doc(widget.recipeId)
+              .collection('nutritionalFacts')
+              .get(),
+          builder: (context, factsSnapshot) {
+            if (factsSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (factsSnapshot.hasError || !factsSnapshot.hasData) {
+              return AlertDialog(
+                title: const Text('Error'),
+                content: const Text('Nutritional facts not available.'),
+                actions: [
+                  TextButton(
+                    child: const Text('Close'),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              );
+            }
+
+            for (var doc in factsSnapshot.data!.docs) {
+              var data = doc.data() as Map<String, dynamic>;
+              String label = data['label'];
+
+              switch (label) {
+                case 'Calories':
+                  caloriesPerServing = _parseStringToInt(data['value']) ~/
+                      totalServings; // Divide by total servings
+                  break;
+                case 'Protein':
+                  proteinPerServing = _parseStringToInt(data['value']) ~/
+                      totalServings; // Divide by total servings
+                  break;
+                case 'Carbohydrate':
+                  carbohydratePerServing = _parseStringToInt(data['value']) ~/
+                      totalServings; // Divide by total servings
+                  break;
+                case 'Fat':
+                  fatPerServing = _parseStringToInt(data['value']) ~/
+                      totalServings; // Divide by total servings
+                  break;
+              }
+            }
+
+            return AlertDialog(
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(15.0),
+  ),
+  contentPadding: const EdgeInsets.all(0),
+  content: SizedBox(
+    width: MediaQuery.of(context).size.width * 0.9,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(15.0)),
+          child: Image.network(
+            widget.imageUrl,
+            fit: BoxFit.contain,
+            width: double.infinity,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: Text(
+            widget.title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.visible,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20.0,
+              color: Color.fromARGB(255, 90, 113, 243),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Select Servings:',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Using a Card to wrap the serving counter with an elevated interface
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove, color: Color.fromARGB(255, 90, 113, 243)),
+                      onPressed: () {
+                        if (selectedServingCountNotifier.value > 1) {
+                          selectedServingCountNotifier.value--;
+                        }
+                      },
+                    ),
+                    ValueListenableBuilder<int>(
+                      valueListenable: selectedServingCountNotifier,
+                      builder: (context, count, child) {
+                        return Text(
+                          '$count',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                        ); // Updated text style
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add, color: Color.fromARGB(255, 90, 113, 243)),
+                      onPressed: () {
+                        selectedServingCountNotifier.value++;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () {
+            // Calculate nutritional values based on current selected servings
+            widget.addToLog(
+              widget.title,
+              (caloriesPerServing * selectedServingCountNotifier.value),
+              (proteinPerServing * selectedServingCountNotifier.value),
+              (carbohydratePerServing * selectedServingCountNotifier.value),
+              (fatPerServing * selectedServingCountNotifier.value),
+            );
+            Navigator.of(context).pop();
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+          child: const Text('Add to Log', style: TextStyle(color: Colors.white)),
+        ),
+        const SizedBox(height: 16),
+      ],
+    ),
+  ),
+);
+          },
+        );
+      },
+    );
+  }
+
+  int _parseStringToInt(dynamic value) {
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    } else if (value is int) {
+      return value;
+    } else if (value is double) {
+      return value.toInt();
+    }
+    return 0;
   }
 }

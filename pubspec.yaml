@@ -34,26 +34,6 @@ dev_dependencies:
 flutter:
   assets:
     - images/
-    - images/recovery.png
-    - images/Logo-1x1.jpeg
-    - images/Logo-rounded.png
-    - images/appointment.png
-    - images/BMI Tracker.png
-    - images/counseling.png
-    - images/nutritionist.png
-    - images/online-consultation.png
-    - images/nutritionist-2.png
-    - images/dietitian.png
-    - images/health-record.png
-    - images/health-record-2.png  
-    - images/health-record-3.png
-    - images/bmi.png
-    - images/recipe_image.jpg
-    - images/calories-calculator.png
-    - images/food_category/breakfast.png
-    - images/food_category/lunch.png
-    - images/food_category/dinner.png
-    - images/food_category/snack.png
-    - images/user_profile/forgot_password.png
-    - images/user_profile/default_profile.png
+    - images/food_category/
+    - images/user_profile/
   uses-material-design: true

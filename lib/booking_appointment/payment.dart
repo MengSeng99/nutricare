@@ -141,76 +141,104 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
-   Widget _buildPromoCodeSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Promo Code",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: promoCodeController,
-                decoration: InputDecoration(
-                  hintText: "Enter Promo Code",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: 10, horizontal: 12),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  if (promoCodeController.text.trim().toUpperCase() == "NEWUSER") {
-                    isPromoApplied = true;
-                    selectedServiceFee = 0.0; // Make it free
-                  } else {
-                    isPromoApplied = false;
-                    // Reset to the actual service fee if the promo code is wrong
-                    selectedServiceFee = availableServices
-                        .firstWhere((service) =>
-                            service['name'] == selectedService)['fee']
-                        .toDouble();
-                  }
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                shape: RoundedRectangleBorder(
+  Widget _buildPromoCodeSection() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        "Promo Code",
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 10),
+      Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: promoCodeController,
+              decoration: InputDecoration(
+                hintText: "Enter Promo Code",
+                border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                suffixIcon: promoCodeController.text.isNotEmpty // Only show if there's input
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          // Clear the text field and reset the promo
+                          promoCodeController.clear();
+                          setState(() {
+                            isPromoApplied = false;
+                            selectedServiceFee = availableServices
+                                .firstWhere(
+                                  (service) => service['name'] == selectedService,
+                                  orElse: () => {'fee': 0},
+                                )['fee']
+                                .toDouble(); // Reset to default fee
+                          });
+                        },
+                      )
+                    : null, // Set to null to hide when there's no input
               ),
-              child: const Text("Apply", style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),),
             ),
-          ],
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                // Check for promo codes
+                String enteredCode = promoCodeController.text.trim().toUpperCase();
+                double originalFee = availableServices
+                    .firstWhere(
+                      (service) => service['name'] == selectedService,
+                      orElse: () => {'fee': 0},
+                    )['fee']
+                    .toDouble();
+
+                if (enteredCode == "1STFREE") {
+                  isPromoApplied = true;
+                  selectedServiceFee = 0.0; // Make it free
+                } else if (enteredCode == "NEWUSER50") {
+                  isPromoApplied = true;
+                  selectedServiceFee = originalFee * 0.5; // Apply 50% discount
+                } else {
+                  isPromoApplied = false;
+                  selectedServiceFee = originalFee; // Reset to the original fee for other codes
+                }
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text(
+              "Apply",
+              style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+      if (isPromoApplied) 
+        const Padding(
+          padding: EdgeInsets.only(top: 10),
+          child: Text(
+            "Promo code applied!",
+            style: TextStyle(color: Colors.green),
+          ),
         ),
-        if (isPromoApplied)
-          const Padding(
-            padding: EdgeInsets.only(top: 10),
-            child: Text(
-              "Promo code applied!",
-              style: TextStyle(color: Colors.green),
-            ),
+      if (!isPromoApplied && promoCodeController.text.isNotEmpty)
+        const Padding(
+          padding: EdgeInsets.only(top: 10),
+          child: Text(
+            "Invalid promo code",
+            style: TextStyle(color: Colors.red),
           ),
-        if (!isPromoApplied && promoCodeController.text.isNotEmpty)
-          const Padding(
-            padding: EdgeInsets.only(top: 10),
-            child: Text(
-              "Invalid promo code",
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-      ],
-    );
-  }
+        ),
+    ],
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -267,8 +295,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   return Center(
     child: Container(
       padding: const EdgeInsets.all(16.0),
-      width: double.infinity, // Make sure the container takes full width
-      constraints: const BoxConstraints(maxWidth: 600), // Optional: Add a maximum width for larger screens
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -282,10 +309,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ],
       ),
       child: Stack(
+        alignment: Alignment.center,
         children: [
           Column(
-            crossAxisAlignment: CrossAxisAlignment.center, 
-            mainAxisAlignment: MainAxisAlignment.start, 
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const Text(
                 "Your Information",
@@ -306,12 +334,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     const SizedBox(height: 10),
                     ElevatedButton(
                       onPressed: () async {
-                        // Navigate to ClientInfoScreen
                         await Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => ClientInfoScreen()),
                         );
-                        // Refresh the user data
                         _loadUserData();
                       },
                       child: const Text("Add it Now"),
@@ -334,21 +360,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ],
             ],
           ),
-          Positioned(
-            right: 5,
-            child: IconButton(
-              icon: const Icon(Icons.edit, color: Color.fromARGB(255, 90, 113, 243)),
-              onPressed: () async {
-                // Navigate to ClientInfoScreen
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ClientInfoScreen()),
-                );
-                // Refresh the user data
-                _loadUserData();
-              },
+          if (isProfileComplete)
+            Positioned(
+              right: 0, // Adjust this value to position it correctly on the right
+              top: 0,   // Position from the top of the container
+              child: IconButton(
+                icon: const Icon(Icons.edit, color: Color.fromARGB(255, 90, 113, 243)),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ClientInfoScreen()),
+                  );
+                  _loadUserData();
+                },
+              ),
             ),
-          ),
         ],
       ),
     ),
@@ -426,25 +452,28 @@ Widget _buildUserInfoRow(String label, String value) {
     );
   }
 
-  Widget _buildServiceSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Select Service",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        availableServices.isEmpty
-            ? const Text("No services available for this specialist.")
-            : DropdownButtonFormField<String>(
+ Widget _buildServiceSelector() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        "Select Service",
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 10),
+      availableServices.isEmpty
+          ? const Text("No services available for this specialist.")
+          : SizedBox( // Wrap the DropdownButtonFormField in a Container
+              width: double.infinity, // Ensure it takes the full width
+              child: DropdownButtonFormField<String>(
                 hint: const Text("Select a service"),
                 value: selectedService,
                 items: availableServices.map<DropdownMenuItem<String>>((service) {
                   return DropdownMenuItem<String>(
                     value: service['name'],
                     child: Text(
-                        '${service['name']} (RM ${service['fee'].toStringAsFixed(2)})'),
+                      '${service['name']} (RM ${service['fee'].toStringAsFixed(2)})',
+                    ),
                   );
                 }).toList(),
                 onChanged: (value) {
@@ -459,13 +488,14 @@ Widget _buildUserInfoRow(String label, String value) {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                 ),
+                isExpanded: true, // Make it expand to prevent overflow
               ),
-      ],
-    );
-  }
+            ),
+    ],
+  );
+}
 
  Widget _buildPaymentMethodSelector() {
   return Column(
@@ -736,50 +766,51 @@ Widget _buildAddCardButton() {
   );
 }
 
-  Widget _buildTotalDueSection() {
-    final bool isFree = isPromoApplied && selectedServiceFee == 0.0;
-    final originalFee = availableServices.isNotEmpty && selectedService != null
-        ? availableServices
-            .firstWhere((service) => service['name'] == selectedService)['fee']
-            .toDouble()
-        : 0.0;
+ Widget _buildTotalDueSection() {
+  final bool isFree = isPromoApplied && selectedServiceFee == 0.0;
+  final double originalFee = availableServices.isNotEmpty && selectedService != null
+      ? availableServices
+          .firstWhere((service) => service['name'] == selectedService)['fee']
+          .toDouble()
+      : 0.0;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            "Total Due",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          Row(
-            children: [
-              if (isFree)
-                Text(
-                  'RM ${originalFee.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.lineThrough,
-                    color: Colors.grey,
-                  ),
-                ),
-              const SizedBox(width: 8),
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 10.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          "Total Due",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        Row(
+          children: [
+            if (isPromoApplied) ...[
               Text(
-                isFree ? 'FREE' : 'RM ${selectedServiceFee.toStringAsFixed(2)}',
-                style: TextStyle(
+                'RM ${originalFee.toStringAsFixed(2)}',
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isFree ? Color.fromARGB(255, 90, 113, 243) : Colors.black,
+                  decoration: TextDecoration.lineThrough,
+                  color: Colors.grey,
                 ),
               ),
+              const SizedBox(width: 8),
             ],
-          ),
-        ],
-      ),
-    );
-  }
+            Text(
+              isFree ? 'FREE' : 'RM ${selectedServiceFee.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(255, 90, 113, 243),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildPayNowButton() {
     return SizedBox(

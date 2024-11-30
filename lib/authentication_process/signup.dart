@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../main/specialist_registration.dart';
 import 'login.dart';
 import 'authentication.dart'; // Import the authentication service
 
@@ -14,9 +15,11 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final AuthenticationService _authService = AuthenticationService();
-  final _formKey = GlobalKey<FormState>(); // Create a GlobalKey for the Form widget
+  final _formKey =
+      GlobalKey<FormState>(); // Create a GlobalKey for the Form widget
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
   bool _isHovered = false;
@@ -63,7 +66,18 @@ class _SignupPageState extends State<SignupPage> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SpecialistRegistrationScreen()),
+                      );
+                    },
+                    child: const Text(
+                      'Wish to be a Specialist? Sign Up Here',
+                    ),
+                  ),
                   // Name TextFormField
                   TextFormField(
                     controller: _nameController,
@@ -97,7 +111,8 @@ class _SignupPageState extends State<SignupPage> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email.';
-                      } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                      } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                          .hasMatch(value)) {
                         return 'Please enter a valid email address.';
                       }
                       return null; // No error
@@ -116,7 +131,9 @@ class _SignupPageState extends State<SignupPage> {
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                          _passwordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
                         onPressed: () {
                           setState(() {
@@ -148,7 +165,9 @@ class _SignupPageState extends State<SignupPage> {
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _confirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                          _confirmPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
                         onPressed: () {
                           setState(() {
@@ -189,17 +208,22 @@ class _SignupPageState extends State<SignupPage> {
 
                             // If signup is successful, navigate to the Login page
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Signup successful! Please log in.')),
+                              const SnackBar(
+                                  content: Text(
+                                      'Signup successful! Please log in.')),
                             );
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (context) => const LoginPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => const LoginPage()),
                             );
                           }
                         } catch (e) {
                           // Catching any exceptions from Firestore save operation
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(e.toString())), // Display the error
+                            SnackBar(
+                                content:
+                                    Text(e.toString())), // Display the error
                           );
                         }
                       }
@@ -210,10 +234,13 @@ class _SignupPageState extends State<SignupPage> {
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         decoration: BoxDecoration(
-                          color: _isHovered ? Colors.blueAccent : const Color.fromARGB(255, 90, 113, 243),
+                          color: _isHovered
+                              ? Colors.blueAccent
+                              : const Color.fromARGB(255, 90, 113, 243),
                           borderRadius: BorderRadius.circular(30),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 50, vertical: 15),
                         child: const Text(
                           'Sign Up',
                           style: TextStyle(color: Colors.white, fontSize: 20),
@@ -226,7 +253,8 @@ class _SignupPageState extends State<SignupPage> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginPage()),
+                        MaterialPageRoute(
+                            builder: (context) => const LoginPage()),
                       );
                     },
                     child: const Text('Already have an account? Log In'),

@@ -69,34 +69,31 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
     super.dispose();
   }
 
-  Future<void> updateProfilePicture() async {
-  if (_imageFile != null) {
-    try {
-      FirebaseStorage storage = FirebaseStorage.instance;
+  Future<String?> uploadProfilePicture() async {
+    if (_imageFile != null) {
+      try {
+        FirebaseStorage storage = FirebaseStorage.instance;
 
-      // Delete the previous profile picture if it exists
-      if (profilePictureUrl != null) {
-        Reference previousRef = storage.refFromURL(profilePictureUrl!);
-        await previousRef.delete();
+        // You can choose to either keep the old file or delete it.
+        if (profilePictureUrl != null) {
+          Reference previousRef = storage.refFromURL(profilePictureUrl!);
+          await previousRef
+              .delete(); // Optional: Delete the previous profile picture
+        }
+
+        String fileName = _imageFile!.name;
+        Reference ref =
+            storage.ref().child('specialist_profile_picture/$fileName');
+        await ref.putFile(File(_imageFile!.path));
+        return await ref.getDownloadURL();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading image: $e')),
+        );
       }
-      
-      // Upload the new image
-      String fileName = _imageFile!.name;
-      Reference ref = storage.ref().child('profile_pictures/$fileName');
-      await ref.putFile(File(_imageFile!.path));
-      String downloadUrl = await ref.getDownloadURL();
-      
-      // Update the state with the new image URL
-      setState(() {
-        profilePictureUrl = downloadUrl;
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error uploading image: $e')),
-      );
     }
+    return null; // Return null if no image is uploaded
   }
-}
 
   Future<void> updateSpecialist() async {
     try {
@@ -124,6 +121,13 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
       updates['services'] = services;
       if (profilePictureUrl != widget.specialistData['profile_picture_url']) {
         updates['profile_picture_url'] = profilePictureUrl;
+      }
+      // Check if profile picture needs to be updated
+      if (_imageFile != null) {
+        String? newImageUrl = await uploadProfilePicture();
+        if (newImageUrl != null) {
+          updates['profile_picture_url'] = newImageUrl;
+        }
       }
 
       if (updates.isNotEmpty) {
@@ -156,25 +160,25 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
         servicesToDelete.clear();
         reviewsToDelete.clear();
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Specialist details updated successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No changes made!')),
-        );
-      }
-
-      Navigator.pop(context);
-    } catch (e) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Specialist details updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating specialist: $e')),
+        const SnackBar(content: Text('No changes made!')),
       );
     }
+
+    Navigator.pop(context);
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error updating specialist: $e')),
+    );
   }
+}
 
   Future<void> deleteReview(Map<String, dynamic> review) {
     setState(() {
@@ -191,11 +195,14 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
   }
 
   Future<void> pickImage() async {
-    _imageFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (_imageFile != null) {
-      await updateProfilePicture();
-    }
+  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+  if (pickedFile != null) {
+    setState(() {
+      _imageFile = pickedFile; // Store the picked file for later use
+      profilePictureUrl = pickedFile.path; // Set the local path to display
+    });
   }
+}
 
   void showAddServiceDialog() {
     final TextEditingController serviceNameController = TextEditingController();
@@ -302,51 +309,50 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Edit Specialist Details",
-          style: TextStyle(
-              color: Color.fromARGB(255, 90, 113, 243),
-              fontWeight: FontWeight.bold),
-        ),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(
-            height: 0.5,
-            color: Color.fromARGB(255, 220, 220, 241),
-          ),
-        ),
-        backgroundColor: Colors.white,
-        iconTheme:
-            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text(
+        "Edit Specialist Details",
+        style: TextStyle(
+            color: Color.fromARGB(255, 90, 113, 243),
+            fontWeight: FontWeight.bold),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: GestureDetector(
-                    onTap: pickImage,
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundImage: profilePictureUrl != null
-                          ? NetworkImage(profilePictureUrl!)
-                          : null,
-                      child: profilePictureUrl == null
-                          ? const Icon(Icons.person,
-                              size: 50,
-                              color: Color.fromARGB(255, 90, 113, 243))
-                          : null,
+      bottom: const PreferredSize(
+        preferredSize: Size.fromHeight(1),
+        child: Divider(
+          height: 0.5,
+          color: Color.fromARGB(255, 220, 220, 241),
+        ),
+      ),
+      backgroundColor: Colors.white,
+      iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+    ),
+    body: SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: GestureDetector(
+                  onTap: pickImage,
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundImage: _imageFile != null
+                        ? FileImage(File(_imageFile!.path)) // Display the picked image
+                        : (profilePictureUrl != null ? NetworkImage(profilePictureUrl!) : null),
+                    child: (_imageFile == null && profilePictureUrl == null)
+                        ? const Icon(Icons.person,
+                            size: 50,
+                            color: Color.fromARGB(255, 90, 113, 243))
+                        : null,
                     ),
                   ),
                 ),

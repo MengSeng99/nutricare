@@ -188,7 +188,8 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(specialist.specialization),
-                    Text(specialist.organization),
+                    Text(specialist.organization,
+                        style: const TextStyle(fontWeight: FontWeight.w300,color: Color.fromARGB(255, 90, 113, 243))),
                   ],
                 ),
                 trailing: IconButton(
@@ -196,7 +197,7 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
                     specialist.isFavorite
                         ? Icons.favorite
                         : Icons.favorite_border,
-                    color: specialist.isFavorite ? Colors.blue : null,
+                    color: specialist.isFavorite ? Color.fromARGB(255, 90, 113, 243) : null,
                   ),
                   onPressed: () async {
                     setState(() {
@@ -299,61 +300,71 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
             ),
             const SizedBox(height: 16.0),
             // Choice chips for filtering
-Row(
-  mainAxisAlignment: MainAxisAlignment.start,
-  children: [
-    Padding(
-      padding: const EdgeInsets.only(right: 12.0),
-      child: ChoiceChip(
-        label: const Text('All'),
-        selected: !_showFavoritesOnly,
-        onSelected: (isSelected) {
-          setState(() {
-            _showFavoritesOnly = false; // Handle selection
-          });
-        },
-        selectedColor: const Color.fromARGB(255, 90, 113, 243),
-        backgroundColor: Colors.grey[200],
-        labelStyle: TextStyle(
-          color: !_showFavoritesOnly ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
-          fontWeight: FontWeight.bold,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(100), // 100px border radius
-          side: BorderSide(
-            color: !_showFavoritesOnly ? const Color.fromARGB(255, 90, 113, 243) : Colors.transparent,
-            width: 2.0,
-          ),
-        ),
-      ),
-    ),
-    Padding(
-      padding: const EdgeInsets.only(right: 12.0),
-      child: ChoiceChip(
-        label: const Text('Favorites'),
-        selected: _showFavoritesOnly,
-        onSelected: (isSelected) {
-          setState(() {
-            _showFavoritesOnly = true; // Handle selection
-          });
-        },
-        selectedColor: const Color.fromARGB(255, 90, 113, 243),
-        backgroundColor: Colors.grey[200],
-        labelStyle: TextStyle(
-          color: _showFavoritesOnly ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
-          fontWeight: FontWeight.bold,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(100), // 100px border radius
-          side: BorderSide(
-            color: _showFavoritesOnly ? const Color.fromARGB(255, 90, 113, 243) : Colors.transparent,
-            width: 2.0,
-          ),
-        ),
-      ),
-    ),
-  ],
-),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 12.0),
+                  child: ChoiceChip(
+                    label: const Text('All'),
+                    selected: !_showFavoritesOnly,
+                    onSelected: (isSelected) {
+                      setState(() {
+                        _showFavoritesOnly = false; // Handle selection
+                      });
+                    },
+                    selectedColor: const Color.fromARGB(255, 90, 113, 243),
+                    backgroundColor: Colors.grey[200],
+                    labelStyle: TextStyle(
+                      color: !_showFavoritesOnly
+                          ? Colors.white
+                          : const Color.fromARGB(255, 0, 0, 0),
+                      fontWeight: FontWeight.bold,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(100), // 100px border radius
+                      side: BorderSide(
+                        color: !_showFavoritesOnly
+                            ? const Color.fromARGB(255, 90, 113, 243)
+                            : Colors.transparent,
+                        width: 2.0,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 12.0),
+                  child: ChoiceChip(
+                    label: const Text('Favorites'),
+                    selected: _showFavoritesOnly,
+                    onSelected: (isSelected) {
+                      setState(() {
+                        _showFavoritesOnly = true; // Handle selection
+                      });
+                    },
+                    selectedColor: const Color.fromARGB(255, 90, 113, 243),
+                    backgroundColor: Colors.grey[200],
+                    labelStyle: TextStyle(
+                      color: _showFavoritesOnly
+                          ? Colors.white
+                          : const Color.fromARGB(255, 0, 0, 0),
+                      fontWeight: FontWeight.bold,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(100), // 100px border radius
+                      side: BorderSide(
+                        color: _showFavoritesOnly
+                            ? const Color.fromARGB(255, 90, 113, 243)
+                            : Colors.transparent,
+                        width: 2.0,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 16.0),
             Expanded(child: _buildSpecialistList()),
           ],

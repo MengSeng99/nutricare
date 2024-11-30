@@ -8,14 +8,17 @@ class ChangePasswordScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Get the current user's email
-    final userEmail = FirebaseAuth.instance.currentUser?.email ?? 'guest@example.com';
+    final userEmail =
+        FirebaseAuth.instance.currentUser?.email ?? 'guest@example.com';
 
     return Scaffold(
       backgroundColor: Colors.white, // Set the background color to white
       appBar: AppBar(
         title: const Text(
           "Change Password",
-          style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: Color.fromARGB(255, 90, 113, 243),
+              fontWeight: FontWeight.bold),
         ),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
@@ -26,7 +29,8 @@ class ChangePasswordScreen extends StatelessWidget {
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        iconTheme:
+            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -61,7 +65,6 @@ class ChangePasswordScreen extends StatelessWidget {
             ),
             const SizedBox(height: 30),
 
-            // Display current email
             Container(
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
@@ -79,11 +82,19 @@ class ChangePasswordScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.email_outlined, color: Color.fromARGB(255, 90, 113, 243)),
+                  const Icon(Icons.email_outlined,
+                      color: Color.fromARGB(255, 90, 113, 243)),
                   const SizedBox(width: 10),
-                  Text(
-                    userEmail,
-                    style: const TextStyle(fontSize: 18.0, color: Colors.black87),
+                  Expanded(
+                    // Use Expanded to wrap the Text widget
+                    child: Text(
+                      userEmail,
+                      style: const TextStyle(
+                          fontSize: 16.0, color: Colors.black87),
+                      overflow:
+                          TextOverflow.ellipsis, // Add ellipsis for overflow
+                      maxLines: 3, // Limit to 1 line
+                    ),
                   ),
                 ],
               ),
@@ -93,15 +104,18 @@ class ChangePasswordScreen extends StatelessWidget {
             // Reset Password Button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 90, 113, 243), // Blue background
-                padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 15.0),
+                backgroundColor:
+                    const Color.fromARGB(255, 90, 113, 243), // Blue background
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 30.0, vertical: 15.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
               child: const Text(
                 "Reset Password",
-                style: TextStyle(color: Colors.white, fontSize: 16.0), // White text
+                style: TextStyle(
+                    color: Colors.white, fontSize: 16.0), // White text
               ),
               onPressed: () {
                 // Show a modernized confirmation dialog
@@ -113,7 +127,9 @@ class ChangePasswordScreen extends StatelessWidget {
                     ),
                     title: const Text(
                       "Confirm Password Reset",
-                      style: TextStyle(fontWeight: FontWeight.bold,color: Color.fromARGB(255, 90, 113, 243)),
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 90, 113, 243)),
                     ),
                     content: const Text(
                       "Are you sure you want to reset your password? You will receive a password reset link at your registered email address.",
@@ -128,7 +144,8 @@ class ChangePasswordScreen extends StatelessWidget {
                       ),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 90, 113, 243), // Blue background
+                          backgroundColor: const Color.fromARGB(
+                              255, 90, 113, 243), // Blue background
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -136,10 +153,12 @@ class ChangePasswordScreen extends StatelessWidget {
                         onPressed: () async {
                           try {
                             // Send password reset email
-                            await FirebaseAuth.instance.sendPasswordResetEmail(email: userEmail);
+                            await FirebaseAuth.instance
+                                .sendPasswordResetEmail(email: userEmail);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text("Check your email to reset your password."),
+                                content: Text(
+                                    "Check your email to reset your password."),
                               ),
                             );
 
@@ -147,7 +166,8 @@ class ChangePasswordScreen extends StatelessWidget {
                             await FirebaseAuth.instance.signOut();
                             Navigator.pushAndRemoveUntil(
                               context,
-                              MaterialPageRoute(builder: (context) => const LoginPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => const LoginPage()),
                               (Route<dynamic> route) => false,
                             );
                           } catch (e) {
@@ -158,7 +178,8 @@ class ChangePasswordScreen extends StatelessWidget {
                             );
                           }
                         },
-                        child: const Text("Reset", style: TextStyle(color: Colors.white)),
+                        child: const Text("Reset",
+                            style: TextStyle(color: Colors.white)),
                       ),
                     ],
                   ),

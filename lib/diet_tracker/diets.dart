@@ -105,9 +105,9 @@ class _DietsScreenState extends State<DietsScreen> {
             mealType: mealType,
             name: mealData['name'] ?? 'No Meal Logged Yet',
             calories: mealData['Calories'] ?? 0,
-            protein: mealData['Proteins'] ?? 0,
-            carbs: mealData['Carbohydrates'] ?? 0,
-            fat: mealData['Fats'] ?? 0,
+            protein: mealData['Protein'] ?? 0,
+            carbs: mealData['Carbohydrate'] ?? 0,
+            fat: mealData['Fat'] ?? 0,
           );
 
           newMeals.add(meal);

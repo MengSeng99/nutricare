@@ -24,7 +24,7 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
 
   String? profilePictureUrl;
   final ImagePicker _picker = ImagePicker();
-  XFile? _imageFile;
+  XFile? _imageFile; // Keep the image file temporarily until add is clicked
 
   String? selectedGender;
   String? selectedSpecialization;
@@ -55,23 +55,22 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
     super.dispose();
   }
 
-  Future<void> updateProfilePicture() async {
+  Future<String?> uploadProfilePicture() async {
     if (_imageFile != null) {
       try {
         FirebaseStorage storage = FirebaseStorage.instance;
         String fileName = _imageFile!.name;
-        Reference ref = storage.ref().child('profile_pictures/$fileName');
+        Reference ref =
+            storage.ref().child('specialist_profile_picture/$fileName');
         await ref.putFile(File(_imageFile!.path));
-        String downloadUrl = await ref.getDownloadURL();
-        setState(() {
-          profilePictureUrl = downloadUrl;
-        });
+        return await ref.getDownloadURL(); // Return the download URL
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error uploading image: $e')),
         );
       }
     }
+    return null; // Return null if no image is uploaded
   }
 
   bool isEmailValid(String email) {
@@ -99,18 +98,6 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
         ),
       );
 
-      return;
-    }
-
-    // Validate if an image is uploaded
-    if (profilePictureUrl == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              const Text('Please upload a profile picture for the specialist!'),
-          backgroundColor: Colors.red,
-        ),
-      );
       return;
     }
 
@@ -157,7 +144,7 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
         'specialization': selectedSpecialization,
         'about': aboutController.text,
         'services': services,
-        'profile_picture_url': profilePictureUrl,
+        'profile_picture_url': null // Initially set to null
       };
 
       // Save the new specialist information to Firestore using the UID as the document ID
@@ -166,6 +153,18 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
           .doc(specialistId)
           .set(newSpecialist);
 
+      // Upload the profile picture after the specialist is created
+      String? imageUrl = await uploadProfilePicture();
+      if (imageUrl != null) {
+        // Update the profile picture URL in Firestore
+        await FirebaseFirestore.instance
+            .collection('specialists')
+            .doc(specialistId)
+            .update({
+          'profile_picture_url': imageUrl,
+        });
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Specialist created successfully!'),
@@ -173,7 +172,7 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
         ),
       );
 
-      Navigator.pop(context); // Go back to the previous screents
+      Navigator.pop(context); // Go back to the previous screen
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error creating specialist: $e')),
@@ -184,7 +183,9 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
   Future<void> pickImage() async {
     _imageFile = await _picker.pickImage(source: ImageSource.gallery);
     if (_imageFile != null) {
-      await updateProfilePicture();
+      setState(() {
+        profilePictureUrl = _imageFile!.path;
+      });
     }
   }
 
@@ -305,10 +306,13 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
                     onTap: pickImage,
                     child: CircleAvatar(
                       radius: 50,
-                      backgroundImage: profilePictureUrl != null
-                          ? NetworkImage(profilePictureUrl!)
+                      backgroundImage: profilePictureUrl != null &&
+                              profilePictureUrl!.isNotEmpty
+                          ? FileImage(File(
+                              profilePictureUrl!)) // Use FileImage to display the local image
                           : null,
-                      child: profilePictureUrl == null
+                      child: (profilePictureUrl == null ||
+                              profilePictureUrl!.isEmpty)
                           ? const Icon(Icons.person,
                               size: 50,
                               color: Color.fromARGB(255, 90, 113, 243))

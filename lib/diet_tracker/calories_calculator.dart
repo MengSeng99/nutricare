@@ -363,7 +363,7 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
                   style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue),
+                      color: Color.fromARGB(255, 90, 113, 243)),
                   textAlign: TextAlign.center,
                   decoration: const InputDecoration(
                     border: InputBorder.none,

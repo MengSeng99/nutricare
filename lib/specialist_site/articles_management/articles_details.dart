@@ -52,64 +52,65 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    // Create a DateFormat instance to format DateTimes
-    final DateFormat dateTimeFormat = DateFormat('yyyy-MM-dd HH:mm');
+Widget build(BuildContext context) {
+  // Create a DateFormat instance to format DateTimes
+  final DateFormat dateTimeFormat = DateFormat('yyyy-MM-dd HH:mm');
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          'Article Details',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 90, 113, 243),
-          ),
+  return Scaffold(
+    backgroundColor: Colors.white,
+    appBar: AppBar(
+      title: const Text(
+        'Article Details',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Color.fromARGB(255, 90, 113, 243),
         ),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(
-            height: 0.5,
-            color: Color.fromARGB(255, 220, 220, 241),
-          ),
-        ),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            color: const Color.fromARGB(255, 90, 113, 243),
-            onPressed: () async {
-              final updatedArticle = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditArticleScreen(
-                    articleId: widget.articleId,
-                    title: title,
-                    subtitle: subtitle,
-                    description: description,
-                    content: content,
-                    imageUrl: imageUrl,
-                  ),
-                ),
-              );
-
-              if (updatedArticle != null) {
-                setState(() {
-                  title = updatedArticle['title'];
-                  subtitle = updatedArticle['subtitle'];
-                  description = updatedArticle['description'];
-                  content = updatedArticle['content'];
-                  imageUrl = updatedArticle['imageUrl'];
-                  lastUpdate = DateTime.now(); // Update to now
-                  likeCount = updatedArticle['likeCount'] ?? likeCount; 
-                });
-              }
-            },
-          ),
-        ],
       ),
-      body: Padding(
+      bottom: const PreferredSize(
+        preferredSize: Size.fromHeight(1),
+        child: Divider(
+          height: 0.5,
+          color: Color.fromARGB(255, 220, 220, 241),
+        ),
+      ),
+      backgroundColor: Colors.white,
+      iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.edit),
+          color: const Color.fromARGB(255, 90, 113, 243),
+          onPressed: () async {
+            final updatedArticle = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EditArticleScreen(
+                  articleId: widget.articleId,
+                  title: title,
+                  subtitle: subtitle,
+                  description: description,
+                  content: content,
+                  imageUrl: imageUrl,
+                ),
+              ),
+            );
+
+            if (updatedArticle != null) {
+              setState(() {
+                title = updatedArticle['title'];
+                subtitle = updatedArticle['subtitle'];
+                description = updatedArticle['description'];
+                content = updatedArticle['content'];
+                imageUrl = updatedArticle['imageUrl'];
+                lastUpdate = DateTime.now(); // Update to now
+                likeCount = updatedArticle['likeCount'] ?? likeCount; 
+              });
+            }
+          },
+        ),
+      ],
+    ),
+    body: SingleChildScrollView( // Wrap contents with this widget
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Card(
           elevation: 4.0,
@@ -140,12 +141,12 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Description: $description',
+                    'Description:\n$description',
                     style: const TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Content: $content',
+                    'Content:\n$content',
                     style: const TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 8),
@@ -169,6 +170,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

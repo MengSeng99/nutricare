@@ -35,11 +35,28 @@ class AddCardDialog {
     return input;
   }
 
-  Future<void> _addCard(BuildContext context) async {
+  bool _isValidCardNumber(String cardNumber) {
+    // Remove spaces and check length
+    String unformattedNumber = cardNumber.replaceAll(' ', '');
+    return unformattedNumber.length == 16;
+  }
+
+  Future<bool> _addCard(BuildContext context) async {
     final user = _auth.currentUser;
 
     if (user != null) {
       String userId = user.uid;
+
+      // Validate card number before adding
+      if (!_isValidCardNumber(cardNumberController.text)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Card number must be 16 digits long (with spaces as required).'),
+                                backgroundColor: Colors.red),
+        );
+        return false; // Exit early if the card number is invalid.
+      }
 
       await _firestore
           .collection('users')
@@ -52,10 +69,10 @@ class AddCardDialog {
         'cvv': cvvController.text,
       });
 
-      Navigator.of(context)
-          .pop(true); // Pass 'true' to indicate a card was added
-      _clearTextFields(); // Clear the text fields after adding
+      // If we reach here, it means card number was valid, and card has been added.
+      return true; // Indicate that the card was added successfully.
     }
+    return false; // Indicate failure due to user not being logged in
   }
 
   void _clearTextFields() {
@@ -66,187 +83,203 @@ class AddCardDialog {
   }
 
   Future<void> showAddCardDialog(BuildContext context) async {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.85, // Width takes 85% of the screen
-          padding: const EdgeInsets.all(16.0), // Add some padding
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // Allow dialog to size itself to fit content
-            children: [
-              const Text(
-                "Add Payment Method",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 90, 113, 243),
-                  fontSize: 24,
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+          child: Container(
+            width: MediaQuery.of(context).size.width *
+                0.85, // Width takes 85% of the screen
+            padding: const EdgeInsets.all(16.0), // Add some padding
+            child: Column(
+              mainAxisSize: MainAxisSize
+                  .min, // Allow dialog to size itself to fit content
+              children: [
+                const Text(
+                  "Add Payment Method",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 90, 113, 243),
+                    fontSize: 24,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-              // Card Number Field
-              TextFormField(
-                controller: cardNumberController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly, // Only allow numbers
-                  LengthLimitingTextInputFormatter(19), // 16 digits + 3 spaces
-                ],
-                onChanged: (value) {
-                  cardNumberController.value = TextEditingValue(
-                    text: formatCardNumber(value),
-                    selection: TextSelection.collapsed(
-                      offset: formatCardNumber(value).length,
+                // Card Number Field
+                TextFormField(
+                  controller: cardNumberController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter
+                        .digitsOnly, // Only allow numbers
+                    LengthLimitingTextInputFormatter(
+                        19), // 16 digits + 3 spaces
+                  ],
+                  onChanged: (value) {
+                    cardNumberController.value = TextEditingValue(
+                      text: formatCardNumber(value),
+                      selection: TextSelection.collapsed(
+                        offset: formatCardNumber(value).length,
+                      ),
+                    );
+                  },
+                  decoration: InputDecoration(
+                    hintText: "Card Number",
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.grey),
                     ),
-                  );
-                },
-                decoration: InputDecoration(
-                  hintText: "Card Number",
-                  filled: true,
-                  fillColor: Colors.white,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Colors.grey),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color.fromARGB(255, 90, 113, 243)),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Card Holder Name Field
-              TextFormField(
-                controller: cardHolderController,
-                decoration: InputDecoration(
-                  hintText: "Card Holder Name",
-                  filled: true,
-                  fillColor: Colors.white,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Colors.grey),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color.fromARGB(255, 90, 113, 243)),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Expiry Date Field
-              TextFormField(
-                controller: expiryDateController,
-                keyboardType: TextInputType.datetime,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(5), // 4 digits + 1 slash
-                ],
-                onChanged: (value) {
-                  expiryDateController.value = TextEditingValue(
-                    text: formatExpiryDate(value),
-                    selection: TextSelection.collapsed(
-                      offset: formatExpiryDate(value).length,
-                    ),
-                  );
-                },
-                decoration: InputDecoration(
-                  hintText: "Expiry Date (MM/YY)",
-                  filled: true,
-                  fillColor: Colors.white,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Colors.grey),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color.fromARGB(255, 90, 113, 243)),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // CVV Field
-              TextFormField(
-                controller: cvvController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(3), // Limit CVV to 3 digits
-                ],
-                decoration: InputDecoration(
-                  hintText: "CVV",
-                  filled: true,
-                  fillColor: Colors.white,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Colors.grey),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color.fromARGB(255, 90, 113, 243)),
-                  ),
-                ),
-                obscureText: true, // Hide CVV for security
-              ),
-
-              const SizedBox(height: 20),
-
-              // Actions
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _clearTextFields(); // Clear text fields on cancel
-                    },
-                    child: const Text("Cancel"),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (cardNumberController.text.isEmpty ||
-                          cardHolderController.text.isEmpty ||
-                          expiryDateController.text.isEmpty ||
-                          cvvController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please fill in all fields')),
-                        );
-                      } else {
-                        _addCard(context);
-                        // Show a snackbar
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Payment method added successfully.'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                    ),
-                    child: const Text(
-                      "Add",
-                      style: TextStyle(color: Colors.white),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 90, 113, 243)),
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+
+                const SizedBox(height: 10),
+
+                // Card Holder Name Field
+                TextFormField(
+                  controller: cardHolderController,
+                  decoration: InputDecoration(
+                    hintText: "Card Holder Name",
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 90, 113, 243)),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // Expiry Date Field
+                TextFormField(
+                  controller: expiryDateController,
+                  keyboardType: TextInputType.datetime,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(5), // 4 digits + 1 slash
+                  ],
+                  onChanged: (value) {
+                    expiryDateController.value = TextEditingValue(
+                      text: formatExpiryDate(value),
+                      selection: TextSelection.collapsed(
+                        offset: formatExpiryDate(value).length,
+                      ),
+                    );
+                  },
+                  decoration: InputDecoration(
+                    hintText: "Expiry Date (MM/YY)",
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 90, 113, 243)),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // CVV Field
+                TextFormField(
+                  controller: cvvController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(
+                        3), // Limit CVV to 3 digits
+                  ],
+                  decoration: InputDecoration(
+                    hintText: "CVV",
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 90, 113, 243)),
+                    ),
+                  ),
+                  obscureText: true, // Hide CVV for security
+                ),
+
+                const SizedBox(height: 20),
+
+                // Actions
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _clearTextFields(); // Clear text fields on cancel
+                      },
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (cardNumberController.text.isEmpty ||
+                            cardHolderController.text.isEmpty ||
+                            expiryDateController.text.isEmpty ||
+                            cvvController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Please fill in all fields')),
+                          );
+                        } else {
+                          bool cardAdded = await _addCard(context);
+                          if (cardAdded) {
+                            // Show a snackbar only if the card was added successfully
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Payment method added successfully.'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color.fromARGB(255, 90, 113, 243),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30)),
+                      ),
+                      child: const Text(
+                        "Add",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 }

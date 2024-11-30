@@ -172,7 +172,9 @@ class BmiResultScreen extends StatelessWidget {
     String formattedTime = TimeOfDay.now().format(context);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text(
           "Your BMI Result",
           style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),

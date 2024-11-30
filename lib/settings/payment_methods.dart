@@ -204,6 +204,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
+                                  backgroundColor: Colors.white,  
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(15),
                                   ),

@@ -35,86 +35,93 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
-  Future<void> _retrieveChatData() async {
-    try {
-      // Query chats where the current user is a part of
-      QuerySnapshot querySnapshot = await _firestore
+ Future<void> _retrieveChatData() async {
+  setState(() {
+    _isLoading = true; // Set loading to true when starting to retrieve data
+  });
+
+  try {
+    // Query chats where the current user is a part of
+    QuerySnapshot querySnapshot = await _firestore
+        .collection('chats')
+        .where('users', arrayContains: currentUserId) // Filter by current user
+        .get();
+
+    // Clear the chat list before adding new data
+    chatList.clear(); 
+
+    if (querySnapshot.docs.isEmpty) {
+      setState(() {
+        _isLoading = false; // Set loading to false when no chats found
+      });
+      return; // Exit if no chats are found
+    }
+
+    for (var doc in querySnapshot.docs) {
+      List<String> users = List<String>.from(
+          (doc.data() as Map<String, dynamic>)['users'] ?? []);
+      var specialistId = users.first == currentUserId
+          ? users.last
+          : users.first; // Specify the specialist ID
+
+      // Fetch specialist data
+      DocumentSnapshot specialistDoc =
+          await _firestore.collection('specialists').doc(specialistId).get();
+      var specialistData = specialistDoc.data() as Map<String, dynamic>?;
+
+      // Fetch the latest message from the chat
+      QuerySnapshot messagesSnapshot = await _firestore
           .collection('chats')
-          .where('users',
-              arrayContains: currentUserId) // Filter by current user
+          .doc(doc.id)
+          .collection('messages')
+          .orderBy('timestamp', descending: true) // Order by most recent timestamp
+          .limit(1) // Get only the latest message
           .get();
 
-      if (querySnapshot.docs.isEmpty) {
-        // print("No chats found for the user.");
-        return;
-      }
+      var lastMessageDoc = messagesSnapshot.docs.isNotEmpty
+          ? messagesSnapshot.docs.first
+          : null; // Get the first doc
+      var lastMessage = lastMessageDoc?.data() as Map<String, dynamic>?;
 
-      for (var doc in querySnapshot.docs) {
-        List<String> users = List<String>.from(
-            (doc.data() as Map<String, dynamic>)['users'] ?? []);
-        var specialistId = users.first == currentUserId
-            ? users.last
-            : users.first; // Specify the specialist ID
-
-        // Fetch specialist data
-        DocumentSnapshot specialistDoc =
-            await _firestore.collection('specialists').doc(specialistId).get();
-        var specialistData = specialistDoc.data() as Map<String, dynamic>?;
-
-        // Fetch the latest message from the chat
-        QuerySnapshot messagesSnapshot = await _firestore
-            .collection('chats')
-            .doc(doc.id)
-            .collection('messages')
-            .orderBy('timestamp',
-                descending: true) // Order by most recent timestamp
-            .limit(1) // Get only the latest message
-            .get();
-
-        var lastMessageDoc = messagesSnapshot.docs.isNotEmpty
-            ? messagesSnapshot.docs.first
-            : null; // Get the first doc
-        var lastMessage = lastMessageDoc?.data() as Map<String, dynamic>?;
-
-        if (lastMessage != null) {
-          String messageText = lastMessage['text'] ?? "No text";
-          // Check if the last message is from the current user and format accordingly
-          if (lastMessage['senderId'] == currentUserId) {
-            messageText =
-                "You: $messageText"; // Prepend "You: " for user messages
-          }
-
-          // Truncate the message if it's too long
-          messageText = _truncateMessage(messageText);
-
-          Timestamp timestamp =
-              lastMessage['timestamp'] as Timestamp? ?? Timestamp.now();
-
-          chatList.add({
-            'chatId': doc.id,
-            'lastMessage': messageText,
-            'lastTimestamp': timestamp,
-            'specialistName': specialistData?['name'] ?? "Unknown",
-            'profilePictureUrl': specialistData?['profile_picture_url'] ?? "",
-            'specialistId': specialistId, // Store specialistId
-          });
+      if (lastMessage != null) {
+        String messageText = lastMessage['text'] ?? "No text";
+        // Check if the last message is from the current user and format accordingly
+        if (lastMessage['senderId'] == currentUserId) {
+          messageText =
+              "You: $messageText"; // Prepend "You: " for user messages
         }
+
+        // Truncate the message if it's too long
+        messageText = _truncateMessage(messageText);
+
+        Timestamp timestamp =
+            lastMessage['timestamp'] as Timestamp? ?? Timestamp.now();
+
+        chatList.add({
+          'chatId': doc.id,
+          'lastMessage': messageText,
+          'lastTimestamp': timestamp,
+          'specialistName': specialistData?['name'] ?? "Unknown",
+          'profilePictureUrl': specialistData?['profile_picture_url'] ?? "",
+          'specialistId': specialistId, // Store specialistId
+        });
       }
-
-      // Sort chatList by lastTimestamp
-      chatList.sort((a, b) => b['lastTimestamp']
-          .compareTo(a['lastTimestamp'])); // Sort descending order
-
-      setState(() {
-        _isLoading = false; // Set loading to false when done
-      });
-    } catch (error) {
-      // print("Error retrieving chat data: $error");
-      setState(() {
-        _isLoading = false; // Set loading to false even on error
-      });
     }
+
+    // Sort chatList by lastTimestamp
+    chatList.sort((a, b) => b['lastTimestamp']
+        .compareTo(a['lastTimestamp'])); // Sort descending order
+
+    setState(() {
+      _isLoading = false; // Set loading to false when done
+    });
+  } catch (error) {
+    // print("Error retrieving chat data: $error");
+    setState(() {
+      _isLoading = false; // Set loading to false even on error
+    });
   }
+}
 
   String _formatTimestamp(Timestamp timestamp) {
     DateTime dateTime = timestamp.toDate();
