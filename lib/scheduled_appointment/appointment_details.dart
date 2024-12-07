@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'chat_details.dart';
 
 class AppointmentDetailsScreen extends StatefulWidget {
@@ -43,58 +44,73 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
         _fetchAppointmentDetails(); // Load data when the screen is initialized
   }
 
-  Future<Map<String, dynamic>?> _fetchAppointmentDetails() async {
-    try {
-      DocumentSnapshot appointmentSnapshot = await FirebaseFirestore.instance
-          .collection('appointments')
-          .doc(widget.appointmentId)
-          .get();
+ Future<Map<String, dynamic>?> _fetchAppointmentDetails() async {
+  try {
+    DocumentSnapshot appointmentSnapshot = await FirebaseFirestore.instance
+        .collection('appointments')
+        .doc(widget.appointmentId)
+        .get();
 
-      if (!appointmentSnapshot.exists) {
-        return null;
-      }
-
-      Map<String, dynamic> appointmentData =
-          appointmentSnapshot.data() as Map<String, dynamic>;
-
-      // Get details from the 'details' subcollection
-      QuerySnapshot detailsSnapshot = await FirebaseFirestore.instance
-          .collection('appointments')
-          .doc(widget.appointmentId)
-          .collection('details')
-          .get();
-
-      // Assuming there's only one document in the details subcollection
-      if (detailsSnapshot.docs.isNotEmpty) {
-        DocumentSnapshot detailDoc = detailsSnapshot.docs.first;
-
-        // Extracting payment information
-        appointmentData['amountPaid'] = detailDoc['amountPaid'];
-        appointmentData['paymentCardUsed'] = detailDoc['paymentCardUsed'];
-        appointmentData['createdAt'] = detailDoc['createdAt'];
-      }
-
-      DocumentSnapshot specialistDoc = await FirebaseFirestore.instance
-          .collection('specialists')
-          .doc(widget.specialistId)
-          .get();
-
-      List<dynamic> reviews =
-          (specialistDoc.data() as Map<String, dynamic>?)?['reviews'] ?? [];
-
-      // Filter reviews to include only those corresponding to the current appointment ID
-      reviews = reviews
-          .where((review) => review['appointment_id'] == widget.appointmentId)
-          .toList();
-
-      appointmentData['reviews'] = reviews;
-
-      return appointmentData;
-    } catch (e) {
-      // print("Error fetching appointment details: $e");
+    if (!appointmentSnapshot.exists) {
       return null;
     }
+
+    Map<String, dynamic> appointmentData =
+        appointmentSnapshot.data() as Map<String, dynamic>;
+
+    // Get details from the 'details' subcollection
+    QuerySnapshot detailsSnapshot = await FirebaseFirestore.instance
+        .collection('appointments')
+        .doc(widget.appointmentId)
+        .collection('details')
+        .get();
+
+    // Initialize reports as an empty list to avoid null reference
+    appointmentData['reports'] = [];
+
+    // Assuming there's only one document in the details subcollection
+    if (detailsSnapshot.docs.isNotEmpty) {
+      DocumentSnapshot detailDoc = detailsSnapshot.docs.first;
+
+      // Extracting payment information
+      appointmentData['amountPaid'] = detailDoc['amountPaid'];
+      appointmentData['paymentCardUsed'] = detailDoc['paymentCardUsed'];
+      appointmentData['createdAt'] = detailDoc['createdAt'];
+
+      // Fetch reports if they exist
+      if (detailDoc.data() != null && (detailDoc.data() as Map<String, dynamic>).containsKey('reports')) {
+        appointmentData['reports'] = detailDoc['reports']; // Get reports if present
+      } 
+
+      // Check if cancellationDate exists and store it if the status matches the widget's status
+      if (widget.status == "Canceled") {
+        Timestamp? cancellationDate =
+            detailDoc['cancellationDate'] as Timestamp?;
+        appointmentData['cancellationDate'] = cancellationDate;
+      }
+    }
+
+    DocumentSnapshot specialistDoc = await FirebaseFirestore.instance
+        .collection('specialists')
+        .doc(widget.specialistId)
+        .get();
+
+    List<dynamic> reviews =
+        (specialistDoc.data() as Map<String, dynamic>?)?['reviews'] ?? [];
+
+    // Filter reviews to include only those corresponding to the current appointment ID
+    reviews = reviews
+        .where((review) => review['appointment_id'] == widget.appointmentId)
+        .toList();
+
+    appointmentData['reviews'] = reviews;
+
+    return appointmentData;
+  } catch (e) {
+    // Handle any errors
+    return null;
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -137,14 +153,10 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
           Timestamp createdAt =
               appointmentDetails['createdAt'] ?? Timestamp.now();
           List<dynamic> reviews = appointmentDetails['reviews'] ?? [];
-
-          if (widget.status == "Completed") {
-            // Show dialog for rating and review
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _showRatingDialogIfNotReviewed(
-                  context, widget.specialistId, widget.appointmentId);
-            });
-          }
+      List<dynamic> reports = appointmentDetails['reports'] ?? []; // Get reports
+          // New Variables for Cancellation
+          Timestamp? cancellationDate =
+              appointmentDetails['cancellationDate'] as Timestamp?;
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
@@ -186,6 +198,52 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  if (widget.status == "Canceled")
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      child: Card(
+                        color: Colors.white,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          side:
+                              BorderSide(color: Colors.grey.shade300, width: 1),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              Icon(Icons.cancel, color: Colors.red, size: 30),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Cancellation Date:\n${cancellationDate != null ? DateFormat('MMMM dd, yyyy').format(cancellationDate.toDate()) : 'N/A'}',
+                                      style: const TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      'Refund will be credited within 14 working days.',
+                                      style: const TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   _buildInfoCard(
                     title: "Appointment Details",
                     children: [
@@ -222,12 +280,54 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                               .format(createdAt.toDate())),
                     ],
                   ),
-                  const SizedBox(height: 5),
+               if (reports.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Uploaded Reports:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  ...reports.map((report) {
+                    return _buildReportCard(report);
+                  }),
+                ],
+                const SizedBox(height: 10),
                   if (reviews.isNotEmpty)
                     ...reviews.map((review) => _buildReviewCard(review))
                   else
                     const SizedBox.shrink(),
                   const SizedBox(height: 10),
+
+                  // Check if the user has already reviewed
+                  if (widget.status == "Completed" && reviews.isEmpty)
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          _showRatingDialogIfNotReviewed(context,
+                              widget.specialistId, widget.appointmentId);
+                        },
+                        icon: const Icon(Icons.rate_review,
+                            color: Colors.white, size: 20), // Use an icon
+                        label: const Text(
+                          "Leave a Review",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(
+                              0xFF5A71F3), // Change to your desired color
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 14, horizontal: 24),
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(30), // Rounded corners
+                          ),
+                          elevation: 2, // Add shadow effect
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 30),
                   Center(
                     child: ElevatedButton.icon(
                       onPressed: () async {
@@ -250,6 +350,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -259,7 +360,57 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     );
   }
 
-  Future<void> _showRatingDialogIfNotReviewed(
+  Widget _buildReportCard(Map<String, dynamic> report) {
+  String fileId = report['fileId'];
+  DateTime uploadTime = report['uploadTime'].toDate(); // Use toDate to convert Firebase Timestamp
+  String filePath = report['filePath'];
+
+  return Card(
+     color: Colors.white,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(color: Colors.grey.shade300, width: 1),
+                      ),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                fileId,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Uploaded on: ${DateFormat('yyyy-MM-dd – kk:mm').format(uploadTime)}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+            ],
+          ),
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: () async {
+              if (await canLaunch(filePath)) {
+                await launch(filePath);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Could not launch the report.')),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+  Future<bool> _showRatingDialogIfNotReviewed(
       BuildContext context, String specialistId, String appointmentId) async {
     final userId = FirebaseAuth.instance.currentUser!.uid;
 
@@ -286,124 +437,124 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     if (!hasReviewed) {
       await _showRatingDialog(
           context, specialistId, reviewerName, appointmentId);
-      setState(() {
-        _appointmentFuture =
-            _fetchAppointmentDetails(); // Refresh appointment details
-      });
-    } else {
-      // print("User has already submitted a review for this appointment.");
     }
+
+    return hasReviewed; // Return the review status
   }
 
-Future<void> _showRatingDialog(BuildContext context, String specialistId,
-    String reviewerName, String appointmentId) {
-  int? selectedRating;
-  final reviewController = TextEditingController();
-  bool isSubmitted = false;
+  Future<void> _showRatingDialog(BuildContext context, String specialistId,
+      String reviewerName, String appointmentId) {
+    int? selectedRating;
+    final reviewController = TextEditingController();
 
-  return showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext dialogContext) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            Text(
-              "Rate Your Appointment",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite, // Makes content width adapt to the dialog
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Rating stars with a modern touch
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    return IconButton(
-                      icon: Icon(
-                        index < (selectedRating ?? 0)
-                            ? Icons.star
-                            : Icons.star_border,
-                        color: Colors.amber,
-                        size: 25,
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text(
+                "Rate Your Appointment",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: StatefulBuilder(
+                builder: (BuildContext context, StateSetter setState) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Rating stars with a modern touch
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          return IconButton(
+                            icon: Icon(
+                              index < (selectedRating ?? 0)
+                                  ? Icons.star
+                                  : Icons.star_border,
+                              color: Colors.amber,
+                              size: 25,
+                            ),
+                            splashColor: Colors.amberAccent,
+                            onPressed: () {
+                              setState(() {
+                                selectedRating =
+                                    index + 1; // Update selected rating
+                              });
+                            },
+                          );
+                        }),
                       ),
-                      splashColor: Colors.amberAccent,
-                      onPressed: () {
-                        setState(() {
-                          selectedRating = index + 1;
-                        });
-                      },
-                    );
-                  }),
-                ),
-                const SizedBox(height: 12),
-                // Review TextField with rounded corners
-                TextField(
-                  controller: reviewController,
-                  decoration: InputDecoration(
-                    labelText: "Write your review",
-                    labelStyle: const TextStyle(color: Colors.grey),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        vertical: 15, horizontal: 10),
-                  ),
-                  maxLines: 3,
-                  style: const TextStyle(fontSize: 16),
-                ),
-                // Validation message with a modern style
-                if (isSubmitted &&
-                    (selectedRating == null ||
-                        reviewController.text.isEmpty))
-                  const Padding(
-                    padding: EdgeInsets.only(top: 10),
-                    child: Text(
-                      'Please fill out both rating and review.',
-                      style: TextStyle(color: Colors.red, fontSize: 14),
-                    ),
-                  ),
-              ],
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: reviewController,
+                        decoration: InputDecoration(
+                          labelText: "Write your review",
+                          labelStyle: const TextStyle(color: Colors.grey),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 15, horizontal: 10),
+                        ),
+                        maxLines: 3,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-        actions: <Widget>[
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                  vertical: 12, horizontal: 30),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+          actions: <Widget>[
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                elevation: 2,
               ),
-              elevation: 2,
-            ),
-            onPressed: () async {
-              setState(() {
-                isSubmitted = true;
-              });
-              if (selectedRating != null &&
-                  reviewController.text.isNotEmpty) {
+              onPressed: () async {
+                // Validate input
+                if (selectedRating == null || reviewController.text.isEmpty) {
+                  // Display error in a SnackBar
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Please fill out both rating and review.',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                  return; // Early exit to prevent submission
+                }
+
                 final currentDate =
                     DateFormat('yyyy-MM-dd').format(DateTime.now());
 
-                // Prepare review data with appointmentId
+                // Prepare the review data
                 final reviewData = {
                   'date': currentDate,
                   'rating': selectedRating,
@@ -416,31 +567,26 @@ Future<void> _showRatingDialog(BuildContext context, String specialistId,
                 await FirebaseFirestore.instance
                     .collection('specialists')
                     .doc(specialistId)
-                    .set(
-                    {
-                      'reviews': FieldValue.arrayUnion([reviewData])
-                    },
-                    SetOptions(
-                        merge:
-                        true)); // Create `reviews` array if it doesn't exist
+                    .set({
+                  'reviews': FieldValue.arrayUnion([reviewData])
+                }, SetOptions(merge: true));
 
-                // Print confirmation
-                // print('Review submitted: $reviewData');
-
-                // Close the dialog
                 Navigator.of(dialogContext).pop();
-              }
-            },
-            child: const Text(
-              'Submit',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                setState(() {
+                  _appointmentFuture =
+                      _fetchAppointmentDetails(); // Refresh appointment details
+                });
+              },
+              child: const Text(
+                'Submit',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-        ],
-      );
-    },
-  );
-}
+          ],
+        );
+      },
+    );
+  }
 
   Future<void> _checkForChatSession(
       BuildContext context, String specialistId) async {
@@ -573,7 +719,7 @@ Future<void> _showRatingDialog(BuildContext context, String specialistId,
       case 'Completed':
         return Colors.blue;
       default:
-        return Colors.grey;
+        return Colors.red;
     }
   }
 

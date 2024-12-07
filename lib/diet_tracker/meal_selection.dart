@@ -8,10 +8,10 @@ class MealSelectionScreen extends StatefulWidget {
   final DateTime selectedDate;
 
   const MealSelectionScreen({
-    Key? key,
+    super.key,
     required this.mealType,
     required this.selectedDate,
-  }) : super(key: key);
+  });
 
   @override
   _MealSelectionScreenState createState() => _MealSelectionScreenState();
@@ -691,109 +691,148 @@ class _RecipeDialogState extends State<RecipeDialog> {
             }
 
             return AlertDialog(
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(15.0),
-  ),
-  contentPadding: const EdgeInsets.all(0),
-  content: SizedBox(
-    width: MediaQuery.of(context).size.width * 0.9,
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(15.0)),
-          child: Image.network(
-            widget.imageUrl,
-            fit: BoxFit.contain,
-            width: double.infinity,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: Text(
-            widget.title,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.visible,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20.0,
-              color: Color.fromARGB(255, 90, 113, 243),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Select Servings:',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Using a Card to wrap the serving counter with an elevated interface
-            Card(
-              elevation: 2,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(15.0),
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                child: Row(
+              contentPadding: const EdgeInsets.all(0),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.9,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove, color: Color.fromARGB(255, 90, 113, 243)),
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(15.0)),
+                          child: Image.network(
+                            widget.imageUrl,
+                            fit: BoxFit.contain,
+                            width: double.infinity,
+                          ),
+                        ),
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 34, 42, 92)
+                                  .withOpacity(0.4),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 30,
+                              ),
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        widget.title,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.visible,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20.0,
+                          color: Color.fromARGB(255, 90, 113, 243),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Select Servings:',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Using a Card to wrap the serving counter with an elevated interface
+                        Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 10),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove,
+                                      color: Color.fromARGB(255, 90, 113, 243)),
+                                  onPressed: () {
+                                    if (selectedServingCountNotifier.value >
+                                        1) {
+                                      selectedServingCountNotifier.value--;
+                                    }
+                                  },
+                                ),
+                                ValueListenableBuilder<int>(
+                                  valueListenable: selectedServingCountNotifier,
+                                  builder: (context, count, child) {
+                                    return Text(
+                                      '$count',
+                                      style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600),
+                                    ); // Updated text style
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.add,
+                                      color: Color.fromARGB(255, 90, 113, 243)),
+                                  onPressed: () {
+                                    selectedServingCountNotifier.value++;
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
                       onPressed: () {
-                        if (selectedServingCountNotifier.value > 1) {
-                          selectedServingCountNotifier.value--;
-                        }
+                        // Calculate nutritional values based on current selected servings
+                        widget.addToLog(
+                          widget.title,
+                          (caloriesPerServing *
+                              selectedServingCountNotifier.value),
+                          (proteinPerServing *
+                              selectedServingCountNotifier.value),
+                          (carbohydratePerServing *
+                              selectedServingCountNotifier.value),
+                          (fatPerServing * selectedServingCountNotifier.value),
+                        );
+                        Navigator.of(context).pop();
                       },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color.fromARGB(255, 90, 113, 243),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                      ),
+                      child: const Text('Add to Log',
+                          style: TextStyle(color: Colors.white)),
                     ),
-                    ValueListenableBuilder<int>(
-                      valueListenable: selectedServingCountNotifier,
-                      builder: (context, count, child) {
-                        return Text(
-                          '$count',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                        ); // Updated text style
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add, color: Color.fromARGB(255, 90, 113, 243)),
-                      onPressed: () {
-                        selectedServingCountNotifier.value++;
-                      },
-                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: () {
-            // Calculate nutritional values based on current selected servings
-            widget.addToLog(
-              widget.title,
-              (caloriesPerServing * selectedServingCountNotifier.value),
-              (proteinPerServing * selectedServingCountNotifier.value),
-              (carbohydratePerServing * selectedServingCountNotifier.value),
-              (fatPerServing * selectedServingCountNotifier.value),
             );
-            Navigator.of(context).pop();
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-          child: const Text('Add to Log', style: TextStyle(color: Colors.white)),
-        ),
-        const SizedBox(height: 16),
-      ],
-    ),
-  ),
-);
           },
         );
       },

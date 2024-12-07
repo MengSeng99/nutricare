@@ -213,26 +213,74 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                 ),
               ),
               const SizedBox(width: 8.0),
-              Column(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.filter_list,
-                        color: Color.fromARGB(255, 90, 113, 243)),
-                    onPressed: () => _showFilterDialog(),
+                InkWell(
+                onTap: () => _showFilterDialog(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: selectedSpecialists.isNotEmpty
+                        ? Color.fromARGB(255, 90, 113, 243).withOpacity(0.1)
+                        : Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  const Text("Filter", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 6.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.filter_list,
+                          color: selectedSpecialists.isNotEmpty
+                              ? Color.fromARGB(255, 90, 113, 243)
+                              : Colors.grey,
+                        ),
+                        const SizedBox(height: 4), // Space between icon and text
+                        const Text(
+                          'Filter',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(width: 8.0),
-              Column(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.sort,
-                        color: Color.fromARGB(255, 90, 113, 243)),
-                    onPressed: () => _showSortDialog(),
+              InkWell(
+                onTap: () => _showSortDialog(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: sortingOption != null
+                        ? Color.fromARGB(255, 90, 113, 243).withOpacity(0.1)
+                        : Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  const Text("Sort", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 6.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.sort,
+                          color: sortingOption != null
+                              ? Color.fromARGB(255, 90, 113, 243)
+                              : Colors.grey,
+                        ),
+                        const SizedBox(height: 4), // Space between icon and text
+                        const Text(
+                          'Sort',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -311,6 +359,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -390,6 +439,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -584,92 +634,103 @@ class AppointmentCard extends StatelessWidget {
     }
   }
 
-  Future<Map<String, dynamic>?> _fetchAppointmentDetails(
-      String appointmentId) async {
-    QuerySnapshot detailSnapshot = await FirebaseFirestore.instance
-        .collection('appointments')
-        .doc(appointmentId)
-        .collection('details')
-        .limit(1)
-        .get();
+  // Update to the _fetchAppointmentDetails method
+Future<Map<String, dynamic>?> _fetchAppointmentDetails(
+    String appointmentId) async {
+  QuerySnapshot detailSnapshot = await FirebaseFirestore.instance
+      .collection('appointments')
+      .doc(appointmentId)
+      .collection('details')
+      .limit(1)
+      .get();
 
-    if (detailSnapshot.docs.isNotEmpty) {
-      return detailSnapshot.docs.first.data() as Map<String, dynamic>;
-    }
-
-    return null;
+  if (detailSnapshot.docs.isNotEmpty) {
+    return detailSnapshot.docs.first.data() as Map<String, dynamic>;
   }
 
-  void _showAppointmentDetailsDialog(
-      BuildContext context, Map<String, dynamic> details) async {
-    String? clientName = users != null && users!.isNotEmpty
-        ? await _fetchUserName(users![0])
-        : "N/A";
+  return null;
+}
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+// Update to the _showAppointmentDetailsDialog method
+void _showAppointmentDetailsDialog(
+    BuildContext context, Map<String, dynamic> details) async {
+  String? clientName = users != null && users!.isNotEmpty
+      ? await _fetchUserName(users![0])
+      : "N/A";
+
+  // Retrieve the cancellation date if available
+  String? cancellationDate = details.containsKey('cancellationDate')
+      ? DateFormat('MMMM dd, yyyy').format(
+          (details['cancellationDate'] as Timestamp).toDate())
+      : null;
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: const Text(
+          'Appointment Details',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color.fromARGB(255, 90, 113, 243),
           ),
-          title: const Text(
-            'Appointment Details',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 90, 113, 243),
-            ),
-            textAlign: TextAlign.center,
+          textAlign: TextAlign.center,
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDetailRow(Icons.calendar_today, 'Appointment ID',
+                  details['appointmentId']),
+              _buildDetailRow(Icons.person, 'Specialist', specialistName),
+              _buildDetailRow(
+                  Icons.account_circle, 'Client', clientName ?? 'N/A'),
+              _buildDetailRow(
+                  Icons.medical_services, 'Service', details['serviceName']),
+              _buildDetailRow(
+                  Icons.date_range,
+                  'Date',
+                  DateFormat('MMMM dd, yyyy').format(
+                      (details['selectedDate'] as Timestamp).toDate())),
+              _buildDetailRow(
+                  Icons.access_time, 'Time', details['selectedTimeSlot']),
+              _buildDetailRow(
+                  Icons.verified, 'Status', details['appointmentStatus']), 
+              if (details['appointmentStatus'] == 'Canceled' && cancellationDate != null)
+                _buildDetailRow(Icons.cancel, 'Cancellation Date', cancellationDate),
+              _buildDetailRow(
+                  Icons.video_call, 'Mode', details['appointmentMode']),
+              _buildDetailRow(Icons.attach_money, 'Amount Paid',
+                  'RM ${details['amountPaid']}'),
+              _buildDetailRow(Icons.credit_card, 'Payment Card Used',
+                  details['paymentCardUsed']),
+              _buildDetailRow(
+                  Icons.calendar_today,
+                  'Paid On',
+                  DateFormat('MMMM dd, yyyy')
+                      .format((details['createdAt'] as Timestamp).toDate())),
+            ],
           ),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDetailRow(Icons.calendar_today, 'Appointment ID',
-                    details['appointmentId']),
-                _buildDetailRow(Icons.person, 'Specialist', specialistName),
-                _buildDetailRow(
-                    Icons.account_circle, 'Client', clientName ?? 'N/A'),
-                _buildDetailRow(
-                    Icons.medical_services, 'Service', details['serviceName']),
-                _buildDetailRow(
-                    Icons.date_range,
-                    'Date',
-                    DateFormat('MMMM dd, yyyy').format(
-                        (details['selectedDate'] as Timestamp).toDate())),
-                _buildDetailRow(
-                    Icons.access_time, 'Time', details['selectedTimeSlot']),
-                _buildDetailRow(
-                    Icons.verified, 'Status', details['appointmentStatus']),
-                _buildDetailRow(
-                    Icons.video_call, 'Mode', details['appointmentMode']),
-                _buildDetailRow(Icons.attach_money, 'Amount Paid',
-                    'RM ${details['amountPaid']}'),
-                _buildDetailRow(Icons.credit_card, 'Payment Card Used',
-                    details['paymentCardUsed']),
-                _buildDetailRow(
-                    Icons.calendar_today,
-                    'Paid On',
-                    DateFormat('MMMM dd, yyyy')
-                        .format((details['createdAt'] as Timestamp).toDate())),
-              ],
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text(
+              'Close',
+              style: TextStyle(color: Color.fromARGB(255, 90, 113, 243)),
             ),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
           ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text(
-                'Close',
-                style: TextStyle(color: Color.fromARGB(255, 90, 113, 243)),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+        ],
+      );
+    },
+  );
+}
 
   Widget _buildDetailRow(IconData icon, String label, String value) {
     return Padding(

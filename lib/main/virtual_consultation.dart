@@ -18,6 +18,47 @@ class VirtualConsultationScreen extends StatelessWidget {
     },
   ];
 
+  // Show info dialog about the differences
+  void _showInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: const Text(
+          'Nutritionist vs Dietitian',
+          style: TextStyle(
+            color: Color.fromARGB(255, 90, 113, 243),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+          content: const Text(
+            '''Nutritionist: Generally, a nutritionist is a broader term that refers to someone who provides advice on food and nutrition. They may have varying levels of education and certification.
+             
+Dietitian: A dietitian is a trained healthcare professional who specializes in dietetics. They are usually required to obtain a degree in nutrition and dietetics, complete a supervised practice program, and pass a national examination. They are qualified to provide medical nutrition therapy and work in clinical settings to treat specific health conditions.''',
+          ),
+          actions: [
+            ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+              child: const Text('Close', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // Build the consultation boxes in a vertical list
   Widget _buildConsultationList(BuildContext context) {
     return ListView.builder(
@@ -110,6 +151,12 @@ class VirtualConsultationScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Color.fromARGB(255, 90, 113, 243)),
+            onPressed: () => _showInfoDialog(context), // Show dialog on button press
+          ),
+        ],
       ),
       body: Container(
         color: Colors.white,

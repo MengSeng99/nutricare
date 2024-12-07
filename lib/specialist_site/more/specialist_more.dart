@@ -1,16 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:nutricare/specialist_site/specialist_earning.dart';
-import '../authentication_process/login.dart';
-import '../food_recipe/food_recipe.dart';
-import '../settings/feedback.dart';
-
+import 'package:nutricare/specialist_site/more/specialist_deactivation.dart';
+import 'package:nutricare/specialist_site/more/specialist_earning.dart';
+import '../../authentication_process/login.dart';
+import '../../food_recipe/food_recipe.dart';
+import '../../settings/feedback.dart';
+import 'package:nutricare/admin_site/specialist_management/admin_specialist_details.dart';
 
 class SpecialistMoreScreen extends StatelessWidget {
   const SpecialistMoreScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final String currentUserId = FirebaseAuth.instance.currentUser!.uid; // Get current user ID
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -35,6 +38,18 @@ class SpecialistMoreScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Adding the Your Profile option
+            _buildSettingOption(context, Icons.person, 'Your Profile', () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AdminSpecialistsDetailsScreen(
+                    specialistId: currentUserId, 
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 10),
             _buildSettingOption(context, Icons.restaurant, 'Food Recipe', () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const FoodRecipeScreen()));
             }),
@@ -42,9 +57,21 @@ class SpecialistMoreScreen extends StatelessWidget {
             _buildSettingOption(context, Icons.feedback_outlined, 'Feedback', () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const FeedbackScreen()));
             }),
-             const SizedBox(height: 10),
+            const SizedBox(height: 10),
             _buildSettingOption(context, Icons.attach_money_outlined, 'Earning', () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const EarningsScreen()));
+            }),
+            const SizedBox(height: 10),
+            // Adding the Deactivation Enquiries option
+            _buildSettingOption(context, Icons.report_problem_outlined, 'Deactivation Enquiries', () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SpecialistDeactivation(
+                    specialistId: currentUserId, // Pass current user ID
+                  ),
+                ),
+              );
             }),
             const SizedBox(height: 60),
             const Divider(height: 1, color: Colors.grey),

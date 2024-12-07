@@ -27,8 +27,9 @@ class SpecialistClientScreen extends StatefulWidget {
 }
 
 class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
-  List<Client> clients = []; // List to hold client instances
-  String? currentUserId; // Variable to hold the current user's ID
+  List<Client> clients = [];
+  String? currentUserId;
+  bool _isLoading = true; // Add loading state
 
   @override
   void initState() {
@@ -37,14 +38,33 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
   }
 
   Future<void> _fetchCurrentUserId() async {
+    setState(() {
+      _isLoading = true; // Set loading to true when starting fetch
+    });
+
     User? user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
-      currentUserId = user.uid; // Set the current user ID
-      await _fetchClients(); // Fetch clients once the ID is retrieved
+      currentUserId = user.uid;
+      try {
+        await _fetchClients();
+      } catch (e) {
+        // Handle any errors during client fetching
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching clients: ${e.toString()}')),
+        );
+      } finally {
+        setState(() {
+          _isLoading = false; // Set loading to false when done
+        });
+      }
     } else {
-      // Handle the case when no user is signed in
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No user is signed in')));
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No user is signed in')),
+      );
     }
   }
 
@@ -53,14 +73,15 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
     clients.clear();
 
     // Fetch appointments
-    var appointmentsSnapshot = await FirebaseFirestore.instance.collection('appointments').get();
+    var appointmentsSnapshot = await FirebaseFirestore.instance
+        .collection('appointments')
+        .get();
 
     // Filter client IDs from appointments
     List<String> clientIds = [];
     for (var doc in appointmentsSnapshot.docs) {
-      List<dynamic> users = doc['users']; // Assuming an array of user IDs
+      List<dynamic> users = doc['users'];
       if (users.contains(currentUserId)) {
-        // Add all other user IDs from this appointment (that are not the current user)
         for (var userId in users) {
           if (userId != currentUserId && !clientIds.contains(userId)) {
             clientIds.add(userId);
@@ -71,14 +92,18 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
 
     // Fetch client details
     for (String clientId in clientIds) {
-      var clientDoc = await FirebaseFirestore.instance.collection('users').doc(clientId).get();
+      var clientDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(clientId)
+          .get();
+      
       if (clientDoc.exists) {
         var clientData = clientDoc.data()!;
         clients.add(Client(
           id: clientId,
           name: clientData['name'] ?? 'Unknown',
           email: clientData['email'] ?? 'No email',
-          profilePic: clientData['profile_pic'] ?? '', // Assuming this is the URL to the profile pic
+          profilePic: clientData['profile_pic'] ?? '',
         ));
       }
     }
@@ -86,7 +111,6 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
     // Refresh the UI
     setState(() {});
   }
-
   Future<void> _showAppointmentDialog(Client client) async {
   // Searching for existing appointments
   QuerySnapshot appointmentsSnapshot = await FirebaseFirestore.instance
@@ -124,6 +148,7 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
     context: context,
     builder: (context) {
       return AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
         ),
@@ -197,15 +222,36 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
         backgroundColor: Colors.white,
         automaticallyImplyLeading: false,
       ),
-      body: clients.isEmpty
-    ? Center(child: Text(
-        'No clients found.',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey,
-        ),
-      )) // Message when no clients found
+      body: _isLoading
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: Color.fromARGB(255, 90, 113, 243),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading clients...',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : clients.isEmpty
+              ? Center(
+                  child: Text(
+                    'No clients found.',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
+                )
     : ListView.builder(
         padding: const EdgeInsets.all(16.0),
         itemCount: clients.length,

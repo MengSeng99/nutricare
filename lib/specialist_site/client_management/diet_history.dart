@@ -28,58 +28,58 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
   }
 
   Future<void> _loadDietHistory() async {
+  setState(() {
+    isLoading = true; // Set loading state to true
+  });
+
+  QuerySnapshot dietSnapshot = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(widget.clientId)
+      .collection('dietHistory')
+      .get();
+
+  if (dietSnapshot.docs.isEmpty) {
     setState(() {
-      isLoading = true; // Set loading state to true
-    });
-
-    QuerySnapshot dietSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.clientId)
-        .collection('dietHistory')
-        .get();
-
-    if (dietSnapshot.docs.isEmpty) {
-      setState(() {
-        dietHistories = [];
-        filteredHistories = [];
-        isLoading = false;
-      });
-      return;
-    }
-
-    List<DietHistory> newHistories = [];
-
-    for (var doc in dietSnapshot.docs) {
-      var mealData = doc.data() as Map<String, dynamic>?;
-
-      if (mealData != null) {
-        DateTime.parse(doc.id);
-        List<MealHistory> meals = [];
-        List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-
-        for (String mealType in mealTypes) {
-          var mealInfo = mealData[mealType] as Map<String, dynamic>?;
-          if (mealInfo != null) {
-            meals.add(MealHistory(
-              mealType: mealType,
-              name: mealInfo['name'] ?? 'Unnamed Meal',
-              calories: mealInfo['Calories'] ?? 0,
-              protein: mealInfo['Proteins'] ?? 0,
-              carbs: mealInfo['Carbohydrates'] ?? 0,
-              fat: mealInfo['Fats'] ?? 0,
-            ));
-          }
-        }
-        newHistories.add(DietHistory(date: doc.id, meals: meals));
-      }
-    }
-
-    setState(() {
-      dietHistories = newHistories;
-      filteredHistories = newHistories;
+      dietHistories = [];
+      filteredHistories = [];
       isLoading = false;
     });
+    return;
   }
+
+  List<DietHistory> newHistories = [];
+
+  for (var doc in dietSnapshot.docs) {
+    var mealData = doc.data() as Map<String, dynamic>?;
+
+    if (mealData != null) {
+      DateTime.parse(doc.id);
+      List<MealHistory> meals = [];
+      List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Other'];
+
+      for (String mealType in mealTypes) {
+        var mealInfo = mealData[mealType] as Map<String, dynamic>?;
+        if (mealInfo != null) {
+          meals.add(MealHistory(
+            mealType: mealType,
+            name: mealInfo['name'] ?? 'Unnamed Meal',
+            calories: mealInfo['Calories'] ?? 0,
+            protein: mealInfo['Protein'] ?? 0, // Updated field name
+            carbs: mealInfo['Carbohydrate'] ?? 0, // Updated field name
+            fat: mealInfo['Fat'] ?? 0, // Updated field name
+          ));
+        }
+      }
+      newHistories.add(DietHistory(date: doc.id, meals: meals));
+    }
+  }
+
+  setState(() {
+    dietHistories = newHistories;
+    filteredHistories = newHistories;
+    isLoading = false;
+  });
+}
 
   void _selectDateRange() async {
     final DateTimeRange? pickedRange = await showDateRangePicker(
@@ -258,15 +258,102 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
     );
   }
 
-  Widget _buildHistoryCard(DietHistory history) {
-    int totalCalories =
-        history.meals.fold(0, (sum, meal) => sum + meal.calories);
-    int totalProteins =
-        history.meals.fold(0, (sum, meal) => sum + meal.protein);
-    int totalCarbs = history.meals.fold(0, (sum, meal) => sum + meal.carbs);
-    int totalFats = history.meals.fold(0, (sum, meal) => sum + meal.fat);
+ Widget _buildHistoryCard(DietHistory history) {
+  int totalCalories =
+      history.meals.fold(0, (sum, meal) => sum + meal.calories);
+  int totalProteins =
+      history.meals.fold(0, (sum, meal) => sum + meal.protein);
+  int totalCarbs = history.meals.fold(0, (sum, meal) => sum + meal.carbs);
+  int totalFats = history.meals.fold(0, (sum, meal) => sum + meal.fat);
 
-    return Card(
+  return Dismissible(
+    key: Key(history.date), // Use a unique key for each card
+    background: Container(
+      color: Colors.red, // Color of the background when swiped
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.only(right: 20),
+      child: const Icon(Icons.delete, color: Colors.white), // Icon for delete
+    ),
+    direction: DismissDirection.endToStart, // Swipe from right to left
+  confirmDismiss: (direction) async {
+  // Show confirmation dialog
+  final confirmation = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Colors.white, // White background for the dialog
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15), // Rounded corners
+        ),
+        title: RichText(
+          text: TextSpan(
+            text: 'Delete Diet History',
+            style: TextStyle(
+              color: primaryColor, // Set the title color to primaryColor
+              fontWeight: FontWeight.bold, // Make it bold
+              fontSize: 18, // Increase font size as desired
+            ),
+          ),
+        ),
+        content: RichText(
+          text: TextSpan(
+            text: 'Are you sure you want to delete this diet history on ',
+            style: TextStyle(color: Colors.black), // Default text color
+            children: <TextSpan>[
+              TextSpan(
+                text: history.date, // Date to be colored and bold
+                style: TextStyle(
+                  color: primaryColor, // Set date color to primaryColor
+                  fontWeight: FontWeight.bold, // Make it bold
+                ),
+              ),
+              TextSpan(text: '?'), // Just to append the question mark
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop(false); // Close the dialog with false
+            },
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red, // Red background
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30), // Rounded button
+              ),
+            ),
+            child: Text('Delete', style: TextStyle(color: Colors.white)), // White text
+            onPressed: () {
+              Navigator.of(context).pop(true); // Close the dialog with true
+            },
+          ),
+        ],
+      );
+    },
+  );
+
+  return confirmation ?? false; // Return confirmation result or false
+},
+    onDismissed: (direction) async {
+      // Call the delete method here
+      bool isDeleted = await _deleteDietHistory(history.date);
+      
+      if (isDeleted) {
+        // Optionally show a snack bar or other feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Deleted diet history for ${history.date}')),
+        );
+      } else {
+        // Re-insert the item back in if it wasn't deleted
+        setState(() {
+          filteredHistories.add(history);
+        });
+      }
+    },
+    child: Card(
       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
@@ -343,8 +430,35 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
           ],
         ),
       ),
+    ),
+  );
+}
+
+Future<bool> _deleteDietHistory(String date) async {
+  try {
+    // Delete the document from Firestore
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.clientId)
+        .collection('dietHistory')
+        .doc(date) // Assuming the `date` is the document ID
+        .delete();
+
+    // Update the local state to reflect the deletion
+    setState(() {
+      dietHistories.removeWhere((history) => history.date == date);
+      filteredHistories.removeWhere((history) => history.date == date);
+    });
+    
+    return true; // Return true if deletion was successful
+  } catch (e) {
+    // Handle error if necessary
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to delete history: $e')),
     );
+    return false; // Return false if an error occurred
   }
+}
 
 // Helper widget for displaying each nutrient with an icon
   Widget _buildNutrientInfo(IconData icon, String label, String value) {

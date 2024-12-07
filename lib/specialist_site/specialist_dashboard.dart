@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nutricare/specialist_site/specialist_more.dart';
+import 'package:nutricare/specialist_site/more/specialist_more.dart';
 import 'package:nutricare/specialist_site/appointment_management/specialist_schedule.dart';
 import 'package:nutricare/specialist_site/articles_management/specialist_articles.dart';
 import 'chat_management/specialist_chatlist.dart';

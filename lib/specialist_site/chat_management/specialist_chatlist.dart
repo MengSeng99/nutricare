@@ -154,7 +154,22 @@ class _SpecialistChatListScreenState extends State<SpecialistChatListScreen> {
         iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator()) // Show loading indicator
+          ? Center(child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: Color.fromARGB(255, 90, 113, 243),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading Messages...',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),) // Show loading indicator
           : chatList.isEmpty
               ? Center(
                   child: Text(

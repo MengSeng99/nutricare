@@ -1,9 +1,15 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../main.dart';
 import '../client_management/client_details.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:file_picker/file_picker.dart';
 
 class SpecialistAppointmentDetailsScreen extends StatefulWidget {
   final String appointmentId;
@@ -53,6 +59,66 @@ class _SpecialistAppointmentDetailsScreenState
     appointmentStatus = widget.appointmentStatus;
   }
 
+  Future<void> _uploadReport(String appointmentId) async {
+  FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+  if (result != null) {
+    PlatformFile file = result.files.first;
+
+    try {
+      _showProcessingDialog(); // Show processing dialog
+
+      Reference ref = FirebaseStorage.instance
+          .ref()
+          .child('reports/$appointmentId/${file.name}');
+
+      UploadTask uploadTask = ref.putFile(File(file.path!));
+      TaskSnapshot snapshot = await uploadTask;
+
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      String fileId = file.name; // Unique ID for the file
+      DateTime uploadTime = DateTime.now();
+
+      final detailsCollectionRef = FirebaseFirestore.instance
+          .collection('appointments')
+          .doc(appointmentId)
+          .collection('details');
+
+      QuerySnapshot detailsSnapshot = await detailsCollectionRef.get();
+
+      if (detailsSnapshot.docs.isNotEmpty) {
+        DocumentReference detailDocRef = detailsSnapshot.docs.first.reference;
+
+        await detailDocRef.update({
+          'reports': FieldValue.arrayUnion([
+            {
+              'fileId': fileId,
+              'filePath': downloadUrl,
+              'uploadTime': uploadTime,
+            },
+          ]),
+        });
+
+        // Hide the processing dialog
+        _dismissProcessingDialog();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Report uploaded successfully!')),
+        );
+
+        setState(() {
+          // This will re-trigger the FutureBuilder to fetch reports again on the next build
+        });
+      }
+    } catch (e) {
+      _dismissProcessingDialog(); // Hide the dialog on error
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to upload report: $e')),
+      );
+    }
+  }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -167,7 +233,7 @@ class _SpecialistAppointmentDetailsScreenState
               title: "Payment Details",
               children: [
                 _buildAppointmentInfo(Icons.attach_money, "Amount Paid",
-                    "\$${widget.amountPaid.toStringAsFixed(2)}"),
+                    "RM ${widget.amountPaid.toStringAsFixed(2)}"),
                 _buildAppointmentInfo(Icons.credit_card, "Payment Card Used",
                     widget.paymentCardUsed),
                 _buildAppointmentInfo(
@@ -177,6 +243,33 @@ class _SpecialistAppointmentDetailsScreenState
                         .format(widget.createdAt)),
               ],
             ),
+
+            // At the appropriate place in your build method, right after the Payment Information Card
+            if (appointmentStatus == 'Completed') ...[
+              Center(
+                child: ElevatedButton(
+                  onPressed: () => _uploadReport(widget.appointmentId),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 90, 113, 243),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 40, vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+                  child: const Text(
+                    "Upload Report",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
+            _buildReportsSection(),
             // At the bottom of the build method
             const SizedBox(height: 20),
 // Appointment Complete Button only visible if appointmentStatus is 'Confirmed'
@@ -208,6 +301,262 @@ class _SpecialistAppointmentDetailsScreenState
       ),
     );
   }
+
+  void _showProcessingDialog() {
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Prevent dismissing by tapping outside
+    builder: (context) {
+      return AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Expanded(child: Text('Uploading report, please wait...')),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+void _dismissProcessingDialog() {
+  Navigator.of(context, rootNavigator: true).pop();
+}
+
+  void _refreshReports() {
+    setState(() {
+    });
+  }
+
+Widget _buildReportsSection() {
+  return FutureBuilder<QuerySnapshot>(
+    future: FirebaseFirestore.instance
+        .collection('appointments')
+        .doc(widget.appointmentId)
+        .collection('details')
+        .limit(1)
+        .get(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Center(child: CircularProgressIndicator());
+      }
+
+      if (snapshot.hasError) {
+        return Center(
+            child: Text('Error fetching reports: ${snapshot.error}'));
+      }
+
+      if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+        var doc = snapshot.data!.docs.first.data() as Map<String, dynamic>?;
+
+        var reports = doc?['reports'] as List<dynamic>?;
+        if (reports == null || reports.isEmpty) {
+          return SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 20),
+            Text(
+              'Uploaded Reports:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 10),
+            ...reports.map((report) {
+              String filePath = report['filePath'];
+              String fileId = report['fileId'];
+              DateTime uploadTime = report['uploadTime'].toDate(); // Convert Firestore Timestamp
+
+              return Dismissible(
+                key: Key(fileId), // Use fileId as the key
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  child: const Padding(
+                    padding: EdgeInsets.only(right: 20),
+                    child: Icon(
+                      Icons.delete,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                confirmDismiss: (direction) async {
+                  return await _showDeleteConfirmationDialog(context);
+                },
+                onDismissed: (direction) async {
+                  await _deleteReport(fileId);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Report deleted successfully.')),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: InkWell(
+                    onTap: () async {
+                      // Launch the URL using the filePath
+                      if (await canLaunch(filePath)) {
+                        await launch(filePath);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Could not launch $filePath')),
+                        );
+                      }
+                    },
+                    child: Card(
+                      color: Colors.white,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(color: Colors.grey.shade300, width: 1),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            Icon(Icons.insert_drive_file,
+                                color: Color.fromARGB(255, 90, 113, 243),
+                                size: 36), // Icon for documents
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    fileId, // Display the fileId
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Uploaded on: ${DateFormat('yyyy-MM-dd – kk:mm').format(uploadTime)}', // Display upload time
+                                    style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.arrow_forward,
+                                color: Colors.grey), // Arrow indicating action
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        );
+      }
+
+      return SizedBox.shrink(); // Return empty widget if there is no document
+    },
+  );
+}
+
+Future<void> _deleteReport(String fileId) async {
+  try {
+    // Access the details collection reference
+    final detailsCollectionRef = FirebaseFirestore.instance
+        .collection('appointments')
+        .doc(widget.appointmentId)
+        .collection('details');
+
+    // Get the details snapshot
+    QuerySnapshot detailsSnapshot = await detailsCollectionRef.get();
+
+    // Check if there's at least one document
+    if (detailsSnapshot.docs.isNotEmpty) {
+      DocumentReference detailDocRef = detailsSnapshot.docs.first.reference;
+
+      // Fetch the report data
+      var docData = detailsSnapshot.docs.first.data() as Map<String, dynamic>;
+      var reports = docData['reports'] as List<dynamic>;
+
+      // Find the report by fileId to get its filePath
+      String? filePath;
+      
+      for (var report in reports) {
+        if (report['fileId'] == fileId) {
+          filePath = report['filePath'];
+        }
+      }
+
+      if (filePath != null) {
+        // Delete the file from Firebase Storage
+        await FirebaseStorage.instance.refFromURL(filePath).delete();
+
+        // Remove the report from Firestore
+        reports.removeWhere((report) => report['fileId'] == fileId);
+        await detailDocRef.update({'reports': reports});
+
+        _refreshReports();
+        // Notify the user about the successful deletion
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Report deleted successfully.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No matching report found for deletion.')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No report details found for deletion.')),
+      );
+    }
+  } catch (e) {
+    print('Error deleting report: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to delete report: $e')),
+    );
+  }
+}
+
+Future<bool> _showDeleteConfirmationDialog(BuildContext context) {
+  return showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Colors.white,
+         shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text(
+            "Delete Report",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+          ),
+        content: Text('Are you sure you want to delete this report?'),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      );
+    },
+  ).then((value) => value ?? false); // Handle the case when null is returned
+}
 
   Widget _buildInfoCard({
     required String title,
@@ -249,7 +598,9 @@ class _SpecialistAppointmentDetailsScreenState
       child: Row(
         children: [
           Icon(icon,
-              color: highlight ? Colors.green : Color.fromARGB(255, 90, 113, 243), size: 22),
+              color:
+                  highlight ? Colors.green : Color.fromARGB(255, 90, 113, 243),
+              size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -278,16 +629,16 @@ class _SpecialistAppointmentDetailsScreenState
   }
 
   void _showCompleteConfirmationDialog(BuildContext context) {
-    // Convert the appointment time to DateTime
+    // Combine date and time into a single string
     String dateTimeString =
         "${DateFormat("MMMM dd, yyyy").format(widget.date)} ${widget.time}";
 
-    // Log the complete datetime string to debug
-    // print("Complete dateTime string: $dateTimeString");
+    print("DateTime String: $dateTimeString"); // Debugging line
 
     try {
+      // Use HH:mm for 24-hour format
       DateTime appointmentDateTime =
-          DateFormat("MMMM dd, yyyy hh:mm a").parse(dateTimeString);
+          DateFormat("MMMM dd, yyyy HH:mm").parse(dateTimeString);
       DateTime currentDateTime = DateTime.now();
 
       // Check if the appointment's time has passed
@@ -296,6 +647,7 @@ class _SpecialistAppointmentDetailsScreenState
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
+            backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
@@ -342,8 +694,9 @@ class _SpecialistAppointmentDetailsScreenState
         );
       }
     } catch (e) {
-      // Log the exception to understand the parsing issue
-      // print("Error parsing date and time: $e");
+      print("Error parsing date and time: $e"); // Log the error for debugging
+
+      // Show an error message in case of failure
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -355,15 +708,21 @@ class _SpecialistAppointmentDetailsScreenState
 
   Future<void> _markAppointmentAsComplete(BuildContext context) async {
     try {
-      // First, update the appointment status in the main appointment document
+      // Fetch the distribution rate from Firestore
+      double distributionRate = await _fetchDistributionRate();
+
+      // Calculate earnings for the specialist
+      double earnings = widget.amountPaid * distributionRate;
+
+      // Get the current specialist (user) ID from Firebase Auth
+      String specialistId = FirebaseAuth.instance.currentUser!.uid;
+
+      // Now, update the appointment status in the main appointment document
       final appointmentDocRef = FirebaseFirestore.instance
           .collection('appointments')
           .doc(widget.appointmentId);
 
-      // Update the appointment status to 'Completed'
-      await appointmentDocRef.update({'appointmentStatus': 'Completed'});
-
-      // Now, reference the details subcollection of the appointment
+      // Reference the details subcollection of the appointment
       final detailsCollectionRef = appointmentDocRef.collection('details');
 
       // Get the details snapshot
@@ -376,6 +735,23 @@ class _SpecialistAppointmentDetailsScreenState
         // Update the appointment status to 'Completed' in the details subcollection
         await detailDocRef.update({'appointmentStatus': 'Completed'});
 
+        // Save the earnings to the specialist's earnings subcollection
+        final earningsDocRef = FirebaseFirestore.instance
+            .collection('specialists')
+            .doc(specialistId)
+            .collection('earnings')
+            .doc(); // This will auto-generate a document ID
+
+        await earningsDocRef.set({
+          'appointmentId': widget.appointmentId,
+          'clientName': widget.clientName,
+          'service': widget.service,
+          'totalAmount': widget.amountPaid,
+          'rate': distributionRate,
+          'amount': earnings,
+          'date': DateTime.now(),
+        });
+
         // Update internal state to reflect changes
         setState(() {
           appointmentStatus = 'Completed'; // Update status in the UI
@@ -384,7 +760,8 @@ class _SpecialistAppointmentDetailsScreenState
         // Show a success message
         scaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
-            content: Text('Appointment marked as completed successfully.'),
+            content: Text(
+                'Appointment marked as completed successfully.\nEarnings calculated: RM ${earnings.toStringAsFixed(2)}'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -392,7 +769,6 @@ class _SpecialistAppointmentDetailsScreenState
 
         widget.onRefresh();
       } else {
-        // print('No appointment details found to update.');
         scaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
             content: Text('No appointment details found.'),
@@ -401,8 +777,6 @@ class _SpecialistAppointmentDetailsScreenState
         );
       }
     } catch (e) {
-      // print('Error marking appointment as completed: $e');
-
       // Show an error message in case of failure
       scaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(
@@ -412,5 +786,20 @@ class _SpecialistAppointmentDetailsScreenState
         ),
       );
     }
+  }
+
+  Future<double> _fetchDistributionRate() async {
+    try {
+      var snapshot = await FirebaseFirestore.instance
+          .collection('rates')
+          .doc('current_rate_doc') // Update with your document ID for the rate
+          .get();
+      if (snapshot.exists) {
+        return snapshot.data()?['rate'] ?? 1.0; // Default to 100% if not set
+      }
+    } catch (e) {
+      print("Error fetching distribution rate: $e");
+    }
+    return 1.0; // Return 100% as default in case of error
   }
 }

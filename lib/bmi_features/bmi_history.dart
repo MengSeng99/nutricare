@@ -185,6 +185,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                           context: context,
                           builder: (context) {
                             return Dialog(
+                              backgroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                               ),
@@ -262,6 +263,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
                                               context: context,
                                               builder: (context) {
                                                 return AlertDialog(
+                                                  backgroundColor: Colors.white,
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -487,125 +489,188 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
     );
   }
 
-  // Method to build a line chart for BMI history
   Widget _buildBmiChart(List<FlSpot> chartData, List<String> chartDates) {
-    return Container(
-      height: 350, // Reduced height of the chart
-      padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 10),
+  return Card(
+    elevation: 2, // Add some elevation for shadow effect
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(15),
+    ),
+    margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0), // Margins around the card
+    child: Container(
+      height: 400, // Adjusted height to fit chart and description
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(
-            255, 255, 255, 255), // Background color for the chart
-        borderRadius: BorderRadius.circular(15), // Rounded corners
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+        color: Colors.white, // Ensuring the card background is white
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey.shade400, width: 1.2),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          // Chart Section
+          Expanded(
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: false),
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 38,
+                      getTitlesWidget: (value, meta) {
+                        int index =
+                            chartData.indexWhere((spot) => spot.x == value);
+                        if (index != -1) {
+                          DateTime date = DateTime.fromMillisecondsSinceEpoch(
+                              value.toInt());
+                          if (chartData.length <= 5 ||
+                              index % (chartData.length ~/ 4) == 0) {
+                            return SideTitleWidget(
+                              axisSide: meta.axisSide,
+                              child: Text(
+                                '${date.month}/${date.day}', // MM/DD format
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.black54),
+                              ),
+                            );
+                          }
+                        }
+                        return const SizedBox(); // Empty widget if no label
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) {
+                        return SideTitleWidget(
+                          axisSide: meta.axisSide,
+                          child: Text(
+                            value.toString(),
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.black54),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(
+                        color: const Color(0xff37434d), width: 1)),
+                minX: chartData.isNotEmpty
+                    ? chartData.last.x
+                    : 0, // Ensure minX starts from latest date
+                maxX: chartData.isNotEmpty
+                    ? chartData.first.x
+                    : DateTime.now().millisecondsSinceEpoch.toDouble(),
+                minY: 10,
+                maxY: 40,
+                extraLinesData: ExtraLinesData(
+                  horizontalLines: [
+                    HorizontalLine(
+                      y: 18.5,
+                      color: Colors.green.withOpacity(0.8),
+                      strokeWidth: 2,
+                      dashArray: [5, 5],
+                    ),
+                    HorizontalLine(
+                      y: 24.9,
+                      color: Colors.green.withOpacity(0.8),
+                      strokeWidth: 2,
+                      dashArray: [5, 5],
+                    ),
+                  ],
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: chartData,
+                    isCurved: true,
+                    color: Colors.blueAccent,
+                    dotData: FlDotData(show: true),
+                    belowBarData: BarAreaData(
+                        show: true, color: Colors.blue.withOpacity(0.2)),
+                    aboveBarData: BarAreaData(
+                        show: false, color: Colors.blue.withOpacity(0.2)),
+                  ),
+                ],
+                lineTouchData: LineTouchData(
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        final index =
+                            chartData.indexWhere((data) => data.x == spot.x);
+                        if (index != -1) {
+                          DateTime date = DateTime.fromMillisecondsSinceEpoch(
+                              spot.x.toInt());
+                          return LineTooltipItem(
+                            'Date: ${date.month}/${date.day}\nBMI: ${spot.y.toStringAsFixed(1)}',
+                            const TextStyle(color: Colors.white),
+                          );
+                        }
+                        return null;
+                      }).toList();
+                    },
+                  ),
+                  touchCallback:
+                      (FlTouchEvent event, LineTouchResponse? touchResponse) {
+                    // Handle touch response
+                  },
+                  handleBuiltInTouches: true,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10), // Space between chart and description
+          // Description Section
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    "Your BMI values",
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 2,
+                    color: Colors.green,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    "Normal BMI range (18.5 - 24.9)",
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
-      child: LineChart(
-        LineChartData(
-          gridData: FlGridData(show: false),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 38,
-                getTitlesWidget: (value, meta) {
-                  int index = chartData.indexWhere((spot) => spot.x == value);
-                  if (index != -1) {
-                    DateTime date =
-                        DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                    // Display dates based on the number of records
-                    if (chartData.length <= 5 ||
-                        index % (chartData.length ~/ 4) == 0) {
-                      return SideTitleWidget(
-                        axisSide: meta.axisSide,
-                        child: Text(
-                          '${date.month}/${date.day}', // Display date in MM/DD format
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.black54),
-                        ),
-                      );
-                    }
-                  }
-                  return const SizedBox(); // Return an empty widget if not showing the label
-                },
-              ),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                getTitlesWidget: (value, meta) {
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text(
-                      value.toString(),
-                      style:
-                          const TextStyle(fontSize: 12, color: Colors.black54),
-                    ),
-                  );
-                },
-              ),
-            ),
-            topTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-          ),
-          borderData: FlBorderData(
-              show: true,
-              border: Border.all(color: const Color(0xff37434d), width: 1)),
-          minX: chartData.isNotEmpty
-              ? chartData.last.x
-              : 0, // Ensure minX starts from the latest date
-          maxX: chartData.isNotEmpty
-              ? chartData.first.x
-              : DateTime.now().millisecondsSinceEpoch.toDouble(),
-          minY: 10,
-          maxY: 40,
-          lineBarsData: [
-            LineChartBarData(
-              spots: chartData,
-              isCurved: true,
-              color: Colors.blueAccent,
-              dotData: FlDotData(show: true), // Show markers
-              belowBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.2)),
-              aboveBarData:
-                  BarAreaData(show: false, color: Colors.blue.withOpacity(0.2)),
-            ),
-          ],
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              // tooltipBgColor: Colors.blueAccent,
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((spot) {
-                  final index =
-                      chartData.indexWhere((data) => data.x == spot.x);
-                  if (index != -1) {
-                    DateTime date =
-                        DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
-                    return LineTooltipItem(
-                      'Date: ${date.month}/${date.day}\nBMI: ${spot.y.toStringAsFixed(1)}',
-                      const TextStyle(color: Colors.white),
-                    );
-                  }
-                  return null;
-                }).toList();
-              },
-            ),
-            touchCallback:
-                (FlTouchEvent event, LineTouchResponse? touchResponse) {
-              // Handle touch response
-            },
-            handleBuiltInTouches: true,
-          ),
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 }

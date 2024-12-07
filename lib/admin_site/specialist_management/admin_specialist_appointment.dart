@@ -10,6 +10,7 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           Expanded(
@@ -93,11 +94,14 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
                         groupedAppointments[monthYear]!;
 
                     return Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15)),
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 16),
+                       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  elevation: 2,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    side: const BorderSide(
+                        color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(

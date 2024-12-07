@@ -1,7 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'food_details.dart'; // Import the details page
+import 'food_details.dart';
+import 'more_recipe.dart'; // Import the details page
 
 class FoodRecipeScreen extends StatefulWidget {
   const FoodRecipeScreen({super.key});
@@ -12,7 +13,8 @@ class FoodRecipeScreen extends StatefulWidget {
 
 class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
   String? selectedCategory; // To track the selected category
-  TextEditingController searchController = TextEditingController(); // Search text controller
+  TextEditingController searchController =
+      TextEditingController(); // Search text controller
   String searchQuery = ""; // To track search query
   Set<String> favoriteRecipeIds = <String>{};
 
@@ -20,31 +22,74 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
   void initState() {
     super.initState();
     selectedCategory = 'All';
-    _loadFavoriteRecipes(); 
+    _loadFavoriteRecipes();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Recipes",
-          style: TextStyle(
-              color: Color.fromARGB(255, 90, 113, 243),
-              fontWeight: FontWeight.bold),
-        ),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(
-            height: 0.5,
-            color: Color.fromARGB(255, 220, 220, 241),
+  title: const Text(
+    "Recipes",
+    style: TextStyle(
+        color: Color.fromARGB(255, 90, 113, 243),
+        fontWeight: FontWeight.bold),
+  ),
+  actions: [
+    Padding(
+      padding: const EdgeInsets.only(right: 16.0),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: () {
+          // Navigate to More Recipes Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MoreRecipesScreen(),
+            ),
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.explore_rounded,
+                  color: Color.fromARGB(255, 90, 113, 243),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Explore',
+                  style: TextStyle(
+                    color: Color.fromARGB(255, 90, 113, 243),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme:
-            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
+    ),
+  ],
+  bottom: const PreferredSize(
+    preferredSize: Size.fromHeight(1),
+    child: Divider(
+      height: 0.5,
+      color: Color.fromARGB(255, 220, 220, 241),
+    ),
+  ),
+  backgroundColor: Colors.white,
+  elevation: 0,
+  iconTheme:
+      const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+),
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Column(
@@ -57,7 +102,8 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                 controller: searchController,
                 onChanged: (value) {
                   setState(() {
-                    searchQuery = value.toLowerCase(); // Update search query when input changes
+                    searchQuery = value
+                        .toLowerCase(); // Update search query when input changes
                   });
                 },
                 decoration: InputDecoration(
@@ -92,7 +138,8 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                           icon: const Icon(Icons.clear),
                           onPressed: () {
                             setState(() {
-                              searchController.clear(); // Clear the search field
+                              searchController
+                                  .clear(); // Clear the search field
                               searchQuery = ""; // Clear the search query
                             });
                           },
@@ -137,7 +184,8 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                                 selectedCategory ??= 'All';
                               });
                             },
-                            selectedColor: const Color.fromARGB(255, 90, 113, 243),
+                            selectedColor:
+                                const Color.fromARGB(255, 90, 113, 243),
                             backgroundColor: Colors.grey[200],
                             labelStyle: TextStyle(
                               color: selectedCategory == 'All'
@@ -146,14 +194,14 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                             shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100),
-                            side: BorderSide(
-                              color: selectedCategory == 'All'
-                                  ? const Color.fromARGB(255, 90, 113, 243)
-                                  : Colors.transparent,
-                              width: 2.0,
+                              borderRadius: BorderRadius.circular(100),
+                              side: BorderSide(
+                                color: selectedCategory == 'All'
+                                    ? const Color.fromARGB(255, 90, 113, 243)
+                                    : Colors.transparent,
+                                width: 2.0,
+                              ),
                             ),
-                          ),
                           ),
                         ),
                         // Favorites category chip
@@ -164,13 +212,15 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                             selected: selectedCategory == 'Favorites',
                             onSelected: (isSelected) {
                               setState(() {
-                                selectedCategory = isSelected ? 'Favorites' : 'All';
+                                selectedCategory =
+                                    isSelected ? 'Favorites' : 'All';
                                 if (isSelected) {
                                   _loadFavoriteRecipes(); // Load favorites when selected
                                 }
                               });
                             },
-                            selectedColor: const Color.fromARGB(255, 90, 113, 243),
+                            selectedColor:
+                                const Color.fromARGB(255, 90, 113, 243),
                             backgroundColor: Colors.grey[200],
                             labelStyle: TextStyle(
                               color: selectedCategory == 'Favorites'
@@ -179,14 +229,14 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                             shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100),
-                            side: BorderSide(
-                              color: selectedCategory == 'Favorites'
-                                  ? const Color.fromARGB(255, 90, 113, 243)
-                                  : Colors.transparent,
-                              width: 2.0,
+                              borderRadius: BorderRadius.circular(100),
+                              side: BorderSide(
+                                color: selectedCategory == 'Favorites'
+                                    ? const Color.fromARGB(255, 90, 113, 243)
+                                    : Colors.transparent,
+                                width: 2.0,
+                              ),
                             ),
-                          ),
                           ),
                         ),
                         // Dynamic category chips
@@ -199,7 +249,8 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                               selected: isSelected,
                               onSelected: (isSelected) {
                                 setState(() {
-                                  selectedCategory = isSelected ? category : selectedCategory;
+                                  selectedCategory =
+                                      isSelected ? category : selectedCategory;
                                 });
                               },
                               selectedColor:
@@ -212,14 +263,14 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                               shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(100),
-                              side: BorderSide(
-                                color: selectedCategory == category
-                                    ? const Color.fromARGB(255, 90, 113, 243)
-                                    : Colors.transparent,
-                                width: 2.0,
+                                borderRadius: BorderRadius.circular(100),
+                                side: BorderSide(
+                                  color: selectedCategory == category
+                                      ? const Color.fromARGB(255, 90, 113, 243)
+                                      : Colors.transparent,
+                                  width: 2.0,
+                                ),
                               ),
-                            ),
                             ),
                           );
                         }),
@@ -295,7 +346,8 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
           : (selectedCategory == 'Favorites' && favoriteRecipeIds.isNotEmpty)
               ? FirebaseFirestore.instance
                   .collection('recipes')
-                  .where(FieldPath.documentId, whereIn: favoriteRecipeIds.toList())
+                  .where(FieldPath.documentId,
+                      whereIn: favoriteRecipeIds.toList())
                   .snapshots()
               : FirebaseFirestore.instance
                   .collection('recipes')
@@ -315,14 +367,18 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
         // Check if there's data in the snapshot
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Center(
-                  child: Text(
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                Text(
                   "No any recipe found in your favourite list.",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey[600],
                   ),
-                ));
+                )
+              ]));
         }
 
         // Extract recipes

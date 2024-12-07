@@ -85,7 +85,7 @@ class _DietsScreenState extends State<DietsScreen> {
       newMeals = List.generate(
         4,
         (index) => Meal(
-          mealType: ['Breakfast', 'Lunch', 'Dinner', 'Snack'][index],
+          mealType: ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Other'][index],
           name: 'No Meal Logged Yet',
           calories: 0,
           protein: 0,
@@ -95,7 +95,13 @@ class _DietsScreenState extends State<DietsScreen> {
       );
     } else {
       // Load meal details if diet document exists
-      List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+      List<String> mealTypes = [
+        'Breakfast',
+        'Lunch',
+        'Dinner',
+        'Snack',
+        'Other'
+      ];
       for (String mealType in mealTypes) {
         var dietData = dietSnapshot.data() as Map<String, dynamic>?;
         var mealData = dietData?[mealType] as Map<String, dynamic>?;
@@ -146,63 +152,63 @@ class _DietsScreenState extends State<DietsScreen> {
   }
 
   void _showCalorieGoalDialog() {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
-        ),
-        elevation: 4.0,
-        backgroundColor: Colors.white,
-        child: Stack(
-          alignment: Alignment.topRight,
-          children: [
-            // Main dialog content
-            Padding(
-              padding: const EdgeInsets.only(top: 30, right: 30, left: 16, bottom: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Set Your Calorie Goal',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 90, 113, 243),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'You haven\'t set a daily calorie goal. '
-                    'Please tap the calculator icon in the top right corner to set it.',
-                    style: TextStyle(fontSize: 16, color: Colors.black),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color.fromARGB(255, 90, 113, 243),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-            ),
-            child: const Text('Okay',
-                style: TextStyle(color: Colors.white)),
-            onPressed: () {
-              Navigator.of(context).pop(); // Just close the dialog
-            },
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
           ),
-                ],
+          elevation: 4.0,
+          backgroundColor: Colors.white,
+          child: Stack(
+            alignment: Alignment.topRight,
+            children: [
+              // Main dialog content
+              Padding(
+                padding: const EdgeInsets.only(
+                    top: 30, right: 30, left: 16, bottom: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Set Your Calorie Goal',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 90, 113, 243),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'You haven\'t set a daily calorie goal. '
+                      'Please tap the calculator icon in the top right corner to set it.',
+                      style: TextStyle(fontSize: 16, color: Colors.black),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(255, 90, 113, 243),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text('Okay',
+                          style: TextStyle(color: Colors.white)),
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Just close the dialog
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -213,27 +219,57 @@ class _DietsScreenState extends State<DietsScreen> {
         title: const Text(
           'Diet Tracker',
           style: TextStyle(
-              color: Color.fromARGB(255, 90, 113, 243),
-              fontWeight: FontWeight.bold),
+            color: Color.fromARGB(255, 90, 113, 243),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.calculate_outlined,
-                color: Color.fromARGB(255, 90, 113, 243)),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => CaloriesCalculatorScreen()),
-              );
-              if (result != null) {
-                setState(() {
-                  dailyCalorieGoal = result; // Update the caloric goal
-                });
-              }
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(30),
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => CaloriesCalculatorScreen()),
+                );
+                if (result != null) {
+                  setState(() {
+                    dailyCalorieGoal = result; // Update the caloric goal
+                  });
+                }
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.calculate_outlined,
+                        color: Color.fromARGB(255, 90, 113, 243),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Calorie Calculator',
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 90, 113, 243),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
         bottom: const PreferredSize(
@@ -279,12 +315,13 @@ class _DietsScreenState extends State<DietsScreen> {
                       height: MediaQuery.of(context).size.width * 0.4,
                       child: CircularProgressIndicator(
                         value: consumedCalories /
-                            (dailyCalorieGoal <= 0
-                                ? 1
-                                : dailyCalorieGoal), // Avoid division by zero
+                            (dailyCalorieGoal <= 0 ? 1 : dailyCalorieGoal),
                         backgroundColor: Colors.grey[300],
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                            Color.fromARGB(255, 90, 113, 243)),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          consumedCalories > dailyCalorieGoal
+                              ? Colors.red
+                              : Color.fromARGB(255, 90, 113, 243),
+                        ),
                         strokeWidth: 14,
                       ),
                     ),
@@ -294,10 +331,12 @@ class _DietsScreenState extends State<DietsScreen> {
                         children: [
                           Text(
                             '$consumedCalories',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 35,
                               fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 90, 113, 243),
+                              color: consumedCalories > dailyCalorieGoal
+                                  ? Colors.red
+                                  : Color.fromARGB(255, 90, 113, 243),
                             ),
                           ),
                           const Text(
@@ -312,12 +351,25 @@ class _DietsScreenState extends State<DietsScreen> {
                     ),
                     Positioned(
                       bottom: 10,
-                      child: Text(
-                        '/ ${dailyCalorieGoal > 0 ? dailyCalorieGoal : "0"}', // Set to 0 if no goal
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                      child: Column(
+                        children: [
+                          Text(
+                            '/ ${dailyCalorieGoal > 0 ? dailyCalorieGoal : "0"}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          if (consumedCalories > dailyCalorieGoal)
+                            Text(
+                              '+${consumedCalories - dailyCalorieGoal} kcal',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],
@@ -395,7 +447,6 @@ class _DietsScreenState extends State<DietsScreen> {
                 ],
               ),
             ),
-
             // List of tracked meals for the day
             Expanded(
               child: ListView.builder(
@@ -407,75 +458,202 @@ class _DietsScreenState extends State<DietsScreen> {
                 },
               ),
             ),
+            // Add this just before the Expanded widget
+            Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color.fromARGB(255, 90, 113, 243),
+                  // padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                onPressed: _showManualFoodLogDialog,
+                child: Text(
+                  'Log Food Manually',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
- Widget _buildMealCard(String mealType, String description, int calories,
-    int protein, int carbs, int fat) {
-  String imagePath =
-      'images/food_category/${mealType.toLowerCase()}.png'; // Image based on meal type
+  Widget _buildMealCard(String mealType, String description, int calories,
+      int protein, int carbs, int fat) {
+    String imagePath = 'images/food_category/${mealType.toLowerCase()}.png';
 
-  // Determine which icon to use based on whether the meal has been logged
-  IconData iconData = description != 'No Meal Logged Yet' && description.isNotEmpty
-      ? Icons.edit_outlined // Use edit icon if meal has data
-      : Icons.add_circle_outline_rounded; // Use add icon if meal is not logged
+    // Determine which icon to use based on whether the meal has been logged
+    IconData iconData = description != 'No Meal Logged Yet' &&
+            description.isNotEmpty
+        ? Icons.edit_outlined // Use edit icon if meal has data
+        : Icons
+            .add_circle_outline_rounded; // Use add icon if meal is not logged
 
-  return Card(
-    elevation: 3,
-    color: Colors.white,
-    margin: const EdgeInsets.symmetric(vertical: 10),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(15),
-      side: BorderSide(color: Colors.grey.shade400, width: 1),
-    ),
-    child: ListTile(
-      contentPadding: const EdgeInsets.only(left: 16, right: 16, top: 2, bottom: 2),
-      leading: CircleAvatar(
-        backgroundColor: Colors.transparent,
-        child: Image.asset(imagePath, fit: BoxFit.cover),
+    return Card(
+      elevation: 3,
+      color: Colors.white,
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: Colors.grey.shade400, width: 1),
       ),
-      title: Text(
-        mealType,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
         children: [
-          const Divider(),
-          const SizedBox(height: 5),
-          Text(description, style: const TextStyle(color: Colors.grey)),
-          const SizedBox(height: 5),
-          Text('$calories kcal', style: const TextStyle(color: Colors.grey)),
-          Text('Protein: $protein g', style: const TextStyle(color: Colors.grey)),
-          Text('Carbs: $carbs g', style: const TextStyle(color: Colors.grey)),
-          Text('Fat: $fat g', style: const TextStyle(color: Colors.grey)),
-        ],
-      ),
-      trailing: IconButton(
-        icon: Icon(iconData, color: const Color.fromARGB(255, 90, 113, 243)),
-        iconSize: 40,
-        onPressed: () {
-          Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MealSelectionScreen(
-                mealType: mealType,
-                selectedDate: _selectedDate, // Pass the selected date here
+          ListTile(
+            contentPadding:
+                const EdgeInsets.only(left: 16, right: 16, top: 2, bottom: 2),
+            leading: CircleAvatar(
+              backgroundColor: Colors.transparent,
+              child: Image.asset(imagePath, fit: BoxFit.cover),
+            ),
+            title: Text(
+              mealType,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Divider(),
+                const SizedBox(height: 5),
+                Text(description, style: const TextStyle(color: Colors.grey)),
+                const SizedBox(height: 5),
+                Text('$calories kcal',
+                    style: const TextStyle(color: Colors.grey)),
+                Text('Protein: $protein g',
+                    style: const TextStyle(color: Colors.grey)),
+                Text('Carbs: $carbs g',
+                    style: const TextStyle(color: Colors.grey)),
+                Text('Fat: $fat g', style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+            trailing: IconButton(
+              icon: Icon(iconData,
+                  color: const Color.fromARGB(255, 90, 113, 243)),
+              iconSize: 40,
+              onPressed: () {
+                Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MealSelectionScreen(
+                      mealType: mealType,
+                      selectedDate:
+                          _selectedDate, // Pass the selected date here
+                    ),
+                  ),
+                ).then((shouldRefresh) {
+                  if (shouldRefresh == true) {
+                    _loadDietData(); // Refresh the diet data when coming back
+                  }
+                });
+              },
+            ),
+          ),
+          // Remove button (only show if meal is logged)
+          if (description != 'No Meal Logged Yet' && description.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.delete, color: Colors.white),
+                label: const Text('Remove Meal',
+                    style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                onPressed: () {
+                  _showRemoveMealConfirmationDialog(mealType);
+                },
               ),
             ),
-          ).then((shouldRefresh) {
-            if (shouldRefresh == true) {
-              _loadDietData(); // Refresh the diet data when coming back
-            }
-          });
-        },
+        ],
       ),
-    ),
-  );
-}
+    );
+  }
+
+// New method to show confirmation dialog before removing meal
+  void _showRemoveMealConfirmationDialog(String mealType) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          title: const Text('Remove Meal',
+              style: TextStyle(
+                  color: Color.fromARGB(255, 90, 113, 243),
+                  fontWeight: FontWeight.bold)),
+          content: Text('Are you sure you want to remove the $mealType meal?'),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child:
+                  const Text('Remove', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the confirmation dialog
+                _removeMeal(mealType); // Call method to remove the meal
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// New method to remove a specific meal from Firestore
+  Future<void> _removeMeal(String mealType) async {
+    User? user = _auth.currentUser;
+    if (user == null) return;
+
+    String dateKey =
+        '${_selectedDate.year}${_selectedDate.month.toString().padLeft(2, '0')}${_selectedDate.day.toString().padLeft(2, '0')}';
+
+    try {
+      // Reference to the diet history document
+      DocumentReference dietDocRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('dietHistory')
+          .doc(dateKey);
+
+      // Remove the specific meal type
+      await dietDocRef.update({
+        mealType: FieldValue.delete(),
+      });
+
+      // Reload diet data to reflect the changes
+      _loadDietData();
+
+      // Show a success snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$mealType meal removed successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error removing meal: $e');
+      // Show an error snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to remove $mealType meal'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   // Function to select a date using the DatePicker dialog
   Future<void> _selectDate(BuildContext context) async {
@@ -491,6 +669,272 @@ class _DietsScreenState extends State<DietsScreen> {
         _selectedDate = picked;
         _loadDietData(); // Load data for the new date
       });
+    }
+  }
+
+  void _showManualFoodLogDialog() {
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController caloriesController = TextEditingController();
+    final TextEditingController proteinController = TextEditingController();
+    final TextEditingController carbsController = TextEditingController();
+    final TextEditingController fatController = TextEditingController();
+    String selectedMealType = 'Breakfast'; // Default meal type
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Log Food Manually',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(255, 90, 113, 243),
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        // Meal Type Dropdown
+                        DropdownButtonFormField<String>(
+                          value: selectedMealType,
+                          decoration: InputDecoration(
+                            labelText: 'Meal Type',
+                            border: OutlineInputBorder(),
+                          ),
+                          items:
+                              ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Other']
+                                  .map((type) => DropdownMenuItem(
+                                        value: type,
+                                        child: Text(type),
+                                      ))
+                                  .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedMealType = value!;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        // Meal Name
+                        TextFormField(
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            labelText: 'Meal Name',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a meal name';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        // Calories
+                        TextFormField(
+                          controller: caloriesController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Calories (kcal)',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter calories';
+                            }
+                            if (int.tryParse(value) == null) {
+                              return 'Please enter a valid number';
+                            }
+                            if (int.parse(value) < 0) {
+                              return 'Calories cannot be negative';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        // Protein
+                        TextFormField(
+                          controller: proteinController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Protein (g)',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter protein amount';
+                            }
+                            if (int.tryParse(value) == null) {
+                              return 'Please enter a valid number';
+                            }
+                            if (int.parse(value) < 0) {
+                              return 'Protein cannot be negative';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        // Carbs
+                        TextFormField(
+                          controller: carbsController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Carbohydrates (g)',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter carbohydrate amount';
+                            }
+                            if (int.tryParse(value) == null) {
+                              return 'Please enter a valid number';
+                            }
+                            if (int.parse(value) < 0) {
+                              return 'Carbohydrates cannot be negative';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        // Fat
+                        TextFormField(
+                          controller: fatController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Fat (g)',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter fat amount';
+                            }
+                            if (int.tryParse(value) == null) {
+                              return 'Please enter a valid number';
+                            }
+                            if (int.parse(value) < 0) {
+                              return 'Fat cannot be negative';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey,
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: Text('Cancel',
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Color.fromARGB(255, 90, 113, 243),
+                              ),
+                              onPressed: () {
+                                // Validate the form
+                                if (formKey.currentState!.validate()) {
+                                  _saveManualFoodLog(
+                                    selectedMealType,
+                                    nameController.text,
+                                    int.parse(caloriesController.text),
+                                    int.parse(proteinController.text),
+                                    int.parse(carbsController.text),
+                                    int.parse(fatController.text),
+                                  );
+                                  Navigator.of(context).pop();
+                                }
+                              },
+                              child: Text('Add',
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _saveManualFoodLog(
+    String mealType,
+    String name,
+    int calories,
+    int protein,
+    int carbs,
+    int fat,
+  ) async {
+    User? user = _auth.currentUser;
+    if (user == null) return;
+
+    String dateKey =
+        '${_selectedDate.year}${_selectedDate.month.toString().padLeft(2, '0')}${_selectedDate.day.toString().padLeft(2, '0')}';
+
+    try {
+      // Reference to the diet history document
+      DocumentReference dietDocRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('dietHistory')
+          .doc(dateKey);
+
+      // Get the current document data
+      DocumentSnapshot dietSnapshot = await dietDocRef.get();
+
+      // Prepare the meal data
+      Map<String, dynamic> mealData = {
+        'name': name,
+        'Calories': calories,
+        'Protein': protein,
+        'Carbohydrate': carbs,
+        'Fat': fat,
+      };
+
+      // If document doesn't exist, create it
+      if (!dietSnapshot.exists) {
+        await dietDocRef.set({
+          mealType: mealData,
+        });
+      } else {
+        // Update the specific meal type
+        await dietDocRef.update({
+          mealType: mealData,
+        });
+      }
+
+      // Reload diet data to reflect the changes
+      _loadDietData();
+    } catch (e) {
+      print('Error saving manual food log: $e');
+      // Optionally show an error dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save meal. Please try again.')),
+      );
     }
   }
 }

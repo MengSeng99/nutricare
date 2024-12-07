@@ -1,74 +1,82 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'adjust_rate.dart';
 
-class EarningsScreen extends StatefulWidget {
-  const EarningsScreen({super.key});
+class AdminEarningsScreen extends StatefulWidget {
+  const AdminEarningsScreen({super.key});
 
   @override
-  _EarningsScreenState createState() => _EarningsScreenState();
+  _AdminEarningsScreenState createState() => _AdminEarningsScreenState();
 }
 
-class _EarningsScreenState extends State<EarningsScreen> {
+class _AdminEarningsScreenState extends State<AdminEarningsScreen> {
   List<Map<String, dynamic>> completedAppointments = [];
-  String? currentUserId;
   List<int> availableYears = []; // List to hold unique years
   int? selectedMonth;
   int? selectedYear;
   bool noEarningsForSelectedDate = false; // Indicator for earnings
+  double distributionRate = 0.0; // Variable to hold the distribution rate
 
   @override
   void initState() {
     super.initState();
-    _fetchCurrentUserId();
-  }
-
-  Future<void> _fetchCurrentUserId() async {
-    User? user = FirebaseAuth.instance.currentUser;
-
-    if (user != null) {
-      currentUserId = user.uid;
-      await _fetchEarnings();
-    } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('No user is signed in')));
-    }
+    _fetchEarnings();
   }
 
   Future<void> _fetchEarnings() async {
     completedAppointments.clear();
-    availableYears.clear(); // Reset the year list
-    noEarningsForSelectedDate = false; // Reset the flag
+    availableYears.clear();
+    noEarningsForSelectedDate = false;
 
-    var appointmentsSnapshot = await FirebaseFirestore.instance
-        .collection('appointments')
-        .where('users', arrayContains: currentUserId)
-        .where('appointmentStatus', isEqualTo: 'Completed')
+    // Fetch all specialists
+    var specialistsSnapshot = await FirebaseFirestore.instance
+        .collection('specialists')
         .get();
 
-    for (var doc in appointmentsSnapshot.docs) {
-      var detailsSnapshot = await FirebaseFirestore.instance
-          .collection('appointments')
-          .doc(doc.id)
-          .collection('details')
-          .limit(1)
+    // Create a map of specialist IDs to names for easy lookup
+    Map<String, String> specialistNames = {};
+    for (var specialistDoc in specialistsSnapshot.docs) {
+      specialistNames[specialistDoc.id] = specialistDoc.data()['name'] ?? 'Unknown';
+    }
+
+    // Fetch earnings for each specialist
+    for (var specialistDoc in specialistsSnapshot.docs) {
+      var earningsSnapshot = await FirebaseFirestore.instance
+          .collection('specialists')
+          .doc(specialistDoc.id)
+          .collection('earnings')
           .get();
 
-      if (detailsSnapshot.docs.isNotEmpty) {
-        double amountPaid = detailsSnapshot.docs[0].data()['amountPaid'] ?? 0.0;
-        Timestamp timestamp = detailsSnapshot.docs[0].data()['selectedDate'];
+      for (var earningDoc in earningsSnapshot.docs) {
+        double totalAmount = earningDoc.data()['totalAmount'] ?? 0.0; // Total amount for the appointment
+        double amount = earningDoc.data()['amount'] ?? 0.0; // Amount paid to the specialist
+        double rate = earningDoc.data()['rate'] ?? 0.0; // Rate
+        String appointmentId = earningDoc.data()['appointmentId'] ?? 'Unknown';
+        String service = earningDoc.data()['service'] ?? 'Unknown'; // Get service name
+
+        Timestamp timestamp = earningDoc.data()['date'];
         DateTime selectedDate = timestamp.toDate();
 
-        // Gather unique years for the year filter
         if (!availableYears.contains(selectedDate.year)) {
           availableYears.add(selectedDate.year);
         }
 
+        // Calculate organization's earning
+        double organizationEarning = totalAmount - amount;
+
+        // Fetch specialist name using specialist ID
+        String specialistName = specialistNames[specialistDoc.id] ?? 'Unknown';
+
+        // Add to completed appointments ensuring to fetch all data and calculate earnings
         completedAppointments.add({
-          'id': doc.id,
-          'amountPaid': amountPaid,
+          'appointmentId': appointmentId,
+          'totalAmount': totalAmount,
+          'organizationEarning': organizationEarning,
           'selectedDate': selectedDate,
+          'specialistName': specialistName,
+          'service': service, // Include the service
+          'rate': rate // Include the distribution rate
         });
       }
     }
@@ -76,34 +84,26 @@ class _EarningsScreenState extends State<EarningsScreen> {
     // Filter completed appointments based on selected month and year
     completedAppointments = completedAppointments.where((appointment) {
       DateTime date = appointment['selectedDate'];
-      bool matchMonth = (selectedMonth == null ||
-          selectedMonth == 0 ||
-          date.month == selectedMonth);
+      bool matchMonth = (selectedMonth == null || selectedMonth == 0 || date.month == selectedMonth);
       bool matchYear = (selectedYear == null || date.year == selectedYear);
       return matchMonth && matchYear;
     }).toList();
 
-    // Update the flag if there are no appointments after filtering
     if (completedAppointments.isEmpty) {
-      noEarningsForSelectedDate =
-          true; // Set the flag to true if no earnings are found
+      noEarningsForSelectedDate = true;
     }
 
     setState(() {});
   }
 
-  // Method to calculate total earnings
   double getTotalEarnings() {
-    return completedAppointments.fold(
-        0, (sum, appointment) => sum + appointment['amountPaid']);
+    return completedAppointments.fold(0, (sum, appointment) => sum + appointment['organizationEarning']);
   }
 
-  // Method to display the filter options
   Widget _buildFilterOptions() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        // Month Filter
         DropdownButton<int>(
           value: selectedMonth,
           hint: const Text('Month'),
@@ -121,12 +121,11 @@ class _EarningsScreenState extends State<EarningsScreen> {
               }).toList(),
           onChanged: (int? newValue) {
             setState(() {
-              selectedMonth = newValue; // "All" is represented by 0
-              _fetchEarnings(); // Fetch earnings based on selected filters
+              selectedMonth = newValue;
+              _fetchEarnings();
             });
           },
         ),
-        // Year Filter
         DropdownButton<int>(
           value: selectedYear,
           hint: const Text('Year'),
@@ -139,11 +138,18 @@ class _EarningsScreenState extends State<EarningsScreen> {
           onChanged: (int? newValue) {
             setState(() {
               selectedYear = newValue;
-              _fetchEarnings(); // Fetch earnings based on selected filters
+              _fetchEarnings();
             });
           },
         ),
       ],
+    );
+  }
+
+  void navigateToRateAdjustment(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => RateAdjustmentScreen()),
     );
   }
 
@@ -154,12 +160,19 @@ class _EarningsScreenState extends State<EarningsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: const Text(
-          'Your Earnings',
+          'Admin Earnings',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Color.fromARGB(255, 90, 113, 243),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            color: Color.fromARGB(255, 90, 113, 243),
+            onPressed: () => navigateToRateAdjustment(context),
+          ),
+        ],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(
@@ -215,7 +228,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                   )
                 : Column(
                     children: [
-                       Container(
+                      Container(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -230,8 +243,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: Colors.blueGrey.withOpacity(0.25),
-                              blurRadius:
-                                  10, // Increased blur for a subtler shadow
+                              blurRadius: 10,
                               offset: const Offset(0, 1),
                             ),
                           ],
@@ -242,13 +254,11 @@ class _EarningsScreenState extends State<EarningsScreen> {
                             Row(
                               children: [
                                 const Icon(
-                                  Icons.attach_money, // Money icon
-                                  color: Color.fromARGB(
-                                      255, 90, 113, 243), // Matching color
+                                  Icons.attach_money,
+                                  color: Color.fromARGB(255, 90, 113, 243),
                                   size: 24,
                                 ),
-                                const SizedBox(
-                                    width: 8.0), // Space between icon and text
+                                const SizedBox(width: 8.0),
                                 const Text(
                                   'Total Earnings:',
                                   style: TextStyle(
@@ -263,7 +273,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                             Text(
                               'RM ${getTotalEarnings().toStringAsFixed(2)}',
                               style: const TextStyle(
-                                fontSize: 36, // Slightly larger for emphasis
+                                fontSize: 36,
                                 fontWeight: FontWeight.bold,
                                 color: Color.fromARGB(255, 90, 113, 243),
                               ),
@@ -282,8 +292,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                               color: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                side: const BorderSide(
-                                    color: Colors.grey, width: 0.5),
+                                side: const BorderSide(color: Colors.grey, width: 0.5),
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(16.0),
@@ -291,11 +300,10 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          'RM ${appointment['amountPaid'].toStringAsFixed(2)}',
+                                          'RM ${appointment['organizationEarning'].toStringAsFixed(2)}',
                                           style: const TextStyle(
                                             fontSize: 24,
                                             fontWeight: FontWeight.bold,
@@ -303,7 +311,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                           ),
                                         ),
                                         Text(
-                                          'Appt ID: ${appointment['id']}',
+                                          'Appt ID: ${appointment['appointmentId']}', // Use appointmentId
                                           style: const TextStyle(
                                             fontSize: 16,
                                             color: Colors.black87,
@@ -311,10 +319,39 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(
-                                        height: 4), 
+                                    const SizedBox(height: 4),
                                     Text(
                                       'Date: ${appointment['selectedDate']?.toLocal().toIso8601String().split('T')[0] ?? 'N/A'}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Specialist: ${appointment['specialistName'] ?? 'Unknown'}', // Display the specialist name
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Service: ${appointment['service'] ?? 'Unknown'}', // Display the service name
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Rate: ${(appointment['rate']! * 100).toStringAsFixed(1)}%', // Show rate as a percentage
+                                      style: const TextStyle(fontSize: 14, color: Colors.black87),
+                                    ),
+                                    const SizedBox(height: 8), // Spacing before total amount
+                                    Text(
+                                      'Total Amount: RM ${appointment['totalAmount'].toStringAsFixed(2)}', // Display total amount
                                       style: const TextStyle(
                                         fontSize: 14,
                                         color: Colors.grey,
@@ -323,7 +360,6 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                   ],
                                 ),
                               ),
-                              
                             );
                           },
                         ),

@@ -1,16 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:nutricare/admin_site/settings/admin_earning.dart';
 import 'package:nutricare/admin_site/settings/admin_feedback.dart';
 import 'package:nutricare/admin_site/settings/admin_specialist_enquiry.dart';
+import 'package:nutricare/admin_site/settings/service_map.dart';
 import 'package:nutricare/authentication_process/login.dart';
+
+import 'admin_specialist_deactivation.dart';
 
 class AdminSettingsScreen extends StatelessWidget {
   const AdminSettingsScreen({super.key});
 
   @override
 Widget build(BuildContext context) {
-  String specialistId = 'zosBSGY2hFRaVOjECum6Hn23kag1'; // Replace with actual ID
   return Scaffold(
     backgroundColor: Colors.white,
     appBar: AppBar(
@@ -38,12 +41,30 @@ Widget build(BuildContext context) {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildSettingOption(context, Icons.attach_money_outlined, 'Earning', () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminEarningsScreen()));
+          }),
+          const SizedBox(height: 10),
           _buildSettingOption(context, Icons.feedback_outlined, 'Feedback', () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminFeedbackScreen()));
           }),
           const SizedBox(height: 10),
           _buildSettingOption(context, Icons.question_answer_outlined, 'Specialist Enquiry', () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminSpecialistEnquiriesScreen()));
+          }),
+          const SizedBox(height: 10),
+          _buildSettingOption(context, Icons.report_problem_outlined, 'Deactivation Enquiries', () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AdminEnquiryReviewScreen(
+                  ),
+                ),
+              );
+            }),
+          const SizedBox(height: 10),
+          _buildSettingOption(context, Icons.map_outlined, 'Service Map', () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => ServiceMapScreen()));
           }),
           const SizedBox(height: 60),
           const Divider(height: 1, color: Colors.grey),

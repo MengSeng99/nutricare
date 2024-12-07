@@ -158,129 +158,135 @@ class ChatDetailScreen extends StatelessWidget {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.white,
+    appBar: AppBar(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundImage: profilePictureUrl.isNotEmpty
-                  ? NetworkImage(profilePictureUrl)
-                  : const AssetImage('images/user_profile/default_profile.png')
-                      as ImageProvider,
-            ),
-            SizedBox(width: 16),
-            Text(
+      title: Row(
+        children: [
+          CircleAvatar(
+            backgroundImage: profilePictureUrl.isNotEmpty
+                ? NetworkImage(profilePictureUrl)
+                : const AssetImage('images/user_profile/default_profile.png')
+                    as ImageProvider,
+          ),
+          SizedBox(width: 16),
+          GestureDetector(
+            onTap: () {
+              // Call the method to show specialist details when the specialist name is tapped
+              _showSpecialistDetails(context);
+            },
+            child: Text(
               specialistName,
               style: TextStyle(
                 color: Color.fromARGB(255, 90, 113, 243),
                 fontWeight: FontWeight.bold,
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.info_outline),
+          onPressed: () {
+            _showSpecialistDetails(context);
+          },
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.info_outline),
-            onPressed: () {
-              _showSpecialistDetails(context);
+      ],
+      bottom: const PreferredSize(
+        preferredSize: Size.fromHeight(1),
+        child: Divider(
+          height: 0.5,
+          color: Color.fromARGB(255, 220, 220, 241),
+        ),
+      ),
+      iconTheme: IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+    ),
+    body: Column(
+      children: [
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('chats')
+                .doc(chatId)
+                .collection('messages')
+                .orderBy('timestamp', descending: false)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return Center(child: CircularProgressIndicator());
+              }
+
+              var messages = snapshot.data!.docs;
+
+              return ListView.builder(
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  var messageData =
+                      messages[index].data() as Map<String, dynamic>;
+                  bool isMe = messageData['senderId'] == currentUserId;
+
+                  bool showProfilePicture = index > 0
+                      ? messages[index - 1]['senderId'] != currentUserId
+                      : true;
+
+                  DateTime? previousMessageDate = index > 0
+                      ? (messages[index - 1].data()
+                              as Map<String, dynamic>)['timestamp']
+                          ?.toDate()
+                      : null;
+
+                  return _buildMessageBubble(context, messageData, isMe,
+                      showProfilePicture, previousMessageDate);
+                },
+              );
             },
           ),
-        ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(
-            height: 0.5,
-            color: Color.fromARGB(255, 220, 220, 241),
-          ),
         ),
-        iconTheme: IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('chats')
-                  .doc(chatId)
-                  .collection('messages')
-                  .orderBy('timestamp', descending: false)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return Center(child: CircularProgressIndicator());
-                }
-
-                var messages = snapshot.data!.docs;
-
-                return ListView.builder(
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    var messageData =
-                        messages[index].data() as Map<String, dynamic>;
-                    bool isMe = messageData['senderId'] == currentUserId;
-
-                    bool showProfilePicture = index > 0
-                        ? messages[index - 1]['senderId'] != currentUserId
-                        : true;
-
-                    DateTime? previousMessageDate = index > 0
-                        ? (messages[index - 1].data()
-                                as Map<String, dynamic>)['timestamp']
-                            ?.toDate()
-                        : null;
-
-                    return _buildMessageBubble(context, messageData, isMe,
-                        showProfilePicture, previousMessageDate);
-                  },
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: Icon(Icons.image),
-                  onPressed: () => _pickImageAndSend(),
-                ),
-                IconButton(
-                  icon: Icon(Icons.attach_file),
-                  onPressed: () => _pickFileAndSend(),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    maxLines: null, // Allows the TextField to expand as needed
-                    decoration: InputDecoration(
-                      hintText: "Type a message",
-                      hintStyle: TextStyle(color: Colors.grey),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25.0),
-                        borderSide: BorderSide(color: Colors.grey),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
+        Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.image),
+                onPressed: () => _pickImageAndSend(),
+              ),
+              IconButton(
+                icon: Icon(Icons.attach_file),
+                onPressed: () => _pickFileAndSend(),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _messageController,
+                  maxLines: null, // Allows the TextField to expand as needed
+                  decoration: InputDecoration(
+                    hintText: "Type a message",
+                    hintStyle: TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25.0),
+                      borderSide: BorderSide(color: Colors.grey),
                     ),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.send),
-                  onPressed: () {
-                    _sendMessage(chatId);
-                  },
-                ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: Icon(Icons.send),
+                onPressed: () {
+                  _sendMessage(chatId);
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Future<void> _pickImageAndSend() async {
     final picker = ImagePicker();

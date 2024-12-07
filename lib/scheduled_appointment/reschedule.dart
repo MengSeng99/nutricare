@@ -42,43 +42,43 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
   }
 
   Future<void> _fetchAvailableTimeSlots() async {
-  if (_selectedDate == null) return;
+    if (_selectedDate == null) return;
 
-  final selectedDateString = _selectedDate!.toIso8601String().split('T')[0];
-  final docRef = FirebaseFirestore.instance
-      .collection('specialists')
-      .doc(widget.specialistId)
-      .collection('appointments')
-      .doc(_selectedMode);
+    final selectedDateString = _selectedDate!.toIso8601String().split('T')[0];
+    final docRef = FirebaseFirestore.instance
+        .collection('specialists')
+        .doc(widget.specialistId)
+        .collection('appointments')
+        .doc(_selectedMode);
 
-  final docSnapshot = await docRef.get();
+    final docSnapshot = await docRef.get();
 
-  if (docSnapshot.exists) {
-    final data = docSnapshot.data();
-    if (data != null && data['date_slots'] != null) {
-      final dateSlots = Map<String, dynamic>.from(data['date_slots']);
-      List<String> slots =
-          List<String>.from(dateSlots[selectedDateString] ?? []);
+    if (docSnapshot.exists) {
+      final data = docSnapshot.data();
+      if (data != null && data['date_slots'] != null) {
+        final dateSlots = Map<String, dynamic>.from(data['date_slots']);
+        List<String> slots =
+            List<String>.from(dateSlots[selectedDateString] ?? []);
 
-      // Sort time slots manually: AM first, then PM
-      slots.sort((a, b) {
-        return _compareTimeSlots(a, b);
-      });
+        // Sort time slots manually: AM first, then PM
+        slots.sort((a, b) {
+          return _compareTimeSlots(a, b);
+        });
 
+        setState(() {
+          availableTimeSlots = slots;
+          noAvailableTimeSlots = slots.isEmpty; // Track if there are no slots
+          isLoadingSlots = false;
+        });
+      }
+    } else {
       setState(() {
-        availableTimeSlots = slots;
-        noAvailableTimeSlots = slots.isEmpty; // Track if there are no slots
+        availableTimeSlots = [];
+        noAvailableTimeSlots = true; // Track as no slots available
         isLoadingSlots = false;
       });
     }
-  } else {
-    setState(() {
-      availableTimeSlots = [];
-      noAvailableTimeSlots = true; // Track as no slots available
-      isLoadingSlots = false;
-    });
   }
-}
 
   int _compareTimeSlots(String a, String b) {
     // Parse time strings into DateTime objects (using a fixed date)
@@ -98,6 +98,23 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
       );
       return;
     }
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Prevent dismissal of dialog by tapping outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(), // Loading indicator
+              SizedBox(width: 20), // Add some spacing
+              Text("Processing, please wait..."), // Loading message
+            ],
+          ),
+        );
+      },
+    );
 
     // Reference to the details collection
     final detailsCollectionRef = FirebaseFirestore.instance
@@ -131,6 +148,8 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
 
       // Remove the newly selected time slot from the date_slots
       await _removeNewSelectedTimeSlot();
+
+      Navigator.pop(context); // Go back after rescheduling
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -338,12 +357,12 @@ Please review the details above and let us know if you spot any errors.
 
             Card(
               shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-          side: BorderSide(color: Colors.grey.shade400, width: 1),
-        ),
-        margin: const EdgeInsets.only(bottom: 16),
-        elevation: 2,
-        color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                side: BorderSide(color: Colors.grey.shade400, width: 1),
+              ),
+              margin: const EdgeInsets.only(bottom: 16),
+              elevation: 2,
+              color: Colors.white,
               child: Column(
                 children: [
                   ListTile(
@@ -380,64 +399,73 @@ Please review the details above and let us know if you spot any errors.
             ),
             const SizedBox(height: 24),
 
-          // Appointment Mode
-          _buildSectionTitle("Appointment Mode"),
-          const SizedBox(height: 10),
-          _buildModeSelector(),
-          const SizedBox(height: 24),
+            // Appointment Mode
+            _buildSectionTitle("Appointment Mode"),
+            const SizedBox(height: 10),
+            _buildModeSelector(),
+            const SizedBox(height: 24),
 
-          // Calendar for selecting date
-          _buildSectionTitle("Select Reschedule Date"),
-          _buildSectionSubtitle("You can select any date starting from today."),
-          const SizedBox(height: 12),
-          _buildCalendar(now, endDate),
+            // Calendar for selecting date
+            _buildSectionTitle("Select Reschedule Date"),
+            _buildSectionSubtitle(
+                "You can select any date within 1 month starting from today (Excluding weekends)."),
+            const SizedBox(height: 12),
+            _buildCalendar(now, endDate),
 
-          // Time slots section
-          if (_selectedDate != null) // Show time slots only if date is selected
-            _buildTimeSlotSelector(), // Will automatically show empty if no slots
+            // Time slots section
+            if (_selectedDate !=
+                null) // Show time slots only if date is selected
+              _buildTimeSlotSelector(), // Will automatically show empty if no slots
 
-          // Show message if no available time slots
-          if (noAvailableTimeSlots) 
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text(
-                "No available time slots for the selected date. Please select another date.",
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
+            // Show message if no available time slots
+            if (noAvailableTimeSlots)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  "No available time slots for the selected date. Please select another date.",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 30),
+
+            Center(
+              child: ElevatedButton(
+                onPressed: (_selectedDate != null &&
+                        _selectedTimeSlot != null &&
+                        !noAvailableTimeSlots)
+                    ? _showConfirmationDialog // Change to show confirmation dialog
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  backgroundColor: (_selectedDate != null &&
+                          _selectedTimeSlot != null &&
+                          !noAvailableTimeSlots)
+                      ? const Color.fromARGB(255, 90, 113, 243)
+                      : Colors.grey,
+                ),
+                child: const Text(
+                  "Reschedule Appointment",
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
                 ),
               ),
             ),
-
-          const SizedBox(height: 30),
-
-          // Reschedule button
-          Center(
-            child: ElevatedButton(
-              onPressed: (_selectedDate != null && _selectedTimeSlot != null && !noAvailableTimeSlots)
-                  ? _rescheduleAppointment
-                  : null,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                backgroundColor: (_selectedDate != null && _selectedTimeSlot != null && !noAvailableTimeSlots)
-                    ? const Color.fromARGB(255, 90, 113, 243)
-                    : Colors.grey,
-              ),
-              child: const Text(
-                "Reschedule Appointment",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   // Mode selection UI
   Widget _buildModeSelector() {
@@ -495,34 +523,34 @@ Please review the details above and let us know if you spot any errors.
   }
 
   Widget _buildCalendar(DateTime startDate, DateTime endDate) {
-  // Go to the next weekday if the start date is Saturday or Sunday
-  DateTime effectiveStartDate = startDate;
-  if (effectiveStartDate.weekday == DateTime.saturday) {
-    effectiveStartDate = effectiveStartDate.add(Duration(days: 2));
-  } else if (effectiveStartDate.weekday == DateTime.sunday) {
-    effectiveStartDate = effectiveStartDate.add(Duration(days: 1));
+    // Go to the next weekday if the start date is Saturday or Sunday
+    DateTime effectiveStartDate = startDate;
+    if (effectiveStartDate.weekday == DateTime.saturday) {
+      effectiveStartDate = effectiveStartDate.add(Duration(days: 2));
+    } else if (effectiveStartDate.weekday == DateTime.sunday) {
+      effectiveStartDate = effectiveStartDate.add(Duration(days: 1));
+    }
+
+    return CalendarDatePicker(
+      initialDate: effectiveStartDate, // Ensure this is a valid starting point
+      firstDate: startDate,
+      lastDate: endDate,
+      selectableDayPredicate: (date) {
+        // Allow only weekdays (Monday to Friday)
+        return date.weekday != DateTime.saturday &&
+            date.weekday != DateTime.sunday;
+      },
+      onDateChanged: (newSelectedDate) {
+        setState(() {
+          _selectedDate = newSelectedDate;
+          isLoadingSlots = true;
+          availableTimeSlots.clear();
+        });
+
+        _fetchAvailableTimeSlots();
+      },
+    );
   }
-
-  return CalendarDatePicker(
-    initialDate: effectiveStartDate, // Ensure this is a valid starting point
-    firstDate: startDate,
-    lastDate: endDate,
-    selectableDayPredicate: (date) {
-      // Allow only weekdays (Monday to Friday)
-      return date.weekday != DateTime.saturday &&
-          date.weekday != DateTime.sunday;
-    },
-    onDateChanged: (newSelectedDate) {
-      setState(() {
-        _selectedDate = newSelectedDate;
-        isLoadingSlots = true;
-        availableTimeSlots.clear();
-      });
-
-      _fetchAvailableTimeSlots();
-    },
-  );
-}
 
   Widget _buildTimeSlotSelector() {
     return Column(
@@ -534,7 +562,12 @@ Please review the details above and let us know if you spot any errors.
           spacing: 8,
           children: availableTimeSlots.map((slot) {
             return ChoiceChip(
+              backgroundColor: Colors.white,
               label: Text(slot),
+              side: BorderSide(
+                color: Colors.grey,
+                width: 1,
+              ),
               selected: _selectedTimeSlot == slot,
               onSelected: (selected) {
                 setState(() {
@@ -553,6 +586,172 @@ Please review the details above and let us know if you spot any errors.
     );
   }
 
+  Future<void> _showConfirmationDialog() async {
+  final bool? shouldReschedule = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: const Text(
+          "Confirm Reschedule",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color.fromARGB(255, 90, 113, 243),
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Original Appointment Card
+            Card(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+                side: BorderSide(color: Colors.grey.shade400, width: 1),
+              ),
+              margin: EdgeInsets.symmetric(vertical: 8),
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Original Appointment Details:",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        // Use appropriate icon based on appointment mode
+                        Icon(widget.appointmentMode == "Physical"
+                            ? Icons.location_on
+                            : Icons.video_call_outlined,
+                          color: Color.fromARGB(255, 90, 113, 243)),
+                        const SizedBox(width: 8),
+                        Text("Mode: ${widget.appointmentMode}"),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.date_range, color: Color.fromARGB(255, 90, 113, 243)),
+                        const SizedBox(width: 8),
+                        Text("Date: ${DateFormat('yyyy-MM-dd').format(widget.originalDate)}"),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.access_time, color: Color.fromARGB(255, 90, 113, 243)),
+                        const SizedBox(width: 8),
+                        Text("Time: ${widget.originalTime}"),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Arrow Icon
+            const Icon(
+              Icons.arrow_downward,
+              size: 30,
+              color: Color.fromARGB(255, 90, 113, 243),
+            ),
+
+            const SizedBox(height: 20),
+
+            // New Appointment Card
+            Card(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+                side: BorderSide(color: Colors.grey.shade400, width: 1),
+              ),
+              margin: EdgeInsets.symmetric(vertical: 8),
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "New Appointment Details:",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        // Use appropriate icon based on selected mode
+                        Icon(_selectedMode == "Physical"
+                            ? Icons.location_on
+                            : Icons.video_call_outlined,
+                          color: Color.fromARGB(255, 90, 113, 243)),
+                        const SizedBox(width: 8),
+                        Text("Mode: $_selectedMode"),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.date_range, color: Color.fromARGB(255, 90, 113, 243)),
+                        const SizedBox(width: 8),
+                        Text("Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}"),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.access_time, color: Color.fromARGB(255, 90, 113, 243)),
+                        const SizedBox(width: 8),
+                        Text("Time: $_selectedTimeSlot"),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              "Confirm",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+
+  // Proceed with rescheduling if confirmed
+  if (shouldReschedule == true) {
+    await _rescheduleAppointment(); // Call the original reschedule method
+  }
+}
   Widget _buildSectionTitle(String title) {
     return Text(
       title,

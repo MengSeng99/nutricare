@@ -151,6 +151,7 @@ class _HealthRecordWidgetState extends State<HealthRecordWidget> {
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -165,15 +166,9 @@ class _HealthRecordWidgetState extends State<HealthRecordWidget> {
             style: TextStyle(fontSize: 16),
           ),
           actions: <Widget>[
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
+            TextButton(
               child:
-                  const Text('Cancel', style: TextStyle(color: Colors.white)),
+                  const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop(false);
               },

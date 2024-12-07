@@ -293,14 +293,20 @@ class _BookingScreenState extends State<BookingScreen>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
           ),
           title: const Text("Appointment Modes",
           style: TextStyle(color: Color.fromARGB(255, 90, 113, 243),fontWeight: FontWeight.bold)),
           content: const Text(
+             'Select the appointment mode that you prefer.\n\n'
+          
               "Physical Appointment: \nPlease arrive at the clinic 30 minutes before your scheduled time. Kindly contact your specialist via Chat if you have any doubt after your booking.\n\n"
-              "Online Appointment: \nYou will receive a virtual consultation at the scheduled time. The specialist will contact you via Chat.\n\n"),
+              "Online Appointment: \nYou will receive a virtual consultation at the scheduled time. The specialist will contact you via Chat.\n\n"
+              'Note: \n1. The available time slots may vary based on the selected mode.\n2. For your convenience, appointments can be booked up to one month ahead. If you are looking to book further in advance, please contact your specialist for assistance.\n\n'
+              ),
+          
           actions: [
             ElevatedButton(
             style: ElevatedButton.styleFrom(

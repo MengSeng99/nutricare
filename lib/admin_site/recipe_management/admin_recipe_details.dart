@@ -106,6 +106,7 @@ class _AdminRecipeDetailsScreenState extends State<AdminRecipeDetailsScreen> {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
         ),

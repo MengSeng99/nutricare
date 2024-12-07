@@ -24,6 +24,7 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Create New Article',
             style: TextStyle(
@@ -31,12 +32,22 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
                 color: Color.fromARGB(255, 90, 113, 243))),
         backgroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 0.5, color: Color.fromARGB(255, 220, 220, 241)),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.symmetric(vertical: 8),
+            elevation: 2,
+            color: Colors.white,
+            shape: RoundedRectangleBorder(
+              side: const BorderSide(
+                  color: Color.fromARGB(255, 221, 222, 226), width: 1),
+              borderRadius: BorderRadius.circular(15),
+            ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -73,16 +84,16 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
                 _buildTextField(titleController, 'Title'),
                 const SizedBox(height: 10),
 
-                // Subtitle TextField
-                _buildTextField(subtitleController, 'Subtitle'),
+              // Subtitle TextField
+                _buildTextField(subtitleController, 'Subtitle', maxLines: 2),
                 const SizedBox(height: 10),
 
                 // Description TextField
-                _buildTextField(descriptionController, 'Description'),
+                _buildTextField(descriptionController, 'Description', maxLines: 3),
                 const SizedBox(height: 10),
 
                 // Content TextField
-                _buildTextField(contentController, 'Content', maxLines: 5),
+                _buildTextField(contentController, 'Content', maxLines: 10),
                 const SizedBox(height: 20),
 
                 // Save button

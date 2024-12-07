@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart'; // Import for Firebase Authen
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class CreateSpecialistScreen extends StatefulWidget {
   const CreateSpecialistScreen({super.key});
@@ -24,12 +26,12 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
 
   String? profilePictureUrl;
   final ImagePicker _picker = ImagePicker();
-  XFile? _imageFile; // Keep the image file temporarily until add is clicked
+  XFile? _imageFile;
 
   String? selectedGender;
   String? selectedSpecialization;
 
-  bool _isPasswordVisible = false; // For password visibility toggle
+  bool _isPasswordVisible = false;
 
   @override
   void initState() {
@@ -53,6 +55,31 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
     experienceController.dispose();
     aboutController.dispose();
     super.dispose();
+  }
+
+  Future<Map<String, dynamic>> geocodeOrganization(
+      String organizationName) async {
+    final apiUrl = 'https://maps.googleapis.com/maps/api/geocode/json';
+    final apiKey = 'AIzaSyATCwN44Py2DWCMxnEU7V4LJN6FtpvWaCQ';
+
+    final queryParameters = {
+      'address': organizationName,
+      'key': apiKey,
+    };
+
+    final response = await http
+        .get(Uri.parse(apiUrl).replace(queryParameters: queryParameters));
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      if (jsonData['results'].isNotEmpty) {
+        return jsonData['results'][0];
+      } else {
+        return {};
+      }
+    } else {
+      throw Exception('Failed to load geocoding data');
+    }
   }
 
   Future<String?> uploadProfilePicture() async {
@@ -124,8 +151,57 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
       return;
     }
 
+    // Check if the organization field is not empty
+    if (organizationController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter an organization name!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Geocode the organization name to get latitude and longitude
+    Map<String, dynamic> geocodedData;
     try {
-      // Create a user in FirebaseAuth
+      geocodedData = await geocodeOrganization(organizationController.text);
+      if (geocodedData.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'No location found for the given organization name.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to retrieve location: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final newSpecialist = {
+      'name': nameController.text,
+      'email': emailController.text,
+      'organization': organizationController.text,
+      'experience_years': int.tryParse(experienceController.text) ?? 0,
+      'gender': selectedGender,
+      'specialization': selectedSpecialization,
+      'about': aboutController.text,
+      'services': services,
+      'profile_picture_url': null, // Initially set to null
+      'latitude': geocodedData['geometry']['location']['lat'],
+      'longitude': geocodedData['geometry']['location']['lng'],
+    };
+
+    // Save the new specialist information to Firestore using the UID as the document ID
+    try {
       UserCredential userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text,
@@ -135,25 +211,12 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
       String specialistId =
           userCredential.user!.uid; // Use the UID as the specialistId
 
-      final newSpecialist = {
-        'name': nameController.text,
-        'email': emailController.text,
-        'organization': organizationController.text,
-        'experience_years': int.tryParse(experienceController.text) ?? 0,
-        'gender': selectedGender,
-        'specialization': selectedSpecialization,
-        'about': aboutController.text,
-        'services': services,
-        'profile_picture_url': null // Initially set to null
-      };
-
-      // Save the new specialist information to Firestore using the UID as the document ID
       await FirebaseFirestore.instance
           .collection('specialists')
           .doc(specialistId)
           .set(newSpecialist);
 
-      // Upload the profile picture after the specialist is created
+      // Upload the profile picture after specialist is created
       String? imageUrl = await uploadProfilePicture();
       if (imageUrl != null) {
         // Update the profile picture URL in Firestore
@@ -197,6 +260,7 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -440,7 +504,6 @@ class _CreateSpecialistScreenState extends State<CreateSpecialistScreen> {
                 Center(
                   child: ElevatedButton.icon(
                     onPressed: createSpecialist,
-                    icon: const Icon(Icons.person_add, color: Colors.white),
                     label: const Text('Add',
                         style: TextStyle(
                             color: Colors.white,

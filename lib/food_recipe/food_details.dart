@@ -498,12 +498,12 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   Widget _buildInfoCard(String title, IconData icon) {
     return Card(
       margin: const EdgeInsets.all(12.0),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(
-            color: const Color.fromARGB(255, 218, 218, 218), width: 1),
-        borderRadius: BorderRadius.circular(12),
-      ),
+          elevation: 2,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
+            borderRadius: BorderRadius.circular(15),
+          ),
       child: Padding(
         padding: const EdgeInsets.all(15.0),
         child: Column(

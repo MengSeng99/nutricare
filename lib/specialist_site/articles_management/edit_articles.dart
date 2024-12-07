@@ -55,22 +55,22 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
                 fontWeight: FontWeight.bold,
                 color: Color.fromARGB(255, 90, 113, 243))),
         backgroundColor: Colors.white,
-        iconTheme:
-            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
-            bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(1),
-        child: Divider(
-          height: 0.5,
-          color: Color.fromARGB(255, 220, 220, 241),
+        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 0.5, color: Color.fromARGB(255, 220, 220, 241)),
         ),
-      ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Card(
+          margin: const EdgeInsets.symmetric(vertical: 8),
           elevation: 4,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
+            borderRadius: BorderRadius.circular(15),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -98,8 +98,7 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
                               )
                             : ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: const Center(
-                                    child: Text('Tap to pick an image')),
+                                child: const Center(child: Text('Tap to pick an image')),
                               ))
                         : ClipRRect(
                             borderRadius: BorderRadius.circular(12),
@@ -118,15 +117,15 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
                 const SizedBox(height: 10),
 
                 // Subtitle TextField
-                _buildTextField(subtitleController, 'Subtitle'),
+                _buildTextField(subtitleController, 'Subtitle', maxLines: 2),
                 const SizedBox(height: 10),
 
                 // Description TextField
-                _buildTextField(descriptionController, 'Description'),
+                _buildTextField(descriptionController, 'Description', maxLines: 3),
                 const SizedBox(height: 10),
 
                 // Content TextField
-                _buildTextField(contentController, 'Content', maxLines: 5),
+                _buildTextField(contentController, 'Content', maxLines: 10),
                 const SizedBox(height: 20),
 
                 // Save button
@@ -156,11 +155,11 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label,
-      {int maxLines = 1}) {
+  Widget _buildTextField(TextEditingController controller, String label, {int maxLines = 1}) {
     return TextField(
       controller: controller,
       maxLines: maxLines,
+      style: TextStyle(fontSize: 16),
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(
@@ -189,6 +188,16 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
   }
 
   Future<void> _updateArticle() async {
+    // Check for changes
+    if (titleController.text == widget.title &&
+        subtitleController.text == widget.subtitle &&
+        descriptionController.text == widget.description &&
+        contentController.text == widget.content &&
+        _image == null) {
+      _showSnackbar('No changes made.');
+      return; // Do not update if no changes
+    }
+
     // Validate fields
     if (titleController.text.isEmpty) {
       _showSnackbar('Title cannot be empty.');
@@ -240,17 +249,6 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
       'lastUpdate': lastUpdate, // Save the last update timestamp
     });
 
-    // Create a map to hold the updated data
-    Map<String, dynamic> updatedArticle = {
-      'imageUrl': imageUrl,
-      'title': titleController.text,
-      'subtitle': subtitleController.text,
-      'description': descriptionController.text,
-      'content': contentController.text,
-      'specialistId': specialistId,
-      'lastUpdate': lastUpdate,
-    };
-
     // Clear the fields after updating
     titleController.clear();
     subtitleController.clear();
@@ -260,8 +258,10 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
       _image = null;
     });
 
-    // Navigate back and pass the updated article
-    Navigator.pop(context, updatedArticle); // Pass the updated article data
+    // Navigate back
+    Navigator.pop(context); // Close the editing screen
+
+    _showSnackbar('Article updated successfully.');
   }
 
   Future<String> _uploadImage() async {

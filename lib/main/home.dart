@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../food_recipe/food_recipe.dart';
 import 'articles.dart';
+import 'nearest_specialist.dart';
 import 'virtual_consultation.dart';
 import '../specialist/specialist_lists.dart';
 import '../bmi_features/bmi_tracker.dart';
@@ -257,6 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Map<String, dynamic>> _services = const [
     {'icon': Icons.restaurant_outlined, 'label': 'Food Recipe'},
     {'icon': Icons.calendar_today_rounded, 'label': 'Book an Appointment'},
+    {'icon': Icons.map_rounded, 'label': 'Nearby Specialists'},
     {'icon': Icons.monitor_weight_rounded, 'label': 'BMI Tracker'},
     {'icon': Icons.book_rounded, 'label': 'Health Records'},
   ];
@@ -310,6 +312,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                       builder: (context) => const HealthRecordScreen()),
+                );
+              } else if (_services[index]['label'] == 'Nearby Specialists') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>  ClientNearMeScreen()),
                 );
               }
             },

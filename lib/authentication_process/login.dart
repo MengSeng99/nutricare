@@ -23,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
       GlobalKey<FormState>(); // Create a GlobalKey for the Form widget
   bool _passwordVisible = false;
   bool _isHovered = false;
+  bool _isSpecialistOrAdmin = false; // Track if the toggle is on
 
   @override
   void initState() {
@@ -51,21 +52,14 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Padding(
-                padding: EdgeInsets.all(2),
-                child: Column(
-                  children: [
-                    Text(
-                      'NutriCare',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 90, 113, 243),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+              const Text(
+                'NutriCare',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 90, 113, 243),
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
               // Email TextFormField
@@ -84,6 +78,10 @@ class _LoginPageState extends State<LoginPage> {
                     return 'Please enter your email.';
                   } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
                     return 'Please enter a valid email address.';
+                  }
+                  if (_isSpecialistOrAdmin &&
+                      !value.endsWith('@nutricare.com')) {
+                    return 'Only @nutricare.com emails can login as Specialist/Admin.';
                   }
                   return null; // No error
                 },
@@ -112,17 +110,16 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   ),
                 ),
-                // Validator for password field
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your password.';
                   } else if (value.length < 6) {
                     return 'Password must be at least 6 characters long.';
                   }
-                  return null; // No error
+                  return null;
                 },
               ),
-              const SizedBox(height: 0),
+              const SizedBox(height: 10),
               // Forgot Password Button
               Align(
                 alignment: Alignment.centerRight,
@@ -140,9 +137,27 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 10),
+              // Toggle for Specialist/Admin Login
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Login as Specialist/Admin',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  Switch(
+                    value: _isSpecialistOrAdmin,
+                    onChanged: (value) {
+                      setState(() {
+                        _isSpecialistOrAdmin = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
               GestureDetector(
                 onTap: () async {
-                  // Validate the form before attempting login
                   if (_formKey.currentState!.validate()) {
                     try {
                       User? user = await _authService.signInWithEmail(
@@ -151,58 +166,78 @@ class _LoginPageState extends State<LoginPage> {
                       );
 
                       if (user != null) {
-                        // Check user email
                         String email = user.email ?? '';
 
-                        // Check for Admin first
-                        if (email == 'admin@nutricare.com') {
-                          // Define user as admin
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const AdminDashboard()),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Suceessfully logged in as Admin'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        } else if (email.endsWith('@nutricare.com')) {
-                          // Define user as specialist
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    const SpecialistDashboard()),
-                          );
-                         ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Successfully logged in as Specialist'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
+                        if (_isSpecialistOrAdmin) {
+                          // Specialist/Admin Login Flow
+                          if (email == 'admin@nutricare.com') {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const AdminDashboard()),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Successfully logged in as Admin'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } else if (email.endsWith('@nutricare.com')) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const SpecialistDashboard()),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Successfully logged in as Specialist'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'You must use a valid @nutricare.com email for Specialist/Admin login.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         } else {
-                          // Regular user flow
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const MainScreen()),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Welcome to Nutricare!'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
+                          // Regular User Login Flow
+                          if (email == 'admin@nutricare.com' ||
+                              email.endsWith('@nutricare.com')) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Please toggle the switch to log in as Admin or Specialist.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          } else {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const MainScreen()),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Welcome to Nutricare!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
                         }
                       }
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                            content: Text(
-                                (e as FirebaseAuthException).message ??
-                                    'Login failed')),
+                          content: Text((e as FirebaseAuthException).message ??
+                              'Login failed'),
+                        ),
                       );
                     }
                   }

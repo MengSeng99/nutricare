@@ -173,12 +173,12 @@ Please review the details above and let us know if you spot any errors.
                   child: Column(
                     children: [
                       Icon(Icons.check_circle_outline,
-                          color: Colors.green, size: MediaQuery.of(context).size.height * 0.18),
+                          color: Colors.green, size: MediaQuery.of(context).size.height * 0.10),
                       const SizedBox(height: 10),
                       Text(
                         "Payment Successful!",
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.green.shade700,
                         ),

@@ -160,25 +160,25 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
         servicesToDelete.clear();
         reviewsToDelete.clear();
 
-       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Specialist details updated successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Specialist details updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No changes made!')),
+        );
+      }
+
+      Navigator.pop(context);
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No changes made!')),
+        SnackBar(content: Text('Error updating specialist: $e')),
       );
     }
-
-    Navigator.pop(context);
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error updating specialist: $e')),
-    );
   }
-}
 
   Future<void> deleteReview(Map<String, dynamic> review) {
     setState(() {
@@ -195,14 +195,14 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
   }
 
   Future<void> pickImage() async {
-  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-  if (pickedFile != null) {
-    setState(() {
-      _imageFile = pickedFile; // Store the picked file for later use
-      profilePictureUrl = pickedFile.path; // Set the local path to display
-    });
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = pickedFile; // Store the picked file for later use
+        profilePictureUrl = pickedFile.path; // Set the local path to display
+      });
+    }
   }
-}
 
   void showAddServiceDialog() {
     final TextEditingController serviceNameController = TextEditingController();
@@ -309,50 +309,59 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text(
-        "Edit Specialist Details",
-        style: TextStyle(
-            color: Color.fromARGB(255, 90, 113, 243),
-            fontWeight: FontWeight.bold),
-      ),
-      bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(1),
-        child: Divider(
-          height: 0.5,
-          color: Color.fromARGB(255, 220, 220, 241),
-        ),
-      ),
+  Widget build(BuildContext context) {
+    return Scaffold(
       backgroundColor: Colors.white,
-      iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
-    ),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
+      appBar: AppBar(
+        title: const Text(
+          "Edit Specialist Details",
+          style: TextStyle(
+              color: Color.fromARGB(255, 90, 113, 243),
+              fontWeight: FontWeight.bold),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: GestureDetector(
-                  onTap: pickImage,
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundImage: _imageFile != null
-                        ? FileImage(File(_imageFile!.path)) // Display the picked image
-                        : (profilePictureUrl != null ? NetworkImage(profilePictureUrl!) : null),
-                    child: (_imageFile == null && profilePictureUrl == null)
-                        ? const Icon(Icons.person,
-                            size: 50,
-                            color: Color.fromARGB(255, 90, 113, 243))
-                        : null,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 0.5,
+            color: Color.fromARGB(255, 220, 220, 241),
+          ),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme:
+            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Card(
+          margin: const EdgeInsets.all(8),
+          elevation: 2,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(
+                color: Color.fromARGB(255, 221, 222, 226), width: 1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: GestureDetector(
+                    onTap: pickImage,
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: _imageFile != null
+                          ? FileImage(File(
+                              _imageFile!.path)) // Display the picked image
+                          : (profilePictureUrl != null
+                              ? NetworkImage(profilePictureUrl!)
+                              : null),
+                      child: (_imageFile == null && profilePictureUrl == null)
+                          ? const Icon(Icons.person,
+                              size: 50,
+                              color: Color.fromARGB(255, 90, 113, 243))
+                          : null,
                     ),
                   ),
                 ),
@@ -410,8 +419,15 @@ Widget build(BuildContext context) {
                   itemBuilder: (context, index) {
                     final service = services[index];
                     return Card(
-                      elevation: 4,
                       margin: const EdgeInsets.symmetric(vertical: 8),
+                      elevation: 2,
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        side: const BorderSide(
+                            color: Color.fromARGB(255, 221, 222, 226),
+                            width: 1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       child: ListTile(
                         title: Text(service['name'] ?? 'Unnamed Service',
                             style:

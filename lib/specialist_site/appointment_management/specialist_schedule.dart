@@ -162,26 +162,36 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
     });
   }
 
-  void _showSortOptions(BuildContext context) {
-    showModalBottomSheet(
+   void _showSortOptions(BuildContext context) {
+    showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: sortOptions.map((String option) {
-              return ListTile(
-                title: Text(option),
-                onTap: () {
-                  setState(() {
-                    _selectedSortOption = option;
-                    refreshAppointments();
-                  });
-                  Navigator.pop(context); // Close the bottom sheet
-                },
-              );
-            }).toList(),
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text(
+            "Sort By",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 90, 113, 243)),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: sortOptions.map((String option) {
+                return RadioListTile<String>(
+                  title: Text(option),
+                  value: option,
+                  groupValue: _selectedSortOption,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSortOption = value!;
+                      refreshAppointments();
+                    });
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                );
+              }).toList(),
+            ),
           ),
         );
       },
@@ -227,17 +237,36 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Sort Icon Button on the right
-               Column(
-                children: [
-              IconButton(
-                icon: const Icon(Icons.sort, color: Color.fromARGB(255, 90, 113, 243)),
-                onPressed: () {
+               InkWell(
+                onTap: () {
                   _showSortOptions(context);
                 },
-              ),
-              const Text("Sort", style: TextStyle(fontSize: 12, color: Colors.grey)),
-             ],
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.sort,
+                          color: Color.fromARGB(255, 90, 113, 243),
+                        ),
+                        const SizedBox(height: 4), // Space between icon and text
+                        const Text(
+                          'Sort',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -247,7 +276,22 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
             future: _appointmentsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: Color.fromARGB(255, 90, 113, 243),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading Appointment...',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),);
               }
 
               if (!snapshot.hasData || snapshot.data!.isEmpty) {

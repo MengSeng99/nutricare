@@ -9,10 +9,13 @@ class AdminSpecialistsDetailsScreen extends StatefulWidget {
   const AdminSpecialistsDetailsScreen({super.key, required this.specialistId});
 
   @override
-  _AdminSpecialistsDetailsScreenState createState() => _AdminSpecialistsDetailsScreenState();
+  _AdminSpecialistsDetailsScreenState createState() =>
+      _AdminSpecialistsDetailsScreenState();
 }
 
-class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsScreen> with SingleTickerProviderStateMixin {
+class _AdminSpecialistsDetailsScreenState
+    extends State<AdminSpecialistsDetailsScreen>
+    with SingleTickerProviderStateMixin {
   bool isLoading = true;
   late Map<String, dynamic> specialistData = {};
   late TabController _tabController;
@@ -30,7 +33,8 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
     // Listen to tab changes
     _tabController.addListener(() {
       setState(() {
-        showEditIcon = _tabController.index == 0 && specialistData['status'] != 'inactive';
+        showEditIcon =
+            _tabController.index == 0 && specialistData['status'] != 'inactive';
       });
     });
   }
@@ -46,16 +50,21 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
         specialistData = snapshot.data() as Map<String, dynamic>;
         services = specialistData['services'] ?? [];
         reviews = specialistData['reviews'] ?? [];
-        
+
         // Check if the specialist is inactive and get the deactivation date
         if (specialistData['status'] == 'inactive') {
-          Timestamp? deactivationTimestamp = specialistData['deactivation_datetime'] as Timestamp?;
+          Timestamp? deactivationTimestamp =
+              specialistData['deactivation_datetime'] as Timestamp?;
           if (deactivationTimestamp != null) {
-            deactivationDate = deactivationTimestamp.toDate().toLocal().toString().split(' ')[0];
+            deactivationDate = deactivationTimestamp
+                .toDate()
+                .toLocal()
+                .toString()
+                .split(' ')[0];
           }
         }
 
-        isLoading = false; 
+        isLoading = false;
       });
     } else {
       setState(() {
@@ -78,7 +87,9 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
     bool isInactive = specialistData['status'] == 'inactive';
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text(
           "Specialist Details",
           style: TextStyle(
@@ -91,7 +102,10 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
           labelColor: Color.fromARGB(255, 90, 113, 243),
           tabs: [
             const Tab(text: 'Details'),
-            Tab(text: isInactive ? 'Appointment Slots (Inactive)' : 'Appointment Slots'),
+            Tab(
+                text: isInactive
+                    ? 'Appointment Slots (Inactive)'
+                    : 'Appointment Slots'),
           ],
         ),
         leading: IconButton(
@@ -102,9 +116,11 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
           },
         ),
         actions: [
-          if (!isInactive && showEditIcon) // Show edit icon only for active specialists
+          if (!isInactive &&
+              showEditIcon) // Show edit icon only for active specialists
             IconButton(
-              icon: const Icon(Icons.edit, color: Color.fromARGB(255, 90, 113, 243)),
+              icon: const Icon(Icons.edit,
+                  color: Color.fromARGB(255, 90, 113, 243)),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -127,7 +143,9 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
           // First Tab for Specialist Details
           _buildDetailsTab(isInactive), // Pass inactive status to details tab
           // Second Tab for Appointments
-          isInactive ? _buildInactiveAppointmentMessage() : SpecialistAppointmentsScreen(specialistId: widget.specialistId),
+          isInactive
+              ? _buildInactiveAppointmentMessage()
+              : SpecialistAppointmentsScreen(specialistId: widget.specialistId),
         ],
       ),
     );
@@ -142,8 +160,14 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Card(
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        margin: const EdgeInsets.all(8),
+        elevation: 2,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          side: const BorderSide(
+              color: Color.fromARGB(255, 221, 222, 226), width: 1),
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -155,15 +179,19 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: (specialistData['profile_picture_url'] != null &&
+                      backgroundImage: (specialistData['profile_picture_url'] !=
+                                  null &&
                               specialistData['profile_picture_url'].isNotEmpty)
                           ? NetworkImage(specialistData['profile_picture_url'])
-                          : const AssetImage('assets/images/default_profile.png') as ImageProvider,
+                          : const AssetImage(
+                                  'assets/images/default_profile.png')
+                              as ImageProvider,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Dr. ${specialistData['name'] ?? 'No Name'}',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     if (isInactive) // Show inactive message if applicable
                       Text(
@@ -178,15 +206,23 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
               Divider(color: Colors.grey[300]),
 
               // Specialist Details
-              _buildInfoRow(Icons.email, 'Email', specialistData['email'] ?? 'No Email'),
-              _buildInfoRow(Icons.business, 'Organization', specialistData['organization'] ?? 'N/A'),
-              _buildInfoRow(Icons.access_time, 'Experience',
-                  specialistData['experience_years'] != null ? '${specialistData['experience_years']} years' : 'N/A'),
-              _buildInfoRow(Icons.person, 'Gender', specialistData['gender'] ?? 'N/A'),
+              _buildInfoRow(
+                  Icons.email, 'Email', specialistData['email'] ?? 'No Email'),
+              _buildInfoRow(Icons.business, 'Organization',
+                  specialistData['organization'] ?? 'N/A'),
+              _buildInfoRow(
+                  Icons.access_time,
+                  'Experience',
+                  specialistData['experience_years'] != null
+                      ? '${specialistData['experience_years']} years'
+                      : 'N/A'),
+              _buildInfoRow(
+                  Icons.person, 'Gender', specialistData['gender'] ?? 'N/A'),
               const SizedBox(height: 20),
 
               // About Section
-              const Text('About', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('About',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               Text(
                 specialistData['about'] ?? 'No Information Available',
@@ -200,21 +236,31 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
               if (services.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0),
-                  child: Text('No services added yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                  child: Text('No services added yet.',
+                      style: TextStyle(fontSize: 16, color: Colors.grey)),
                 )
-              else ...services.map((service) {
-                final serviceFee = service['fee'] ?? 'N/A';
-                final serviceName = service['name'] ?? 'Unnamed Service';
+              else
+                ...services.map((service) {
+                  final serviceFee = service['fee'] ?? 'N/A';
+                  final serviceName = service['name'] ?? 'Unnamed Service';
 
-                return Card(
-                  elevation: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  child: ListTile(
-                    title: Text(serviceName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text('Fee: RM $serviceFee', style: const TextStyle(color: Colors.grey)),
-                  ),
-                );
-              }),
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    elevation: 2,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      side: const BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ListTile(
+                      title: Text(serviceName,
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Text('Fee: RM $serviceFee',
+                          style: const TextStyle(color: Colors.grey)),
+                    ),
+                  );
+                }),
 
               const SizedBox(height: 20),
               // Reviews Section
@@ -222,39 +268,51 @@ class _AdminSpecialistsDetailsScreenState extends State<AdminSpecialistsDetailsS
               if (reviews.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0),
-                  child: Text('No reviews available yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                  child: Text('No reviews available yet.',
+                      style: TextStyle(fontSize: 16, color: Colors.grey)),
                 )
-              else ...reviews.map((review) {
-                String reviewDate;
-                if (review['date'] is Timestamp) {
-                  reviewDate = (review['date'] as Timestamp).toDate().toLocal().toString().split(' ')[0];
-                } else if (review['date'] is String) {
-                  reviewDate = review['date'];
-                } else {
-                  reviewDate = 'N/A';
-                }
+              else
+                ...reviews.map((review) {
+                  String reviewDate;
+                  if (review['date'] is Timestamp) {
+                    reviewDate = (review['date'] as Timestamp)
+                        .toDate()
+                        .toLocal()
+                        .toString()
+                        .split(' ')[0];
+                  } else if (review['date'] is String) {
+                    reviewDate = review['date'];
+                  } else {
+                    reviewDate = 'N/A';
+                  }
 
-                final reviewerName = review['reviewer_name'] ?? 'Anonymous';
-                final reviewText = review['review'] ?? 'No Review';
-                final rating = review['rating'] ?? 'N/A';
+                  final reviewerName = review['reviewer_name'] ?? 'Anonymous';
+                  final reviewText = review['review'] ?? 'No Review';
+                  final rating = review['rating'] ?? 'N/A';
 
-                return Card(
-                  elevation: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  child: ListTile(
-                    title: Text(reviewerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Date: $reviewDate', style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                        Text('Rating: $rating / 5', style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                        const SizedBox(height: 4),
-                        Text(reviewText, style: const TextStyle(fontSize: 15)),
-                      ],
+                  return Card(
+                    elevation: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: ListTile(
+                      title: Text(reviewerName,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Date: $reviewDate',
+                              style: const TextStyle(
+                                  fontSize: 14, color: Colors.grey)),
+                          Text('Rating: $rating / 5',
+                              style: const TextStyle(
+                                  fontSize: 14, color: Colors.grey)),
+                          const SizedBox(height: 4),
+                          Text(reviewText,
+                              style: const TextStyle(fontSize: 15)),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
             ],
           ),
         ),

@@ -2,40 +2,53 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth for user ID
 import '../booking_appointment/booking.dart';
-import 'specialist_lists.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SpecialistDetailsScreen extends StatefulWidget {
-  final Specialist specialist;
+  final String specialistId; // Updated class to accept only the ID
 
-  const SpecialistDetailsScreen({super.key, required this.specialist});
+  const SpecialistDetailsScreen({super.key, required this.specialistId});
 
   @override
-  _SpecialistDetailsScreenState createState() => _SpecialistDetailsScreenState();
+  _SpecialistDetailsScreenState createState() =>
+      _SpecialistDetailsScreenState();
 }
 
 class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
-  late Future<DocumentSnapshot> _specialistData;
+  late Future<DocumentSnapshot> _specialistData; // Future to hold specialist data
   late String currentUserId;
   late bool isFavorite;
 
   @override
   void initState() {
     super.initState();
-    _specialistData = _fetchSpecialistData();
-    currentUserId = FirebaseAuth.instance.currentUser!.uid;
-    isFavorite = widget.specialist.isFavorite;
+    _specialistData = _fetchSpecialistData(); // Fetch specialist data upon initialization
+    currentUserId = FirebaseAuth.instance.currentUser!.uid; // Get current user ID
+    isFavorite = false; // Initialize to false
   }
 
   Future<DocumentSnapshot> _fetchSpecialistData() async {
-    final specialistId = widget.specialist.id;
+    // Fetch specialist data from Firestore based on the specialist ID
     return await FirebaseFirestore.instance
         .collection('specialists')
-        .doc(specialistId)
-        .get();
+        .doc(widget.specialistId)
+        .get()
+        .then((doc) async {
+          if (doc.exists) {
+            // Check if the specialist is a favorite
+            isFavorite = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUserId)
+                .collection('favorite_specialist_lists')
+                .doc(widget.specialistId)
+                .get()
+                .then((value) => value.exists);
+          }
+          return doc;
+        });
   }
 
-  Future<void> _updateFavoriteStatus(Specialist specialist) async {
+  Future<void> _updateFavoriteStatus() async {
     final userFavoritesRef = FirebaseFirestore.instance
         .collection('users')
         .doc(currentUserId)
@@ -46,30 +59,27 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
     });
 
     if (isFavorite) {
-      await userFavoritesRef.doc(specialist.id).set({
-        'name': specialist.name,
-        'specialization': specialist.specialization,
-        'organization': specialist.organization,
-        'profile_picture_url': specialist.profilePictureUrl,
+      await userFavoritesRef.doc(widget.specialistId).set({
+        'id': widget.specialistId,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content:
-              Text('Successfully added Dr. ${specialist.name} to favorites.')));
+              Text('Successfully added to favorites.')));
     } else {
-      await userFavoritesRef.doc(specialist.id).delete();
+      await userFavoritesRef.doc(widget.specialistId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-              'Successfully removed Dr. ${specialist.name} from favorites.')));
+              'Successfully removed from favorites.')));
     }
   }
 
   Future<void> _launchGoogleMapsSearch(String organization) async {
     final query = Uri.encodeComponent(organization);
     final url = 'https://www.google.com/maps/search/?api=1&query=$query';
-    
+
     // Check if the URL can be launched
     if (await canLaunch(url)) {
-      await launch(url); // Launch the Google Maps search in the browser or Maps app
+      await launch(url); // Launch Google Maps search
     } else {
       throw 'Could not launch $url';
     }
@@ -77,8 +87,6 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final specialist = widget.specialist;
-
     return Scaffold(
       body: FutureBuilder<DocumentSnapshot>(
         future: _specialistData,
@@ -95,27 +103,28 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
             return const Center(child: Text('Specialist data not found'));
           }
 
-          final data = snapshot.data!.data() as Map<String, dynamic>;
-          final experienceYears = (data['experience_years'] is int)
-              ? (data['experience_years'] as int).toDouble()
-              : (data['experience_years'] ?? 0.0);
-           // Ensure reviews defaults to an empty list if it's null
-        final services = List<Map<String, dynamic>>.from(data['services'] ?? []);
-        final reviews = List<Map<String, dynamic>>.from(data['reviews'] ?? []);
-        final about = data['about'] ?? 'No details available';
+          final specialist = snapshot.data!.data() as Map<String, dynamic>;
+          final experienceYears = (specialist['experience_years'] is int)
+              ? (specialist['experience_years'] as int).toDouble()
+              : (specialist['experience_years'] ?? 0.0);
+
+          // Ensure reviews defaults to an empty list if it's null
+          final services = List<Map<String, dynamic>>.from(specialist['services'] ?? []);
+          final reviews = List<Map<String, dynamic>>.from(specialist['reviews'] ?? []);
+          final about = specialist['about'] ?? 'No details available';
 
           final rating = _calculateAverageRating(reviews);
 
           return CustomScrollView(
             slivers: [
               SliverAppBar(
-                expandedHeight: 500.0,
+                expandedHeight: 300.0,
                 floating: false,
                 pinned: true,
                 leading: _buildCustomBackButton(),
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
-                    "Dr. ${specialist.name}",
+                    "Dr. ${specialist['name']}",
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -126,7 +135,7 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
                     children: [
                       Positioned.fill(
                         child: Image.network(
-                          specialist.profilePictureUrl,
+                          specialist['profile_picture_url'],
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -159,29 +168,32 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                specialist.specialization,
+                                specialist['specialization'],
                                 style: const TextStyle(
                                     fontSize: 22, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 8),
                               Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   const Icon(Icons.location_on,
                                       color: Color.fromARGB(255, 90, 113, 243)),
                                   const SizedBox(width: 5),
-                                  // Organization name as a hyperlink
-                                  InkWell(
+                                  GestureDetector(
                                     onTap: () {
-                                      _launchGoogleMapsSearch(
-                                          specialist.organization);
+                                      _launchGoogleMapsSearch(specialist['organization']);
                                     },
-                                    child: Text(
-                                      specialist.organization,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        color: Color.fromARGB(255, 90, 113, 243),
-                                        fontWeight: FontWeight.bold,
-                                        decoration: TextDecoration.underline, // Underline to indicate a link
+                                    child: Container(
+                                      constraints: const BoxConstraints(maxWidth: 200),
+                                      child: Text(
+                                        specialist['organization'],
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          color: Color.fromARGB(255, 90, 113, 243),
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                        overflow: TextOverflow.visible,
                                       ),
                                     ),
                                   ),
@@ -191,14 +203,12 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
                           ),
                           IconButton(
                             icon: Icon(
-                              isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
+                              isFavorite ? Icons.favorite : Icons.favorite_border,
                               color: isFavorite ? Color.fromARGB(255, 90, 113, 243) : Colors.grey,
                               size: 30,
                             ),
                             onPressed: () async {
-                              await _updateFavoriteStatus(specialist);
+                              await _updateFavoriteStatus();
                             },
                           ),
                         ],
@@ -229,7 +239,7 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
                       const SizedBox(height: 20),
 
                       Text(
-                        'About Dr. ${specialist.name}:',
+                        'About Dr. ${specialist['name']}:',
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
@@ -258,43 +268,56 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
           );
         },
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => BookingScreen(
-                    specialistName: specialist.name,
-                    specialistId: specialist.id, // Pass the specialistId
+      bottomNavigationBar: FutureBuilder<DocumentSnapshot>(
+        future: _specialistData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox.shrink(); // Return an empty widget or wait indicator
+          }
+          if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+            return const SizedBox.shrink(); // Handle error or no data case
+          }
+
+          final specialistData = snapshot.data!.data() as Map<String, dynamic>;
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-              );
-            },
-            child: const Text(
-              'Book Appointment',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BookingScreen(
+                        specialistName: specialistData['name'],
+                        specialistId: widget.specialistId, // Pass the specialist ID
+                      ),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Book Appointment',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  // Function to calculate the average rating from the reviews
   double _calculateAverageRating(List<Map<String, dynamic>> reviews) {
     if (reviews.isEmpty) return 0.0; // No reviews, return 0.0
 
@@ -309,7 +332,6 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
     return totalRating / reviews.length;
   }
 
-  // Helper method to build modern service list with a numbered counter
   Widget _buildServiceList(List<Map<String, dynamic>> services) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,7 +347,6 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
     );
   }
 
-  // Updated method to build individual service card without icons, but with a numbered counter
   Widget _buildServiceCard(int index, String serviceName, String fee) {
     return Card(
       elevation: 2,
@@ -334,9 +355,8 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            // Counter number in front of the service name
             Text(
-              '$index. ', // Display the number (1. 2. 3. etc.)
+              '$index. ',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Expanded(
@@ -355,31 +375,32 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
     );
   }
 
-// Helper method to build modern reviews section
-Widget _buildReviewsSection(List<Map<String, dynamic>> reviews) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        'Reviews:',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 10),
-      // Check if reviews are empty
-      if (reviews.isEmpty)
+  Widget _buildReviewsSection(List<Map<String, dynamic>> reviews) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         const Text(
-          'No reviews yet.',
-          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
-        )
-      else
-        for (var review in reviews)
-          _buildReviewCard(review['reviewer_name'], review['review'], 
-              (review['rating'] is int) ? (review['rating'] as int).toDouble() : review['rating']),
-    ],
-  );
-}
+          'Reviews:',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        if (reviews.isEmpty)
+          const Text(
+            'No reviews yet.',
+            style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+          )
+        else
+          for (var review in reviews)
+            _buildReviewCard(
+                review['reviewer_name'],
+                review['review'],
+                (review['rating'] is int)
+                    ? (review['rating'] as int).toDouble()
+                    : review['rating']),
+      ],
+    );
+  }
 
-  // Helper method to build individual review card with modern design
   Widget _buildReviewCard(String reviewerName, String review, double rating) {
     return Card(
       elevation: 4,
@@ -390,7 +411,6 @@ Widget _buildReviewsSection(List<Map<String, dynamic>> reviews) {
         child: Row(
           children: [
             const SizedBox(width: 12),
-            // Review details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,7 +427,6 @@ Widget _buildReviewsSection(List<Map<String, dynamic>> reviews) {
                 ],
               ),
             ),
-            // Rating with stars
             Row(
               children: List.generate(
                 5,
@@ -424,14 +443,13 @@ Widget _buildReviewsSection(List<Map<String, dynamic>> reviews) {
     );
   }
 
-  // Helper method to create custom back button
   Widget _buildCustomBackButton() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Material(
-        color: Colors.white, // White background
+        color: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10), // 10px radius
+          borderRadius: BorderRadius.circular(10),
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
@@ -441,8 +459,8 @@ Widget _buildReviewsSection(List<Map<String, dynamic>> reviews) {
           child: const Padding(
             padding: EdgeInsets.all(4.0),
             child: Icon(
-              Icons.arrow_back, // Back icon
-              color: Color.fromARGB(255, 90, 113, 243), // Blue color for the icon
+              Icons.arrow_back,
+              color: Color.fromARGB(255, 90, 113, 243),
             ),
           ),
         ),
@@ -450,26 +468,12 @@ Widget _buildReviewsSection(List<Map<String, dynamic>> reviews) {
     );
   }
 
-  // Helper method to map Firestore icon strings to Flutter Icons
-  IconData _getIcon(String iconName) {
-    switch (iconName) {
-      case 'medical_services':
-        return Icons.medical_services;
-      case 'restaurant_menu':
-        return Icons.restaurant_menu;
-      case 'calendar_today':
-        return Icons.calendar_today;
-      default:
-        return Icons.help_outline;
-    }
-  }
-
-  // Helper method to create info cards (for Experience and Rating)
-  Widget _buildInfoCard(
-      {required IconData icon,
-      required String label,
-      required String value,
-      required Color iconColor}) {
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color iconColor,
+  }) {
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(

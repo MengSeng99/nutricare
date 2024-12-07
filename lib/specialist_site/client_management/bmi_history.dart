@@ -44,6 +44,12 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
       return BmiRecord(
         date: data['date'],
         bmi: double.parse(data['bmi'].toString()),
+        height: double.parse(data['height'].toString()), // New fields
+        weight: double.parse(data['weight'].toString()),
+        age: data['age'],
+        gender: data['gender'],
+        bmiCategory: data['bmiCategory'],
+        idealWeightRange: data['idealWeightRange'],
       );
     }).toList();
 
@@ -52,7 +58,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
       filteredRecords = records; // Initially show all records
       isLoading = false;
     });
-  }
+}
 
   Map<String, List<BmiRecord>> _categorizeRecords(List<BmiRecord> records) {
     final Map<String, List<BmiRecord>> categorizedRecords = {
@@ -291,7 +297,80 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
   }
 
   Widget _buildBmiCard(BmiRecord record) {
-    return Card(
+  return GestureDetector(
+    onTap: () {
+      // Show BMI detail dialog
+      showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            elevation: 16,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'BMI Details',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 90, 113, 243),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Divider(color: Colors.grey.shade400),
+                  const SizedBox(height: 10),
+                  Text(
+                    'BMI: ${record.bmi.toStringAsFixed(1)}',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: getBmiColor(record.bmi), // Get color based on BMI
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _buildDetailRow(Icons.height, 'Height', '${record.height} CM'),
+                  _buildDetailRow(Icons.fitness_center, 'Weight', '${record.weight} KG'),
+                  _buildDetailRow(Icons.calendar_today, 'Age', '${record.age} years'),
+                  _buildDetailRow(Icons.person, 'Gender', record.gender),
+                  _buildDetailRow(Icons.category, 'Category', record.bmiCategory),
+                  _buildDetailRow(Icons.assignment, 'Ideal Weight', record.idealWeightRange),
+                  const SizedBox(height: 10),
+                  Divider(color: Colors.grey.shade400),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Recorded on: ${record.date}',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close the dialog
+                    },
+                    child: const Text('Close', style: TextStyle(color: Colors.white)),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+    child: Card(
       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
@@ -301,127 +380,241 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
       elevation: 2,
       child: ListTile(
         title: Text('BMI: ${record.bmi.toStringAsFixed(1)}',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold,color: getBmiColor(record.bmi))),
         subtitle: Text('Recorded on: ${record.date}',
             style: TextStyle(color: Colors.grey)),
       ),
-    );
+    ),
+  );
+}
+
+Color getBmiColor(double bmi) {
+    if (bmi < 18.5) {
+      return Colors.blue; // Underweight
+    } else if (bmi >= 18.5 && bmi <= 24.9) {
+      return Colors.green; // Normal weight
+    } else if (bmi >= 25.0 && bmi <= 29.9) {
+      return Colors.orange; // Pre-obesity
+    } else if (bmi >= 30.0 && bmi <= 34.9) {
+      return Colors.red; // Obesity class I
+    } else if (bmi >= 35.0 && bmi <= 39.9) {
+      return Colors.red.shade700; // Obesity class II
+    } else {
+      return Colors.red.shade900; // Obesity class III
+    }
   }
 
-  Widget _buildBmiChart(List<BmiRecord> records) {
-    List<FlSpot> chartData = records.map((record) {
-      final DateTime date = DateTime.parse(record.date);
-      return FlSpot(date.millisecondsSinceEpoch.toDouble(), record.bmi);
-    }).toList();
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.45,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.shade400, width: 1),  
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: LineChart(
-        LineChartData(
-          gridData: FlGridData(show: false),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) {
-                  DateTime date =
-                      DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                  // Show only the first and last dates
-                  if (value == chartData.first.x || value == chartData.last.x) {
-                    return SideTitleWidget(
-                      axisSide: meta.axisSide,
-                      child: Text(
-                        '${date.month}/${date.day}',
-                        style: const TextStyle(color: Colors.black54),
-                      ),
-                    );
-                  }
-                  return const SizedBox();
-                },
-              ),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                getTitlesWidget: (value, meta) {
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text(
-                      value.toString(),
-                      style: const TextStyle(color: Colors.black54),
-                    ),
-                  );
-                },
-              ),
-            ),
-            topTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-          ),
-          borderData:
-              FlBorderData(show: true, border: Border.all(color: primaryColor)),
-          minX: chartData.isNotEmpty ? chartData.last.x : 0,
-          maxX: chartData.isNotEmpty
-              ? chartData.first.x
-              : DateTime.now().millisecondsSinceEpoch.toDouble(),
-          minY: 10,
-          maxY: 40,
-          lineBarsData: [
-            LineChartBarData(
-              spots: chartData,
-              isCurved: true,
-              color: Colors.blueAccent,
-              dotData: FlDotData(show: true),
-              belowBarData: BarAreaData(show: false),
-              aboveBarData:
-                  BarAreaData(show: true, color: Colors.blue.withOpacity(0.2)),
-            ),
+Widget _buildDetailRow(IconData icon, String title, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: primaryColor, size: 24), // Use the primary color
+            const SizedBox(width: 8),
+            Text(title, style: const TextStyle(fontSize: 16)),
           ],
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((spot) {
-                  DateTime date =
-                      DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
-                  return LineTooltipItem(
-                    '${date.month}/${date.day}\nBMI: ${spot.y.toStringAsFixed(1)}',
-                    const TextStyle(color: Colors.white),
-                  );
-                }).toList();
-              },
+        ),
+        Text(value, style: const TextStyle(fontSize: 16)),
+      ],
+    ),
+  );
+}
+
+  Widget _buildBmiChart(List<BmiRecord> records) {
+  List<FlSpot> chartData = records.map((record) {
+    final DateTime date = DateTime.parse(record.date);
+    return FlSpot(date.millisecondsSinceEpoch.toDouble(), record.bmi);
+  }).toList();
+
+  return Container(
+    height: MediaQuery.of(context).size.height * 0.45,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(15),
+      border: Border.all(color: Colors.grey.shade400, width: 1),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.1),
+          blurRadius: 10,
+          offset: const Offset(0, 5),
+        ),
+      ],
+    ),
+    child: Column(
+      children: [
+        Expanded(
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(show: false),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (value, meta) {
+                      DateTime date =
+                          DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                      if (value == chartData.first.x || value == chartData.last.x) {
+                        return SideTitleWidget(
+                          axisSide: meta.axisSide,
+                          child: Text(
+                            '${date.month}/${date.day}',
+                            style: const TextStyle(color: Colors.black54),
+                          ),
+                        );
+                      }
+                      return const SizedBox();
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: (value, meta) {
+                      return SideTitleWidget(
+                        axisSide: meta.axisSide,
+                        child: Text(
+                          value.toString(),
+                          style: const TextStyle(color: Colors.black54),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                topTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+              ),
+              borderData:
+                  FlBorderData(show: true, border: Border.all(color: primaryColor)),
+              minX: chartData.isNotEmpty ? chartData.last.x : 0,
+              maxX: chartData.isNotEmpty
+                  ? chartData.first.x
+                  : DateTime.now().millisecondsSinceEpoch.toDouble(),
+              minY: 10,
+              maxY: 40,
+              extraLinesData: ExtraLinesData(
+                horizontalLines: [
+                  HorizontalLine(
+                    y: 18.5,
+                    color: Colors.green.withOpacity(0.8),
+                    strokeWidth: 2,
+                    dashArray: [5, 5],
+                  ),
+                  HorizontalLine(
+                    y: 24.9,
+                    color: Colors.green.withOpacity(0.8),
+                    strokeWidth: 2,
+                    dashArray: [5, 5],
+                  ),
+                ],
+              ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: chartData,
+                  isCurved: true,
+                  color: Colors.blueAccent,
+                  dotData: FlDotData(show: true),
+                  belowBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.2)),
+                  aboveBarData:
+                      BarAreaData(show: false, color: Colors.blue.withOpacity(0.2)),
+                ),
+              ],
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      DateTime date =
+                          DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                      return LineTooltipItem(
+                        '${date.month}/${date.day}\nBMI: ${spot.y.toStringAsFixed(1)}',
+                        const TextStyle(color: Colors.white),
+                      );
+                    }).toList();
+                  },
+                ),
+              ),
             ),
           ),
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 10), // Add spacing between the chart and the description
+        // Description Section
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "BMI values.",
+                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 2,
+                      color: Colors.green,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "Normal BMI range (18.5 - 24.9).",
+                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
 }
 
 class BmiRecord {
   final String date;
   final double bmi;
+  final double height; // Additional fields
+  final double weight;
+  final int age;
+  final String gender;
+  final String bmiCategory;
+  final String idealWeightRange;
 
   BmiRecord({
     required this.date,
     required this.bmi,
+    required this.height,
+    required this.weight,
+    required this.age, // Add other parameters
+    required this.gender,
+    required this.bmiCategory,
+    required this.idealWeightRange,
   });
 }
 

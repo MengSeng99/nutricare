@@ -90,16 +90,46 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                     style: const TextStyle(color: Colors.black),
                   ),
                 ),
-                 Column(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.filter_list,
-                        color: Color.fromARGB(255, 90, 113, 243)),
-                    onPressed: () => _showFilterDialog(),
+                const SizedBox(
+                    width:
+                        12), // Add some space between the search field and filter button
+                InkWell(
+                  onTap: _showFilterDialog,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: selectedSpecialistIds.isNotEmpty
+                          ? Color.fromARGB(255, 90, 113, 243).withOpacity(0.1)
+                          : Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0, vertical: 6.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.filter_list,
+                            color: selectedSpecialistIds.isNotEmpty
+                                ? Color.fromARGB(255, 90, 113, 243)
+                                : Colors.grey,
+                          ),
+                          const SizedBox(
+                              height: 4), // Add space between icon and text
+                          Text(
+                            'Filter',
+                            style: TextStyle(
+                              color: selectedSpecialistIds.isNotEmpty
+                                  ? Color.fromARGB(255, 90, 113, 243)
+                                  : Colors.grey,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const Text("Filter", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                ],
-              ),
+                ),
               ],
             ),
           ),
@@ -126,6 +156,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -394,6 +425,7 @@ class ArticlesListView extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
