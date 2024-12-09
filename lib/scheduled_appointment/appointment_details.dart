@@ -393,7 +393,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
             ],
           ),
           IconButton(
-            icon: const Icon(Icons.download),
+            icon: const Icon(Icons.download_rounded, color: Color(0xFF5A71F3)),
             onPressed: () async {
               if (await canLaunch(filePath)) {
                 await launch(filePath);

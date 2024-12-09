@@ -51,7 +51,7 @@ class _AdminEnquiryReviewScreenState extends State<AdminEnquiryReviewScreen> {
         _enquiries = enquiries;
       });
     } catch (e) {
-      print("Error fetching enquiries: $e");
+      // print("Error fetching enquiries: $e");
     } finally {
       setState(() {
         _loading = false;

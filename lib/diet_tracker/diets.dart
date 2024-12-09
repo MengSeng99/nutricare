@@ -13,7 +13,7 @@ class DietsScreen extends StatefulWidget {
 
 class _DietsScreenState extends State<DietsScreen> {
   DateTime _selectedDate = DateTime.now();
-  int dailyCalorieGoal = -1; // Initialize with a value that indicates no goal
+  int dailyCalorieGoal = 999; // Initialize with a value that indicates no goal
   int consumedCalories = 0; // Will be retrieved from Firestore
   int totalCarbs = 0; // Will be retrieved from Firestore
   int totalProtein = 0; // Will be retrieved from Firestore
@@ -541,6 +541,7 @@ class _DietsScreenState extends State<DietsScreen> {
                       mealType: mealType,
                       selectedDate:
                           _selectedDate, // Pass the selected date here
+                      calorieGoal: dailyCalorieGoal,
                     ),
                   ),
                 ).then((shouldRefresh) {
@@ -612,48 +613,73 @@ class _DietsScreenState extends State<DietsScreen> {
     );
   }
 
-// New method to remove a specific meal from Firestore
-  Future<void> _removeMeal(String mealType) async {
-    User? user = _auth.currentUser;
-    if (user == null) return;
+Future<void> _removeMeal(String mealType) async {
+  User? user = _auth.currentUser;
+  if (user == null) return;
 
-    String dateKey =
-        '${_selectedDate.year}${_selectedDate.month.toString().padLeft(2, '0')}${_selectedDate.day.toString().padLeft(2, '0')}';
+  String dateKey =
+      '${_selectedDate.year}${_selectedDate.month.toString().padLeft(2, '0')}${_selectedDate.day.toString().padLeft(2, '0')}';
 
-    try {
-      // Reference to the diet history document
-      DocumentReference dietDocRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('dietHistory')
-          .doc(dateKey);
+  try {
+    // Reference to the diet history document
+    DocumentReference dietDocRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('dietHistory')
+        .doc(dateKey);
 
-      // Remove the specific meal type
-      await dietDocRef.update({
-        mealType: FieldValue.delete(),
-      });
+    // Remove the specific meal type
+    await dietDocRef.update({
+      mealType: FieldValue.delete(),
+    });
 
+    // Check if the document still has any meal types
+    DocumentSnapshot updatedDietSnapshot = await dietDocRef.get();
+    Map<String, dynamic>? updatedDietData = updatedDietSnapshot.data() as Map<String, dynamic>?;
+
+    bool hasMeals = updatedDietData != null &&
+        updatedDietData.keys.any((key) => ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Other'].contains(key));
+
+    if (!hasMeals) {
+      // If there are no meal types left, delete the document and refresh the state
+      await dietDocRef.delete(); // Delete the document if no meals left.
+
+
+    } else {
       // Reload diet data to reflect the changes
       _loadDietData();
-
-      // Show a success snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$mealType meal removed successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      print('Error removing meal: $e');
-      // Show an error snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to remove $mealType meal'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
+
+    // Call setState to refresh the UI
+    setState(() {
+      // Clear the local meals list if deleting the last meal
+      if (!hasMeals) {
+        consumedCalories = 0; // Reset the calorie count
+        totalCarbs = 0; // Reset total carbs
+        totalProtein = 0; // Reset total protein
+        totalFat = 0; // Reset total fat
+
+        _loadDietData();
+      }
+    });
+
+    // Show a success snackbar for removing the meal
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$mealType meal removed successfully'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  } catch (e) {
+    // Show an error snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to remove $mealType meal'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
 
   // Function to select a date using the DatePicker dialog
   Future<void> _selectDate(BuildContext context) async {
@@ -672,271 +698,276 @@ class _DietsScreenState extends State<DietsScreen> {
     }
   }
 
-  void _showManualFoodLogDialog() {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController caloriesController = TextEditingController();
-    final TextEditingController proteinController = TextEditingController();
-    final TextEditingController carbsController = TextEditingController();
-    final TextEditingController fatController = TextEditingController();
-    String selectedMealType = 'Breakfast'; // Default meal type
-    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+ void _showManualFoodLogDialog() {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController caloriesController = TextEditingController();
+  final TextEditingController proteinController = TextEditingController();
+  final TextEditingController carbsController = TextEditingController();
+  final TextEditingController fatController = TextEditingController();
+  String selectedMealType = 'Breakfast'; // Default meal type
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView( // Prevent overflow
                 child: Form(
                   key: formKey,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Log Food Manually',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color.fromARGB(255, 90, 113, 243),
-                          ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Log Food Manually',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 90, 113, 243),
                         ),
-                        SizedBox(height: 16),
-                        // Meal Type Dropdown
-                        DropdownButtonFormField<String>(
-                          value: selectedMealType,
-                          decoration: InputDecoration(
-                            labelText: 'Meal Type',
-                            border: OutlineInputBorder(),
-                          ),
-                          items:
-                              ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Other']
-                                  .map((type) => DropdownMenuItem(
-                                        value: type,
-                                        child: Text(type),
-                                      ))
-                                  .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedMealType = value!;
-                            });
-                          },
+                      ),
+                      SizedBox(height: 16),
+                      // Meal Type Dropdown
+                      DropdownButtonFormField<String>(
+                        value: selectedMealType,
+                        decoration: InputDecoration(
+                          labelText: 'Meal Type',
+                          border: OutlineInputBorder(),
                         ),
-                        SizedBox(height: 16),
-                        // Meal Name
-                        TextFormField(
-                          controller: nameController,
-                          decoration: InputDecoration(
-                            labelText: 'Meal Name',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a meal name';
-                            }
-                            return null;
-                          },
+                        items: ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Other']
+                            .map((type) => DropdownMenuItem(
+                                  value: type,
+                                  child: Text(type),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedMealType = value!;
+                          });
+                        },
+                      ),
+                      SizedBox(height: 16),
+                      // Meal Name
+                      TextFormField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Meal Name',
+                          border: OutlineInputBorder(),
                         ),
-                        SizedBox(height: 16),
-                        // Calories
-                        TextFormField(
-                          controller: caloriesController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Calories (kcal)',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter calories';
-                            }
-                            if (int.tryParse(value) == null) {
-                              return 'Please enter a valid number';
-                            }
-                            if (int.parse(value) < 0) {
-                              return 'Calories cannot be negative';
-                            }
-                            return null;
-                          },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a meal name';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16),
+                      // Calories
+                      TextFormField(
+                        controller: caloriesController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Calories (kcal)',
+                          border: OutlineInputBorder(),
                         ),
-                        SizedBox(height: 16),
-                        // Protein
-                        TextFormField(
-                          controller: proteinController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Protein (g)',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter protein amount';
-                            }
-                            if (int.tryParse(value) == null) {
-                              return 'Please enter a valid number';
-                            }
-                            if (int.parse(value) < 0) {
-                              return 'Protein cannot be negative';
-                            }
-                            return null;
-                          },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter calories';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          if (int.parse(value) < 0) {
+                            return 'Calories cannot be negative';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16),
+                      // Protein
+                      TextFormField(
+                        controller: proteinController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Protein (g)',
+                          border: OutlineInputBorder(),
                         ),
-                        SizedBox(height: 16),
-                        // Carbs
-                        TextFormField(
-                          controller: carbsController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Carbohydrates (g)',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter carbohydrate amount';
-                            }
-                            if (int.tryParse(value) == null) {
-                              return 'Please enter a valid number';
-                            }
-                            if (int.parse(value) < 0) {
-                              return 'Carbohydrates cannot be negative';
-                            }
-                            return null;
-                          },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter protein amount';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          if (int.parse(value) < 0) {
+                            return 'Protein cannot be negative';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16),
+                      // Carbs
+                      TextFormField(
+                        controller: carbsController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Carbohydrates (g)',
+                          border: OutlineInputBorder(),
                         ),
-                        SizedBox(height: 16),
-                        // Fat
-                        TextFormField(
-                          controller: fatController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Fat (g)',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter fat amount';
-                            }
-                            if (int.tryParse(value) == null) {
-                              return 'Please enter a valid number';
-                            }
-                            if (int.parse(value) < 0) {
-                              return 'Fat cannot be negative';
-                            }
-                            return null;
-                          },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter carbohydrate amount';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          if (int.parse(value) < 0) {
+                            return 'Carbohydrates cannot be negative';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16),
+                      // Fat
+                      TextFormField(
+                        controller: fatController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Fat (g)',
+                          border: OutlineInputBorder(),
                         ),
-                        SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey,
-                              ),
-                              onPressed: () {
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter fat amount';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          if (int.parse(value) < 0) {
+                            return 'Fat cannot be negative';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey,
+                            ),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('Cancel',
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Color.fromARGB(255, 90, 113, 243),
+                            ),
+                            onPressed: () {
+                              // Validate the form
+                              if (formKey.currentState!.validate()) {
+                                _saveManualFoodLog(
+                                  selectedMealType,
+                                  nameController.text,
+                                  int.parse(caloriesController.text),
+                                  int.parse(proteinController.text),
+                                  int.parse(carbsController.text),
+                                  int.parse(fatController.text),
+                                );
                                 Navigator.of(context).pop();
-                              },
-                              child: Text('Cancel',
-                                  style: TextStyle(color: Colors.white)),
-                            ),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Color.fromARGB(255, 90, 113, 243),
-                              ),
-                              onPressed: () {
-                                // Validate the form
-                                if (formKey.currentState!.validate()) {
-                                  _saveManualFoodLog(
-                                    selectedMealType,
-                                    nameController.text,
-                                    int.parse(caloriesController.text),
-                                    int.parse(proteinController.text),
-                                    int.parse(carbsController.text),
-                                    int.parse(fatController.text),
-                                  );
-                                  Navigator.of(context).pop();
-                                }
-                              },
-                              child: Text('Add',
-                                  style: TextStyle(color: Colors.white)),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                              }
+                            },
+                            child: Text('Add',
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
-            );
-          },
-        );
-      },
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+Future<void> _saveManualFoodLog(
+  String mealType,
+  String name,
+  int calories,
+  int protein,
+  int carbs,
+  int fat,
+) async {
+  User? user = _auth.currentUser;
+  if (user == null) return;
+
+  String dateKey =
+      '${_selectedDate.year}${_selectedDate.month.toString().padLeft(2, '0')}${_selectedDate.day.toString().padLeft(2, '0')}';
+
+  try {
+    // Reference to the diet history document
+    DocumentReference dietDocRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('dietHistory')
+        .doc(dateKey);
+
+    // Get the current document data
+    DocumentSnapshot dietSnapshot = await dietDocRef.get();
+
+    // Prepare the meal data
+    Map<String, dynamic> mealData = {
+      'name': name,
+      'Calories': calories,
+      'Protein': protein,
+      'Carbohydrate': carbs,
+      'Fat': fat,
+    };
+
+    // If document doesn't exist, create it with the meal data and calorie goal
+    if (!dietSnapshot.exists) {
+      await dietDocRef.set({
+        'calorieGoal': dailyCalorieGoal, // Save daily calorie goal
+        mealType: mealData, // Save meal data
+      });
+    } else {
+      // Update the specific meal type without overwriting the calorie goal
+      await dietDocRef.update({
+        mealType: mealData,
+      });
+    }
+
+    // Reload diet data to reflect the changes
+    _loadDietData();
+
+    // Show success scaffold for adding meal
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Food logged successfully!'),
+      backgroundColor: Colors.green,),
+    );
+  } catch (e) {
+    // Show an error snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to save meal. Please try again.')),
     );
   }
-
-  Future<void> _saveManualFoodLog(
-    String mealType,
-    String name,
-    int calories,
-    int protein,
-    int carbs,
-    int fat,
-  ) async {
-    User? user = _auth.currentUser;
-    if (user == null) return;
-
-    String dateKey =
-        '${_selectedDate.year}${_selectedDate.month.toString().padLeft(2, '0')}${_selectedDate.day.toString().padLeft(2, '0')}';
-
-    try {
-      // Reference to the diet history document
-      DocumentReference dietDocRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('dietHistory')
-          .doc(dateKey);
-
-      // Get the current document data
-      DocumentSnapshot dietSnapshot = await dietDocRef.get();
-
-      // Prepare the meal data
-      Map<String, dynamic> mealData = {
-        'name': name,
-        'Calories': calories,
-        'Protein': protein,
-        'Carbohydrate': carbs,
-        'Fat': fat,
-      };
-
-      // If document doesn't exist, create it
-      if (!dietSnapshot.exists) {
-        await dietDocRef.set({
-          mealType: mealData,
-        });
-      } else {
-        // Update the specific meal type
-        await dietDocRef.update({
-          mealType: mealData,
-        });
-      }
-
-      // Reload diet data to reflect the changes
-      _loadDietData();
-    } catch (e) {
-      print('Error saving manual food log: $e');
-      // Optionally show an error dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save meal. Please try again.')),
-      );
-    }
-  }
+}
 }
 
 class Meal {

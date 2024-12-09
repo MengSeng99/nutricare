@@ -6,12 +6,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class EditArticleScreen extends StatefulWidget {
+  final VoidCallback onArticleUpdated;
   final String articleId; // ID of the article to be edited
   final String title;
   final String subtitle;
   final String description;
   final String content;
   final String imageUrl;
+  final List<String> tags; // Add tags field
+  final String? youtubeLink; // Add YouTube link field
 
   const EditArticleScreen({
     super.key,
@@ -21,6 +24,9 @@ class EditArticleScreen extends StatefulWidget {
     required this.description,
     required this.content,
     required this.imageUrl,
+    required this.tags, // Initialize with existing tags
+    this.youtubeLink, // Initialize with existing YouTube link
+    required this.onArticleUpdated,
   });
 
   @override
@@ -32,6 +38,9 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
   final TextEditingController subtitleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
+  final TextEditingController youtubeLinkController = TextEditingController();
+  final TextEditingController tagsController = TextEditingController(); // Controller for tags
+  
   File? _image; // To hold the selected image
   final ImagePicker _picker = ImagePicker();
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -39,10 +48,13 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
   @override
   void initState() {
     super.initState();
+    // Populate the controllers with the current article data
     titleController.text = widget.title;
     subtitleController.text = widget.subtitle;
     descriptionController.text = widget.description;
     contentController.text = widget.content;
+    youtubeLinkController.text = widget.youtubeLink ?? '';
+    tagsController.text = widget.tags.join(', '); // Join existing tags for easy editing
   }
 
   @override
@@ -126,6 +138,14 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
 
                 // Content TextField
                 _buildTextField(contentController, 'Content', maxLines: 10),
+                const SizedBox(height: 10),
+
+                // YouTube Link TextField
+                _buildTextField(youtubeLinkController, 'YouTube Link'),
+                const SizedBox(height: 10),
+
+                // Tags TextField
+                _buildTextField(tagsController, 'Tags (comma separated)'),
                 const SizedBox(height: 20),
 
                 // Save button
@@ -159,7 +179,7 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      style: TextStyle(fontSize: 16),
+      style: const TextStyle(fontSize: 16),
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(
@@ -193,7 +213,8 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
         subtitleController.text == widget.subtitle &&
         descriptionController.text == widget.description &&
         contentController.text == widget.content &&
-        _image == null) {
+        tagsController.text == widget.tags.join(', ') &&
+        _image == null && youtubeLinkController.text == (widget.youtubeLink ?? '')) {
       _showSnackbar('No changes made.');
       return; // Do not update if no changes
     }
@@ -219,8 +240,12 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
       return;
     }
 
-    // Get the user ID from Firebase Auth
-    String? specialistId = _auth.currentUser?.uid;
+    // Convert tags from string to list and trim spaces
+  List<String> tags = tagsController.text
+      .split(',')
+      .map((tag) => tag.trim()) // Trim whitespace from each tag
+      .where((tag) => tag.isNotEmpty) // Remove empty tags
+      .toList();
 
     String imageUrl;
     if (_image != null) {
@@ -245,7 +270,8 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
       'subtitle': subtitleController.text,
       'description': descriptionController.text,
       'content': contentController.text,
-      'specialistId': specialistId,
+      'tags': tags, // Save the updated tags
+      'youtubeLink': youtubeLinkController.text, // Save the YouTube link
       'lastUpdate': lastUpdate, // Save the last update timestamp
     });
 
@@ -254,13 +280,16 @@ class _EditArticleScreenState extends State<EditArticleScreen> {
     subtitleController.clear();
     descriptionController.clear();
     contentController.clear();
+    youtubeLinkController.clear();
+    tagsController.clear();
     setState(() {
-      _image = null;
+      _image = null; // Reset the image state
     });
+ // After successfully updating the article
+    widget.onArticleUpdated(); // Call the provided callback
 
     // Navigate back
     Navigator.pop(context); // Close the editing screen
-
     _showSnackbar('Article updated successfully.');
   }
 

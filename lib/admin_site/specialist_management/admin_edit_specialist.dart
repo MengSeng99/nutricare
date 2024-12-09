@@ -470,8 +470,13 @@ class _EditSpecialistScreenState extends State<EditSpecialistScreen> {
                     }
 
                     return Card(
-                      elevation: 4,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
+                     elevation: 2,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    side: const BorderSide(
+                        color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                       child: ListTile(
                         title: Text(review['reviewer_name'] ?? 'Anonymous',
                             style:

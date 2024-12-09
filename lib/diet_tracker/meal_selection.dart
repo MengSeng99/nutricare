@@ -6,11 +6,13 @@ import 'package:intl/intl.dart';
 class MealSelectionScreen extends StatefulWidget {
   final String mealType;
   final DateTime selectedDate;
+  final int calorieGoal;
 
   const MealSelectionScreen({
     super.key,
     required this.mealType,
     required this.selectedDate,
+    required this.calorieGoal,
   });
 
   @override
@@ -123,53 +125,54 @@ class _MealSelectionScreenState extends State<MealSelectionScreen> {
     );
   }
 
-  void addToLog(
-      String title, int calories, int protein, int carbs, int fat) async {
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+void addToLog(
+    String title, int calories, int protein, int carbs, int fat) async {
+  final User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
 
-    String userId = user.uid;
-    String mealType = widget.mealType;
-    String dateKey = DateFormat('yyyyMMdd').format(widget.selectedDate);
+  String userId = user.uid;
+  String mealType = widget.mealType;
+  String dateKey = DateFormat('yyyyMMdd').format(widget.selectedDate);
+  
+  Map<String, dynamic> mealData = {
+    'name': title,
+    'Calories': calories,
+    'Protein': protein,
+    'Carbohydrate': carbs,
+    'Fat': fat,
+  };
 
-    Map<String, dynamic> mealData = {
-      'name': title,
-      'Calories': calories,
-      'Protein': protein,
-      'Carbohydrate': carbs,
-      'Fat': fat,
-    };
+  try {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('dietHistory')
+        .doc(dateKey)
+        .set({
+      'calorieGoal': widget.calorieGoal, // Save the calorie goal
+      mealType: mealData,
+    }, SetOptions(merge: true));
 
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('dietHistory')
-          .doc(dateKey)
-          .set({
-        mealType: mealData,
-      }, SetOptions(merge: true));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:
+            Text('$title added to log! You may view it in the Diet History.'),
+        duration: const Duration(seconds: 4),
+        backgroundColor: const Color.fromARGB(255, 90, 113, 243),
+      ),
+    );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text('$title added to log! You may view it in the Diet History.'),
-          duration: const Duration(seconds: 4),
-          backgroundColor: const Color.fromARGB(255, 90, 113, 243),
-        ),
-      );
-
-      Navigator.pop(context, true);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Error adding to log.'),
-          duration: const Duration(seconds: 2),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+    Navigator.pop(context, true);
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Error adding to log.'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

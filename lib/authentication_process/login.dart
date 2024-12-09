@@ -81,7 +81,7 @@ class _LoginPageState extends State<LoginPage> {
                   }
                   if (_isSpecialistOrAdmin &&
                       !value.endsWith('@nutricare.com')) {
-                    return 'Only @nutricare.com emails can login as Specialist/Admin.';
+                    return 'Your email are not authorized as Specialist/Admin.';
                   }
                   return null; // No error
                 },
@@ -233,12 +233,43 @@ class _LoginPageState extends State<LoginPage> {
                         }
                       }
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text((e as FirebaseAuthException).message ??
-                              'Login failed'),
-                        ),
-                      );
+                      // Handle specific cases for login failure
+                      if (e is FirebaseAuthException) {
+                        String errorMessage;
+                        switch (e.code) {
+                          case 'invalid-email':
+                            errorMessage = 'The email address is not valid.';
+                            break;
+                          case 'user-disabled':
+                            errorMessage =
+                                'User with this email has been disabled.';
+                            break;
+                          case 'user-not-found':
+                            errorMessage = 'No user found with this email.';
+                            break;
+                          case 'wrong-password':
+                            errorMessage =
+                                'The password provided is incorrect.';
+                            break;
+                          default:
+                            errorMessage = 'Login failed. Please try again.';
+                        }
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(errorMessage),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      } else {
+                        // If it is not a FirebaseAuthException
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('An unexpected error occurred.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     }
                   }
                 },

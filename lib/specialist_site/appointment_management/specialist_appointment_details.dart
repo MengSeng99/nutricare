@@ -512,7 +512,7 @@ Future<void> _deleteReport(String fileId) async {
       );
     }
   } catch (e) {
-    print('Error deleting report: $e');
+    // print('Error deleting report: $e');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Failed to delete report: $e')),
     );
@@ -633,7 +633,7 @@ Future<bool> _showDeleteConfirmationDialog(BuildContext context) {
     String dateTimeString =
         "${DateFormat("MMMM dd, yyyy").format(widget.date)} ${widget.time}";
 
-    print("DateTime String: $dateTimeString"); // Debugging line
+    // print("DateTime String: $dateTimeString"); // Debugging line
 
     try {
       // Use HH:mm for 24-hour format
@@ -694,7 +694,7 @@ Future<bool> _showDeleteConfirmationDialog(BuildContext context) {
         );
       }
     } catch (e) {
-      print("Error parsing date and time: $e"); // Log the error for debugging
+      // print("Error parsing date and time: $e"); // Log the error for debugging
 
       // Show an error message in case of failure
       ScaffoldMessenger.of(context).showSnackBar(
@@ -798,7 +798,7 @@ Future<bool> _showDeleteConfirmationDialog(BuildContext context) {
         return snapshot.data()?['rate'] ?? 1.0; // Default to 100% if not set
       }
     } catch (e) {
-      print("Error fetching distribution rate: $e");
+      // print("Error fetching distribution rate: $e");
     }
     return 1.0; // Return 100% as default in case of error
   }

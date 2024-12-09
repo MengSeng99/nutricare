@@ -162,7 +162,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
     });
   }
 
-   void _showSortOptions(BuildContext context) {
+  void _showSortOptions(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -198,13 +198,6 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
     );
   }
 
-  void _clearSearchField() {
-    searchController.clear();
-    setState(() {
-      searchKeyword = '';
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -219,12 +212,17 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                   controller: searchController,
                   decoration: InputDecoration(
                     hintText: "Client Name/ Appointment ID",
-                    hintStyle: const TextStyle(color: Colors.grey,fontSize: 14),
+                    hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: searchKeyword.isNotEmpty // Clear button inside the search field
                         ? IconButton(
                             icon: const Icon(Icons.clear),
-                            onPressed: _clearSearchField,
+                            onPressed: () {
+                              searchController.clear();
+                              setState(() {
+                                searchKeyword = '';
+                              });
+                            },
                           )
                         : null,
                     filled: true,
@@ -237,7 +235,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                 ),
               ),
               const SizedBox(width: 8),
-               InkWell(
+              InkWell(
                 onTap: () {
                   _showSortOptions(context);
                 },
@@ -276,28 +274,42 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
             future: _appointmentsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: Color.fromARGB(255, 90, 113, 243),
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        color: Color.fromARGB(255, 90, 113, 243),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Loading Appointment...',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Loading Appointment...',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),);
+                );
               }
 
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                // Customize the no appointments found message based on the status
+                String noAppointmentsMessage;
+                if (widget.statusFilter.contains('Confirmed') || widget.statusFilter.contains('Pending Confirmation')) {
+                  noAppointmentsMessage = 'No Scheduled Appointments Found';
+                } else if (widget.statusFilter.contains('Completed')) {
+                  noAppointmentsMessage = 'No Completed Appointments Found';
+                } else if (widget.statusFilter.contains('Canceled')) {
+                  noAppointmentsMessage = 'No Canceled Appointments Found';
+                } else {
+                  noAppointmentsMessage = 'No Appointments Found'; // Fallback message
+                }
+
                 return Center(
                   child: Text(
-                    "No Scheduled Appointments Found",
+                    noAppointmentsMessage,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

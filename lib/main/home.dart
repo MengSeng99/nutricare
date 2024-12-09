@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../food_recipe/food_recipe.dart';
+import 'all_articles.dart';
 import 'articles.dart';
 import 'nearest_specialist.dart';
 import 'virtual_consultation.dart';
@@ -64,8 +65,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchArticles() async {
   try {
-    QuerySnapshot querySnapshot =
-        await FirebaseFirestore.instance.collection('articles').get();
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('articles')
+        .orderBy('postDate', descending: true) // Sort by postDate in descending order
+        .limit(3) // Limit the articles to the 3 most recent
+        .get();
+
     setState(() {
       _articles = querySnapshot.docs.map((doc) {
         return {
@@ -79,8 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList().where((article) => article['specialistId'].isNotEmpty).toList(); // Ensure specialistId is not empty
     });
   } catch (e) {
-    // print("Error fetching articles: $e");
-    // Handle error here
+    // Handle error here (consider implementing some logging)
+    // print("Error fetching articles: $e"); 
   }
 }
 
@@ -118,33 +123,51 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // Function to build articles and blogs section with pagination
   Widget _buildArticlesSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: MediaQuery.of(context).size.height *
-              0.25, // Adjust height to fit your design
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: PageView.builder(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
-            itemCount: _articles.length,
-            itemBuilder: (context, index) {
-              return _buildArticleCard(_articles[index]);
-            },
-          ),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        height: MediaQuery.of(context).size.height * 0.25, // Adjust height to fit your design
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: PageView.builder(
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          itemCount: _articles.length,
+          itemBuilder: (context, index) {
+            return _buildArticleCard(_articles[index]);
+          },
         ),
-        const SizedBox(height: 10), // Space before indicators
-        _buildPageIndicators(),
-      ],
-    );
-  }
+      ),
+      const SizedBox(height: 10), // Space before indicators
+      _buildPageIndicators(),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.end, // Align to the right
+        children: [
+          TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AllArticlesScreen()),
+              );
+            },
+            child: const Text(
+              'View More Articles',
+              style: TextStyle(
+                color: Color.fromARGB(255, 90, 113, 243) , // You can style this button as needed
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+}
 
   // Build page indicators
   Widget _buildPageIndicators() {
@@ -257,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // List of services with icons and descriptions
   final List<Map<String, dynamic>> _services = const [
     {'icon': Icons.restaurant_outlined, 'label': 'Food Recipe'},
-    {'icon': Icons.calendar_today_rounded, 'label': 'Book an Appointment'},
+    {'icon': Icons.calendar_today_rounded, 'label': 'Book Appointment'},
     {'icon': Icons.map_rounded, 'label': 'Nearby Specialists'},
     {'icon': Icons.monitor_weight_rounded, 'label': 'BMI Tracker'},
     {'icon': Icons.book_rounded, 'label': 'Health Records'},
@@ -289,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (context, index) {
           return GestureDetector(
             onTap: () {
-              if (_services[index]['label'] == 'Book an Appointment') {
+              if (_services[index]['label'] == 'Book Appointment') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(

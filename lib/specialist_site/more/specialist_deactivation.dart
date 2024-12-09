@@ -68,7 +68,7 @@ class _SpecialistDeactivationState extends State<SpecialistDeactivation> {
         });
       }
     } catch (e) {
-      print("Error fetching enquiry: $e");
+      // print("Error fetching enquiry: $e");
     } finally {
       setState(() {
         _loading = false;
@@ -80,7 +80,7 @@ class _SpecialistDeactivationState extends State<SpecialistDeactivation> {
     try {
       setState(() {});
     } catch (e) {
-      print("Error fetching past enquiries: $e");
+      // print("Error fetching past enquiries: $e");
     }
   }
 

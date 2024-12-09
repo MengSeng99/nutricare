@@ -149,11 +149,7 @@ Future<void> saveTimeSlotsToFirestore(String specialistId) async {
 
       // Update the Firestore document
       await appointmentDocRef.set({'date_slots': dateSlots}, SetOptions(merge: true));
-      
-      print('Added timeslots for $dateKey: $timeSlots');
     }
-
-    print('All time slots added successfully!');
   }
   // Widget to build each setting option
   Widget _buildSettingOption(BuildContext context, IconData icon, String title, VoidCallback onTap) {

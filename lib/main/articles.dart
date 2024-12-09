@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'all_articles.dart';
 
 class ArticleScreen extends StatefulWidget {
   final String title;
@@ -30,6 +32,9 @@ class _ArticleScreenState extends State<ArticleScreen> {
   bool isLiked = false;
   String subtitle = '';
   String content = '';
+  List<String> tags = [];
+  String youtubeLink = ''; 
+  Timestamp? lastUpdate; 
 
   @override
   void initState() {
@@ -48,13 +53,11 @@ class _ArticleScreenState extends State<ArticleScreen> {
       if (doc.exists) {
         setState(() {
           likeCount = doc['likeCount'] ?? 0;
-          isLiked = (doc['likedBy'] ?? []).contains(FirebaseAuth
-              .instance.currentUser?.uid); // Check if liked by current user
+          isLiked = (doc['likedBy'] ?? [])
+              .contains(FirebaseAuth.instance.currentUser?.uid);
         });
       }
-    } catch (e) {
-      // print("Error fetching like count: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> _toggleLike() async {
@@ -68,22 +71,20 @@ class _ArticleScreenState extends State<ArticleScreen> {
         await articleRef.update({
           'likeCount': likeCount,
           'likedBy':
-              FieldValue.arrayRemove([FirebaseAuth.instance.currentUser?.uid])
+              FieldValue.arrayRemove([FirebaseAuth.instance.currentUser?.uid]),
         });
       } else {
         likeCount += 1;
         await articleRef.update({
           'likeCount': likeCount,
           'likedBy':
-              FieldValue.arrayUnion([FirebaseAuth.instance.currentUser?.uid])
+              FieldValue.arrayUnion([FirebaseAuth.instance.currentUser?.uid]),
         });
       }
       setState(() {
         isLiked = !isLiked;
       });
-    } catch (e) {
-      // print("Error updating like count: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> _fetchSpecialistInfo() async {
@@ -98,9 +99,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
           specialistProfileUrl = doc['profile_picture_url'] ?? '';
         });
       }
-    } catch (e) {
-      // print("Error fetching specialist info: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> _fetchArticleContent() async {
@@ -113,15 +112,20 @@ class _ArticleScreenState extends State<ArticleScreen> {
         setState(() {
           subtitle = doc['subtitle'] ?? 'No subtitle found';
           content = doc['content'] ?? 'No content found';
-        });
-      } else {
-        setState(() {
-          subtitle = 'No subtitle or content found';
-          content = '';
+          tags = (doc['tags'] != null)
+              ? List<String>.from(doc['tags'].map((tag) => tag.toString()))
+              : [];
+          youtubeLink =
+              (doc.data() as Map<String, dynamic>).containsKey('youtubeLink')
+                  ? doc['youtubeLink'] ?? ''
+                  : ''; 
+          lastUpdate =
+              (doc.data() as Map<String, dynamic>).containsKey('lastUpdate')
+                  ? doc['lastUpdate'] as Timestamp
+                  : null;
         });
       }
     } catch (e) {
-      // print("Error fetching article content: $e");
       setState(() {
         subtitle = 'Error fetching subtitle or content';
         content = '';
@@ -141,6 +145,25 @@ class _ArticleScreenState extends State<ArticleScreen> {
       return '${diff.inMinutes}m ago';
     }
     return 'Just now';
+  }
+
+  String _getYoutubeThumbnail(String videoUrl) {
+    final RegExp regex = RegExp(
+        r'^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^&\n]{11})');
+    final match = regex.firstMatch(videoUrl);
+    if (match != null) {
+      String videoId = match.group(1)!;
+      return 'https://img.youtube.com/vi/$videoId/0.jpg'; 
+    }
+    return ''; 
+  }
+
+  Future<void> _launchURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
   }
 
   @override
@@ -176,6 +199,51 @@ class _ArticleScreenState extends State<ArticleScreen> {
               ),
               const SizedBox(height: 18),
 
+              // Display Tags at the Top
+              if (tags.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 4.0,
+                    children: tags.map((tag) {
+                      return GestureDetector(
+                        onTap: () {
+                          // Navigate to AllArticlesScreen and pass the selected tag
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => AllArticlesScreen(selectedTag: tag),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Color.fromARGB(255, 90, 113, 243)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            tag,
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 90, 113, 243),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              const SizedBox(height: 8),
+
               // Specialist Info and Formatted Timestamp
               Row(
                 children: [
@@ -202,6 +270,14 @@ class _ArticleScreenState extends State<ArticleScreen> {
                 ],
               ),
 
+              const SizedBox(height: 8),
+
+              if (lastUpdate != null)
+                Text(
+                  'Last updated: ${_formatTimestamp(lastUpdate!)}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+
               const SizedBox(height: 16),
 
               // Article Image
@@ -226,8 +302,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
 
               // Article Subtitle
               Padding(
-                padding:
-                    const EdgeInsets.only(bottom: 8.0), // Padding for subtitle
+                padding: const EdgeInsets.only(bottom: 8.0),
                 child: Text(
                   subtitle,
                   style: const TextStyle(
@@ -243,8 +318,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
 
               // Article Content
               Padding(
-                padding: const EdgeInsets.only(
-                    top: 8.0, bottom: 20.0), // Padding for content
+                padding: const EdgeInsets.only(top: 8.0, bottom: 20.0),
                 child: Text(
                   content.isNotEmpty ? content : 'No subtitle or content found',
                   style: const TextStyle(
@@ -255,14 +329,41 @@ class _ArticleScreenState extends State<ArticleScreen> {
                 ),
               ),
 
+              // Display YouTube Thumbnail if YouTube link is available
+              if (youtubeLink.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'YouTube Video:',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _launchURL(youtubeLink), 
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          _getYoutubeThumbnail(youtubeLink),
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
               // Divider below content
               const Divider(color: Colors.grey),
 
               // Copyright Notice
               Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 16.0), // Padding for copyright
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
                   child: const Text(
                     '© NutriCare',
                     style: TextStyle(
@@ -284,7 +385,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
               isLiked ? Icons.favorite : Icons.favorite_border,
               color: Colors.white,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               '$likeCount',
               style: const TextStyle(color: Colors.white),

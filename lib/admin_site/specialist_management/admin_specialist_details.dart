@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 import 'admin_edit_specialist.dart';
 import 'admin_specialist_appointment.dart';
 
@@ -21,20 +22,24 @@ class _AdminSpecialistsDetailsScreenState
   late TabController _tabController;
   List<dynamic> services = [];
   List<dynamic> reviews = [];
-  bool showEditIcon = true;
+  bool showEditIcon = false; // Initial value set to false
   String deactivationDate = '';
+  String? currentUserEmail; // To hold the current user's email
 
   @override
   void initState() {
     super.initState();
     fetchSpecialistData();
     _tabController = TabController(length: 2, vsync: this);
+    
+    // Get current user email
+    currentUserEmail = FirebaseAuth.instance.currentUser?.email;
 
     // Listen to tab changes
     _tabController.addListener(() {
       setState(() {
         showEditIcon =
-            _tabController.index == 0 && specialistData['status'] != 'inactive';
+            _tabController.index == 0 && specialistData['status'] != 'inactive' && currentUserEmail == 'admin@nutricare.com';
       });
     });
   }
@@ -50,7 +55,7 @@ class _AdminSpecialistsDetailsScreenState
         specialistData = snapshot.data() as Map<String, dynamic>;
         services = specialistData['services'] ?? [];
         reviews = specialistData['reviews'] ?? [];
-
+        
         // Check if the specialist is inactive and get the deactivation date
         if (specialistData['status'] == 'inactive') {
           Timestamp? deactivationTimestamp =
@@ -63,6 +68,9 @@ class _AdminSpecialistsDetailsScreenState
                 .split(' ')[0];
           }
         }
+        
+        // Check if current user is admin
+        showEditIcon = currentUserEmail == 'admin@nutricare.com' && specialistData['status'] != 'inactive'; // Set showEditIcon based on current user
 
         isLoading = false;
       });
@@ -116,8 +124,7 @@ class _AdminSpecialistsDetailsScreenState
           },
         ),
         actions: [
-          if (!isInactive &&
-              showEditIcon) // Show edit icon only for active specialists
+          if (!isInactive && showEditIcon) // Show edit icon only for active specialists
             IconButton(
               icon: const Icon(Icons.edit,
                   color: Color.fromARGB(255, 90, 113, 243)),
@@ -131,7 +138,7 @@ class _AdminSpecialistsDetailsScreenState
                     ),
                   ),
                 ).then((_) {
-                  fetchSpecialistData();
+                  fetchSpecialistData(); // Refresh data after editing
                 });
               },
             ),
@@ -183,8 +190,7 @@ class _AdminSpecialistsDetailsScreenState
                                   null &&
                               specialistData['profile_picture_url'].isNotEmpty)
                           ? NetworkImage(specialistData['profile_picture_url'])
-                          : const AssetImage(
-                                  'assets/images/default_profile.png')
+                          : const AssetImage('assets/images/default_profile.png')
                               as ImageProvider,
                     ),
                     const SizedBox(height: 16),
@@ -291,8 +297,13 @@ class _AdminSpecialistsDetailsScreenState
                   final rating = review['rating'] ?? 'N/A';
 
                   return Card(
-                    elevation: 4,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    elevation: 2,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      side: const BorderSide(
+                          color: Color.fromARGB(255, 221, 222, 226), width: 1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: ListTile(
                       title: Text(reviewerName,
                           style: const TextStyle(fontWeight: FontWeight.bold)),

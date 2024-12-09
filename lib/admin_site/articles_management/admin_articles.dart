@@ -1,5 +1,8 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'admin_articles_details.dart'; // Import the ArticlesDetailsScreen
 
 class AdminArticlesScreen extends StatefulWidget {
@@ -310,21 +313,30 @@ class ArticlesListView extends StatelessWidget {
             final imageUrl = articleData['imageUrl'] ?? '';
             final specialistId = articleData['specialistId'];
             final postDate = (articleData['postDate'] as Timestamp).toDate();
+            final lastUpdate = articleData.containsKey('lastUpdate') &&
+                    articleData['lastUpdate'] != null
+                ? (articleData['lastUpdate'] as Timestamp).toDate()
+                : null;
             final subtitle = articleData['subtitle'] ?? '';
+            final likeCount = articleData['likeCount'] ?? 0; // Add likeCount
+            final tags = articleData['tags'] != null
+                ? List<String>.from(articleData['tags'])
+                : []; // Add tags
 
-            // Fetching the specialist data here instead of using FutureBuilder
             return StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('specialists')
                   .doc(specialistId)
-                  .snapshots(), // Use Stream instead of Future
+                  .snapshots(),
               builder: (context, specialistSnapshot) {
                 if (specialistSnapshot.connectionState ==
                     ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (specialistSnapshot.hasError ||
-                    !specialistSnapshot.hasData) {
+                    !specialistSnapshot.hasData ||
+                    specialistSnapshot.data == null ||
+                    !specialistSnapshot.data!.exists) {
                   return const ListTile(
                       title: Text('Error loading specialist'));
                 }
@@ -333,6 +345,10 @@ class ArticlesListView extends StatelessWidget {
                     specialistSnapshot.data!.data() as Map<String, dynamic>;
                 final specialistName =
                     specialistData['name'] ?? 'Unknown Specialist';
+
+                // Date formatter
+                final DateFormat dateTimeFormat =
+                    DateFormat('yyyy-MM-dd HH:mm');
 
                 return GestureDetector(
                   onTap: () {
@@ -392,9 +408,35 @@ class ArticlesListView extends StatelessWidget {
                                   fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
                           Text(
-                            'Posted on: ${postDate.toLocal().toString().split(' ')[0]}',
+                            'Posted on: ${dateTimeFormat.format(postDate.toLocal())}',
                             style: const TextStyle(color: Colors.grey),
                           ),
+                          if (lastUpdate != null)
+                            Text(
+                              'Last Updated: ${dateTimeFormat.format(lastUpdate.toLocal())}',
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          const SizedBox(height: 8),
+                          // Display Like Count
+                          Text(
+                            'Likes: $likeCount',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                          const SizedBox(height: 8),
+                          // Display Tags
+                          if (tags.isNotEmpty)
+                            Wrap(
+                              spacing: 4.0,
+                              runSpacing: 4.0,
+                              children: tags.map((tag) {
+                                return Chip(
+                                  label: Text(tag),
+                                  backgroundColor:
+                                      Color.fromARGB(255, 90, 113, 243)
+                                          .withOpacity(0.1),
+                                );
+                              }).toList(),
+                            ),
                           const SizedBox(height: 8),
                           Align(
                             alignment: Alignment.centerRight,

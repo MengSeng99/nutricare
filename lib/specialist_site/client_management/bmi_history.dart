@@ -304,6 +304,7 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
         context: context,
         builder: (context) {
           return Dialog(
+            backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),

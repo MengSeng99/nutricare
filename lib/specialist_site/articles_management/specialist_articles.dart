@@ -83,9 +83,8 @@ class SpecialistArticlesScreen extends StatelessWidget {
               final imageUrl = articleData?['imageUrl'] ?? '';
               final postDate = articleData?['postDate'] as Timestamp?;
               final lastUpdate = articleData?['lastUpdate'] as Timestamp?;
-
-              // Check if the likeCount field exists
               final likeCount = articleData?.containsKey('likeCount') == true ? articleData!['likeCount'] : 0;
+              final tags = articleData?['tags'] != null ? List<String>.from(articleData!['tags']) : [];
 
               // Create DateFormat instance
               final DateFormat dateFormat = DateFormat('yyyy-MM-dd HH:mm');
@@ -105,6 +104,8 @@ class SpecialistArticlesScreen extends StatelessWidget {
                         postDate: postDate!.toDate(), // Handle nullable Timestamp safely
                         lastUpdate: lastUpdate?.toDate(), // Handle nullable lastUpdate safely
                         likeCount: likeCount,
+                        tags: List<String>.from(tags),
+                        youtubeLink: articleData?['youtubeLink'] ?? '',
                       ),
                     ),
                   );
@@ -169,6 +170,21 @@ class SpecialistArticlesScreen extends StatelessWidget {
                           style: const TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 14),
                         ),
+                        const SizedBox(height: 8),
+
+                        // Display Tags
+                        if (tags.isNotEmpty) 
+                          Wrap(
+                            spacing: 4.0,
+                            runSpacing: 4.0,
+                            children: tags.map((tag) {
+                              return Chip(
+                                label: Text(tag),
+                                backgroundColor: Color.fromARGB(255, 90, 113, 243).withOpacity(0.1),
+                              );
+                            }).toList(),
+                          ),
+                        
                         // Delete button
                         Align(
                           alignment: Alignment.centerRight,
@@ -246,7 +262,7 @@ void _showDeleteConfirmationDialog(BuildContext context, String? articleTitle, S
                   final Reference storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
                   await storageRef.delete();
                 } catch (e) {
-                  // print('Error deleting image: $e'); // Handle error as needed
+                  // Handle error as needed
                 }
               }
               

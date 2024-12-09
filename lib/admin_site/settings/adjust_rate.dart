@@ -35,7 +35,6 @@ class _RateAdjustmentScreenState extends State<RateAdjustmentScreen> {
         });
       }
     } catch (e) {
-      print("Error fetching current rate: $e");
     }
   }
 

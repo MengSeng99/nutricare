@@ -18,6 +18,8 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
   DateTime? endDate; // End date for range
   bool isLoading = true; // Loading state
 
+  int calorieGoal = 0; // Calorie goal for the user
+
   final Color primaryColor = Color.fromARGB(255, 90, 113, 243); // Primary color
 
   // Initialize the widget state
@@ -27,10 +29,21 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
     _loadDietHistory(); // Load diet history on initialization
   }
 
-  Future<void> _loadDietHistory() async {
+ Future<void> _loadDietHistory() async {
   setState(() {
     isLoading = true; // Set loading state to true
   });
+
+  // Retrieve calorie goal from user's document
+  DocumentSnapshot userDoc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(widget.clientId)
+      .get();
+
+  // Check if the user document exists
+  if (userDoc.exists && userDoc.data() != null) {
+    calorieGoal = userDoc['calorieGoal'] ?? 0; // Assuming this exists
+  }
 
   QuerySnapshot dietSnapshot = await FirebaseFirestore.instance
       .collection('users')
@@ -64,9 +77,10 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
             mealType: mealType,
             name: mealInfo['name'] ?? 'Unnamed Meal',
             calories: mealInfo['Calories'] ?? 0,
-            protein: mealInfo['Protein'] ?? 0, // Updated field name
-            carbs: mealInfo['Carbohydrate'] ?? 0, // Updated field name
-            fat: mealInfo['Fat'] ?? 0, // Updated field name
+            protein: mealInfo['Protein'] ?? 0,
+            carbs: mealInfo['Carbohydrate'] ?? 0,
+            fat: mealInfo['Fat'] ?? 0,
+            calorieGoal: mealInfo['CalorieGoal'] ?? 0, // Assuming it's here, before we populate meals
           ));
         }
       }
@@ -258,98 +272,105 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
     );
   }
 
- Widget _buildHistoryCard(DietHistory history) {
-  int totalCalories =
-      history.meals.fold(0, (sum, meal) => sum + meal.calories);
+Widget _buildHistoryCard(DietHistory history) {
   int totalProteins =
       history.meals.fold(0, (sum, meal) => sum + meal.protein);
   int totalCarbs = history.meals.fold(0, (sum, meal) => sum + meal.carbs);
   int totalFats = history.meals.fold(0, (sum, meal) => sum + meal.fat);
 
+  int totalCalories =
+      history.meals.fold(0, (sum, meal) => sum + meal.calories);
+  
+  // Determine the status of the calorie goal
+  String caloricFeedback;
+  Color feedbackColor;
+  int excessCalories = totalCalories > calorieGoal ? totalCalories - calorieGoal : 0;
+
+  if (excessCalories > 0) {
+    caloricFeedback = 'Exceeds by $excessCalories kcal';
+    feedbackColor = Colors.red;
+  } else {
+    caloricFeedback = 'Remaining: ${calorieGoal - totalCalories} kcal to reach goal';
+    feedbackColor = Colors.green;
+  }
+  
   return Dismissible(
-    key: Key(history.date), // Use a unique key for each card
+    key: Key(history.date), 
     background: Container(
-      color: Colors.red, // Color of the background when swiped
+      color: Colors.red, 
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.only(right: 20),
-      child: const Icon(Icons.delete, color: Colors.white), // Icon for delete
+      child: const Icon(Icons.delete, color: Colors.white), 
     ),
-    direction: DismissDirection.endToStart, // Swipe from right to left
-  confirmDismiss: (direction) async {
-  // Show confirmation dialog
-  final confirmation = await showDialog<bool>(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        backgroundColor: Colors.white, // White background for the dialog
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15), // Rounded corners
-        ),
-        title: RichText(
-          text: TextSpan(
-            text: 'Delete Diet History',
-            style: TextStyle(
-              color: primaryColor, // Set the title color to primaryColor
-              fontWeight: FontWeight.bold, // Make it bold
-              fontSize: 18, // Increase font size as desired
+    direction: DismissDirection.endToStart,
+    confirmDismiss: (direction) async {
+      final confirmation = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
             ),
-          ),
-        ),
-        content: RichText(
-          text: TextSpan(
-            text: 'Are you sure you want to delete this diet history on ',
-            style: TextStyle(color: Colors.black), // Default text color
-            children: <TextSpan>[
-              TextSpan(
-                text: history.date, // Date to be colored and bold
+            title: RichText(
+              text: TextSpan(
+                text: 'Delete Diet History',
                 style: TextStyle(
-                  color: primaryColor, // Set date color to primaryColor
-                  fontWeight: FontWeight.bold, // Make it bold
+                  color: primaryColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
               ),
-              TextSpan(text: '?'), // Just to append the question mark
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            child: Text('Cancel'),
-            onPressed: () {
-              Navigator.of(context).pop(false); // Close the dialog with false
-            },
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red, // Red background
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30), // Rounded button
+            ),
+            content: RichText(
+              text: TextSpan(
+                text: 'Are you sure you want to delete this diet history on ',
+                style: TextStyle(color: Colors.black), 
+                children: <TextSpan>[
+                  TextSpan(
+                    text: history.date, 
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(text: '?'), 
+                ],
               ),
             ),
-            child: Text('Delete', style: TextStyle(color: Colors.white)), // White text
-            onPressed: () {
-              Navigator.of(context).pop(true); // Close the dialog with true
-            },
-          ),
-        ],
+            actions: [
+              TextButton(
+                child: Text('Cancel'),
+                onPressed: () {
+                  Navigator.of(context).pop(false); 
+                },
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                ),
+                child: Text('Delete', style: TextStyle(color: Colors.white)),
+                onPressed: () {
+                  Navigator.of(context).pop(true); 
+                },
+              ),
+            ],
+          );
+        },
       );
-    },
-  );
 
-  return confirmation ?? false; // Return confirmation result or false
-},
+      return confirmation ?? false; 
+    },
     onDismissed: (direction) async {
-      // Call the delete method here
       bool isDeleted = await _deleteDietHistory(history.date);
       
       if (isDeleted) {
-        // Optionally show a snack bar or other feedback
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Deleted diet history for ${history.date}')),
         );
       } else {
-        // Re-insert the item back in if it wasn't deleted
         setState(() {
-          filteredHistories.add(history);
+          filteredHistories.add(history); // Reinsert if not deleted
         });
       }
     },
@@ -362,7 +383,7 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(16.0), // Internal padding
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -373,13 +394,49 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
                 Text(
                   'Date: ${history.date}',
                   style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800]),
+                      fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800]),
                 ),
                 Icon(Icons.calendar_today, color: primaryColor, size: 24),
               ],
             ),
+            const SizedBox(height: 16),
+
+            // Calorie Goal and Progress Display
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Calorie Goal: $calorieGoal kcal',
+                        style: TextStyle(fontSize: 18, color: Colors.black, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Total Calories Consumed: $totalCalories kcal',
+                        style: TextStyle(fontSize: 18, color: feedbackColor, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        caloricFeedback,
+                        style: TextStyle(fontSize: 16, color: feedbackColor),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Optional: Progress Circle (Add a circular progress indicator)
+                CircularProgressIndicator(
+                  value: totalCalories / calorieGoal,
+                  backgroundColor: Colors.grey[300],
+                  color: feedbackColor,
+                  strokeWidth: 7,
+                ),
+              ],
+            ),
+
             const SizedBox(height: 16),
 
             // Summary Section with Icons
@@ -388,25 +445,20 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Summary:',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildNutrientInfo(Icons.local_fire_department,
-                          "Calories", "$totalCalories kcal"),
-                      _buildNutrientInfo(
-                          Icons.fitness_center, "Protein", "$totalProteins g"),
+                      _buildNutrientInfo(Icons.local_fire_department, "Calories", "$totalCalories kcal"),
+                      _buildNutrientInfo(Icons.fitness_center, "Protein", "$totalProteins g"),
                       _buildNutrientInfo(Icons.grain, "Carbs", "$totalCarbs g"),
-                      _buildNutrientInfo(
-                          Icons.bubble_chart, "Fat", "$totalFats g"),
+                      _buildNutrientInfo(Icons.bubble_chart, "Fat", "$totalFats g"),
                     ],
                   ),
                   const SizedBox(height: 20),
                 ],
               ),
-
             // Meals Section
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -530,6 +582,7 @@ class MealHistory {
   final int protein;
   final int carbs;
   final int fat;
+  final int calorieGoal;
 
   MealHistory({
     required this.mealType,
@@ -537,6 +590,7 @@ class MealHistory {
     required this.calories,
     required this.protein,
     required this.carbs,
-    required this.fat,
+    required this.fat, 
+    required this.calorieGoal,
   });
 }
