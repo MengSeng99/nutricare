@@ -10,8 +10,9 @@
 analyzer:
   errors:
     avoid_types_as_parameter_names: ignore
-    depend_on_referenced_packages: ignore ignore
+    depend_on_referenced_packages: ignore
     deprecated_member_use: ignore
+    empty_catches: ignore
     library_private_types_in_public_api: ignore
     must_be_immutable: ignore
     unused_element: ignore

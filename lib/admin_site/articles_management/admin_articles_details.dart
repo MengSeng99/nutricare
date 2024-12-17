@@ -11,11 +11,11 @@ class ArticlesDetailsScreen extends StatefulWidget {
   final String specialistName;
 
   const ArticlesDetailsScreen({
-    Key? key,
+    super.key,
     required this.articleId,
     required this.specialistId,
     required this.specialistName,
-  }) : super(key: key);
+  });
 
   @override
   _ArticlesDetailsScreenState createState() => _ArticlesDetailsScreenState();

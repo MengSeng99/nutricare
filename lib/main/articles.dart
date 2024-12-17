@@ -11,6 +11,7 @@ class ArticleScreen extends StatefulWidget {
   final Timestamp postDate;
   final String specialistId;
   final String articleId;
+  final Function(bool) onLikeToggle;
 
   const ArticleScreen({
     super.key,
@@ -19,6 +20,7 @@ class ArticleScreen extends StatefulWidget {
     required this.postDate,
     required this.specialistId,
     required this.articleId,
+    required this.onLikeToggle,
   });
 
   @override
@@ -57,7 +59,8 @@ class _ArticleScreenState extends State<ArticleScreen> {
               .contains(FirebaseAuth.instance.currentUser?.uid);
         });
       }
-    } catch (e) {}
+    // ignore: empty_catches
+    } catch (e) {}  
   }
 
   Future<void> _toggleLike() async {
@@ -84,6 +87,8 @@ class _ArticleScreenState extends State<ArticleScreen> {
       setState(() {
         isLiked = !isLiked;
       });
+
+      widget.onLikeToggle(isLiked);
     } catch (e) {}
   }
 

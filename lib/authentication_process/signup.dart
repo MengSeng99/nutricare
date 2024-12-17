@@ -210,7 +210,7 @@ class _SignupPageState extends State<SignupPage> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                   content: Text(
-                                      'Signup successful! Please log in.')),
+                                      'Signup successful! Please log in.'), backgroundColor: Colors.green,),
                             );
                             Navigator.pushReplacement(
                               context,

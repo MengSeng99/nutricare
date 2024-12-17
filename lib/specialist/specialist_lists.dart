@@ -302,12 +302,15 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content:
-              Text('Successfully added Dr. ${specialist.name} to favorites.')));
+              Text('Successfully added Dr. ${specialist.name} to favorites.')
+              ,backgroundColor: Colors.green,
+              ));
     } else {
       await userFavoritesRef.doc(specialist.id).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-              'Successfully removed Dr. ${specialist.name} from favorites.')));
+              'Successfully removed Dr. ${specialist.name} from favorites.')
+              ,backgroundColor: Colors.red,));
     }
 
     await _fetchUserFavorites();

@@ -458,8 +458,8 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                         borderRadius: BorderRadius.circular(10.0),
                       ),
                       child: Icon(
-                        isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                        color: const Color(0xFF5A71F3),
+                        isBookmarked ? Icons.favorite : Icons.favorite_border,
+                        color: Colors.red,
                       ),
                     ),
                   ),

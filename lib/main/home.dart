@@ -200,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
         imageUrl: article['imageUrl']!,
         postDate: article['postDate'],
         specialistId: article['specialistId'],
-        articleId: article['id'],
+        articleId: article['id'], onLikeToggle: (bool ) {  },
       ),
     ),
   );

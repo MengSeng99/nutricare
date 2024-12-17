@@ -65,7 +65,7 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Explore',
+                  'More Recipe',
                   style: TextStyle(
                     color: Color.fromARGB(255, 90, 113, 243),
                     fontWeight: FontWeight.w600,
@@ -304,28 +304,44 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
     }
   }
 
-  Future<void> _toggleFavoriteStatus(String recipeId) async {
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+  Future<void> _toggleFavoriteStatus(String recipeId, String recipeTitle) async {
+  final User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
 
-    final favRecipesRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('favorite_recipes_lists')
-        .doc(recipeId);
+  final favRecipesRef = FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('favorite_recipes_lists')
+      .doc(recipeId);
 
-    if (favoriteRecipeIds.contains(recipeId)) {
-      await favRecipesRef.delete();
-      setState(() {
-        favoriteRecipeIds.remove(recipeId);
-      });
-    } else {
-      await favRecipesRef.set({});
-      setState(() {
-        favoriteRecipeIds.add(recipeId);
-      });
-    }
+  if (favoriteRecipeIds.contains(recipeId)) {
+    await favRecipesRef.delete();
+    setState(() {
+      favoriteRecipeIds.remove(recipeId);
+    });
+    // Show SnackBar for removed recipe
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$recipeTitle removed from favorites'),
+        backgroundColor: Colors.red, // Red background for removed
+        duration: Duration(seconds: 2),
+      ),
+    );
+  } else {
+    await favRecipesRef.set({});
+    setState(() {
+      favoriteRecipeIds.add(recipeId);
+    });
+    // Show SnackBar for added recipe
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$recipeTitle added to favorites'),
+        backgroundColor: Colors.green, // Green background for added
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
+}
 
   List<String> _getAvailableCategories(QuerySnapshot snapshot) {
     List<String> categories = [];
@@ -410,134 +426,134 @@ class _FoodRecipeScreenState extends State<FoodRecipeScreen> {
     );
   }
 
-  Widget _buildModernRecipeCard(
-      BuildContext context, Map<String, dynamic> recipe, String recipeId) {
-    bool isFavorite = favoriteRecipeIds.contains(recipeId);
+ Widget _buildModernRecipeCard(
+    BuildContext context, Map<String, dynamic> recipe, String recipeId) {
+  bool isFavorite = favoriteRecipeIds.contains(recipeId);
 
-    return GestureDetector(
-      onTap: () async {
-        final updatedBookmarkStatus = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => FoodDetailsScreen(
-              recipeId: recipeId,
-              isBookmarked: isFavorite,
+  return GestureDetector(
+    onTap: () async {
+      final updatedBookmarkStatus = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FoodDetailsScreen(
+            recipeId: recipeId,
+            isBookmarked: isFavorite,
+          ),
+        ),
+      );
+
+      if (updatedBookmarkStatus != null) {
+        setState(() {
+          isFavorite = updatedBookmarkStatus;
+          if (updatedBookmarkStatus) {
+            favoriteRecipeIds.add(recipeId);
+          } else {
+            favoriteRecipeIds.remove(recipeId);
+          }
+        });
+      }
+    },
+    child: Card(
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+      elevation: 5.0,
+      child: Stack(
+        children: [
+          // Recipe Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(15.0),
+            child: Image.network(
+              recipe['imageUrl'],
+              fit: BoxFit.cover,
+              height: double.infinity,
+              width: double.infinity,
             ),
           ),
-        );
-
-        if (updatedBookmarkStatus != null) {
-          setState(() {
-            isFavorite = updatedBookmarkStatus;
-            if (updatedBookmarkStatus) {
-              favoriteRecipeIds.add(recipeId);
-            } else {
-              favoriteRecipeIds.remove(recipeId);
-            }
-          });
-        }
-      },
-      child: Card(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-        elevation: 5.0,
-        child: Stack(
-          children: [
-            // Recipe Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(15.0),
-              child: Image.network(
-                recipe['imageUrl'],
-                fit: BoxFit.cover,
-                height: double.infinity,
-                width: double.infinity,
-              ),
-            ),
-            // Text overlay with gradient background
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(15.0)),
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
-                  ),
+          // Text overlay with gradient background
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(15.0)),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      recipe['title'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    recipe['title'],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0,
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        recipe['category'],
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 14.0),
                       ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          recipe['category'],
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 14.0),
-                        ),
-                        Row(
-                          children: [
-                            const Icon(Icons.timer,
-                                size: 14.0, color: Colors.white70),
-                            const SizedBox(width: 5.0),
-                            Text(
-                              "${recipe['cookingTime']} min",
-                              style: const TextStyle(
-                                  color: Colors.white70, fontSize: 14.0),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Bookmark Icon
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 4.0,
-                      spreadRadius: 1.0,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    isFavorite ? Icons.bookmark : Icons.bookmark_border,
-                    color: isFavorite
-                        ? Color.fromARGB(255, 90, 113, 243)
-                        : Colors.grey,
+                      Row(
+                        children: [
+                          const Icon(Icons.timer,
+                              size: 14.0, color: Colors.white70),
+                          const SizedBox(width: 5.0),
+                          Text(
+                            "${recipe['cookingTime']} min",
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 14.0),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  onPressed: () {
-                    _toggleFavoriteStatus(recipeId);
-                  },
-                ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          // Bookmark Icon
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4.0,
+                    spreadRadius: 1.0,
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite
+                      ? Colors.red
+                      : Colors.grey,
+                ),
+                onPressed: () {
+                  _toggleFavoriteStatus(recipeId, recipe['title']); // Pass the recipe title
+                },
+              ),
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
