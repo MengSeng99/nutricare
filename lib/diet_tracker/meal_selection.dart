@@ -474,7 +474,7 @@ void addToLog(
                       ),
                       child: IconButton(
                         icon: Icon(
-                          isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
                           color: isFavorite
                               ? const Color.fromARGB(255, 90, 113, 243)
                               : Colors.grey,

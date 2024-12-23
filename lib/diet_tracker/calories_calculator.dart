@@ -69,10 +69,11 @@ class _CaloriesCalculatorScreenState extends State<CaloriesCalculatorScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Calories Calculator',
+        title: const Text('Calorie Goal Calculator',
             style: TextStyle(
                 color: Color.fromARGB(255, 90, 113, 243),
-                fontWeight: FontWeight.bold)),
+                fontWeight: FontWeight.bold,
+                fontSize: 20)),
         backgroundColor: Colors.white,
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),

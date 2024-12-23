@@ -192,7 +192,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                   SnackBar(
                                     content: const Text(
                                         'Payment method deleted successfully.'),
-                                    backgroundColor: Colors.green,
+                                    backgroundColor: Colors.red,
                                   ),
                                 );
                               }
@@ -203,23 +203,38 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
+                                // Extract the cardHolder and split it to get the first name
+                                String cardHolder = card['cardHolder'];
+                                List<String> nameParts = cardHolder.split(' ');
+                                String firstName =
+                                    nameParts.first; // Get the first name
+
+                                // Create the masked name by replacing the rest with asterisks
+                                String maskedName = nameParts.length > 1
+                                    ? '$firstName ${'*' * (cardHolder.length - firstName.length)}'
+                                    : firstName; // If only one name part, just show it
+
                                 return AlertDialog(
-                                  backgroundColor: Colors.white,  
+                                  backgroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(15),
                                   ),
                                   title: const Text(
                                     "Card Details",
                                     style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color:
-                                            Color.fromARGB(255, 90, 113, 243)),
+                                      fontWeight: FontWeight.bold,
+                                      color: Color.fromARGB(255, 90, 113, 243),
+                                    ),
                                   ),
                                   content: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
+                                      Text(
+                                        "Card Holder: $maskedName", // Display first name and masked name
+                                        style: TextStyle(fontSize: 16),
+                                      ),
                                       Text(
                                         "Card Number: $maskedCardNumber",
                                         style: TextStyle(fontSize: 16),
@@ -228,7 +243,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                         "Expiry Date: ${card['expiryDate']}",
                                         style: TextStyle(fontSize: 16),
                                       ),
-                                      // Text("CVV: ${card['cvv']}"),
+                                      // Optional: Text("CVV: ${card['cvv']}"),
                                       const SizedBox(height: 20),
                                     ],
                                   ),

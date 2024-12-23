@@ -172,6 +172,7 @@ class SettingsScreen extends StatelessWidget {
                 await _handleLogout(context); // Proceed to logout
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                   content: Text("You have been logged out successfully."),
+                  backgroundColor: Colors.green ,
                   duration: Duration(seconds: 1),
                 ));
               },

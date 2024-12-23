@@ -259,7 +259,7 @@ class _DietsScreenState extends State<DietsScreen> {
                       ),
                       SizedBox(width: 8),
                       Text(
-                        'Calorie Calculator',
+                        'Set Up Calorie Goal',
                         style: TextStyle(
                           color: Color.fromARGB(255, 90, 113, 243),
                           fontWeight: FontWeight.w600,

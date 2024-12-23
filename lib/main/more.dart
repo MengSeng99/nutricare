@@ -374,7 +374,7 @@ class _MoreScreenState extends State<MoreScreen> {
 
                     // BMI Tracker Section
                     const Text(
-                      'Calories Calculator',
+                      'Calories Goal Calculator',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 22,

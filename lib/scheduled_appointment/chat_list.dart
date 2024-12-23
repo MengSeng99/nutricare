@@ -144,7 +144,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text(
-          "Chat List",
+          "Chats",
           style: TextStyle(
             color: Color.fromARGB(255, 90, 113, 243),
             fontWeight: FontWeight.bold,

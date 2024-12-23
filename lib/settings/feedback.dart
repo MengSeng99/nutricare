@@ -161,6 +161,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> with SingleTickerProvid
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: const Text('Feedback sent successfully! Thank you!'),
+                            backgroundColor: Colors.green,
                             duration: const Duration(seconds: 2),
                           ),
                         );

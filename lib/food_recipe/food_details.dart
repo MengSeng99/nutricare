@@ -186,7 +186,9 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: recipe == null // Check if data is already fetched
-          ? const Center(child: CircularProgressIndicator()) // Show loading indicator while data is being fetched
+          ? const Center(
+              child:
+                  CircularProgressIndicator()) // Show loading indicator while data is being fetched
           : Stack(
               children: [
                 Positioned(
@@ -226,9 +228,11 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                       right: 16,
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          color: const Color.fromARGB(255, 34, 42, 92)
+                                          color: const Color.fromARGB(
+                                                  255, 34, 42, 92)
                                               .withOpacity(0.4),
-                                          borderRadius: BorderRadius.circular(30),
+                                          borderRadius:
+                                              BorderRadius.circular(30),
                                         ),
                                         child: IconButton(
                                           icon: Icon(
@@ -236,7 +240,8 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                             color: Colors.white,
                                             size: 30,
                                           ),
-                                          onPressed: () => Navigator.of(context).pop(),
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
                                         ),
                                       ),
                                     ),
@@ -269,7 +274,8 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                       padding: const EdgeInsets.all(16.0),
                       decoration: const BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(20.0)),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black26,
@@ -315,14 +321,32 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                     children: [
                                       _buildInfoCard(
                                           "${recipe!['cookingTime']} mins",
-                                          Icons.timer),
+                                          Icons.timer,
+                                          () => _showInfoDialog(
+                                              context,
+                                              'Cooking Time',
+                                              'The time needed for this recipe is ${recipe!['cookingTime']} minutes.')),
                                       _buildInfoCard(
                                           "${recipe!['servings']} Servings",
-                                          Icons.people),
-                                      _buildInfoCard("${recipe!['calories']} Cal",
-                                          Icons.local_fire_department),
-                                      _buildInfoCard(recipe!['difficulty'],
-                                          Icons.emoji_emotions),
+                                          Icons.people,
+                                          () => _showInfoDialog(
+                                              context,
+                                              'Servings',
+                                              'This recipe serves ${recipe!['servings']} people.')),
+                                      _buildInfoCard(
+                                          "${recipe!['calories']} Cal",
+                                          Icons.local_fire_department,
+                                          () => _showInfoDialog(
+                                              context,
+                                              'Calories',
+                                              'This recipe contains approximately ${recipe!['calories']} calories.')),
+                                      _buildInfoCard(
+                                          recipe!['difficulty'],
+                                          Icons.emoji_emotions,
+                                          () => _showInfoDialog(
+                                              context,
+                                              'Difficulty',
+                                              'This recipe has a difficulty level of ${recipe!['difficulty']}.')),
                                     ],
                                   ),
                                 ),
@@ -334,14 +358,16 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                   showIngredients,
                                   () {
                                     setState(() {
-                                      showIngredients = !showIngredients; // toggle the state
+                                      showIngredients =
+                                          !showIngredients; // toggle the state
                                     });
                                   },
                                   showIngredients
                                       ? Column(
                                           children: ingredients
                                               .map((ingredient) =>
-                                                  _buildIngredientItem(ingredient['name']))
+                                                  _buildIngredientItem(
+                                                      ingredient['name']))
                                               .toList(),
                                         )
                                       : null,
@@ -355,7 +381,8 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                   showSteps,
                                   () {
                                     setState(() {
-                                      showSteps = !showSteps; // toggle the state
+                                      showSteps =
+                                          !showSteps; // toggle the state
                                     });
                                   },
                                   showSteps
@@ -377,14 +404,17 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                   showNutritionalFacts,
                                   () {
                                     setState(() {
-                                      showNutritionalFacts = !showNutritionalFacts; // toggle the state
+                                      showNutritionalFacts =
+                                          !showNutritionalFacts; // toggle the state
                                     });
                                   },
                                   showNutritionalFacts
                                       ? Column(
                                           children: nutritionalFacts
                                               .map((fact) =>
-                                                  _buildNutritionalFact(fact['label'], fact['value']))
+                                                  _buildNutritionalFact(
+                                                      fact['label'],
+                                                      fact['value']))
                                               .toList(),
                                         )
                                       : null,
@@ -393,17 +423,20 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                 const SizedBox(height: 5.0),
 
                                 // YouTube Thumbnail Section - Only build if a valid link exists
-                                if (recipe?['youtubeLink'] != null && recipe!['youtubeLink'].isNotEmpty)
+                                if (recipe?['youtubeLink'] != null &&
+                                    recipe!['youtubeLink'].isNotEmpty)
                                   _buildCollapsibleSection(
                                     "Tutorial Video",
                                     showYTThumbnail,
                                     () {
                                       setState(() {
-                                        showYTThumbnail = !showYTThumbnail; // toggle the state
+                                        showYTThumbnail =
+                                            !showYTThumbnail; // toggle the state
                                       });
                                     },
                                     showYTThumbnail
-                                        ? _buildYouTubeThumbnail(recipe!['youtubeLink'])
+                                        ? _buildYouTubeThumbnail(
+                                            recipe!['youtubeLink'])
                                         : null,
                                   ),
                               ],
@@ -427,7 +460,8 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10.0),
                       ),
-                      child: const Icon(Icons.arrow_back, color: Color(0xFF5A71F3)),
+                      child: const Icon(Icons.arrow_back,
+                          color: Color(0xFF5A71F3)),
                     ),
                   ),
                 ),
@@ -486,54 +520,122 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
               title: Text(title,
                   style: const TextStyle(
                       fontSize: 18.0, fontWeight: FontWeight.bold)),
-              trailing: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
+              trailing:
+                  Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
             ),
-            if (isExpanded) content ?? const SizedBox(), // Show content only if expanded
+            if (isExpanded)
+              content ?? const SizedBox(), // Show content only if expanded
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoCard(String title, IconData icon) {
-    return Card(
-      margin: const EdgeInsets.all(12.0),
-          elevation: 2,
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-            side: const BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
-            borderRadius: BorderRadius.circular(15),
+  Widget _buildInfoCard(String title, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        margin: const EdgeInsets.all(12.0),
+        elevation: 2,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          side: const BorderSide(
+              color: Color.fromARGB(255, 221, 222, 226), width: 1),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                backgroundColor: Color(0xFF5A71F3),
+                radius: 28,
+                child: Icon(
+                  icon,
+                  color: Color.fromARGB(255, 255, 255, 255),
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 10.0),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-      child: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              backgroundColor: Color(0xFF5A71F3),
-              radius: 28,
-              child: Icon(
-                icon,
-                color: Color.fromARGB(255, 255, 255, 255),
-                size: 28,
-              ),
-            ),
-            const SizedBox(height: 10.0),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
         ),
       ),
     );
   }
 
+ void _showInfoDialog(BuildContext context, String title, String content) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
+        ),
+        elevation: 8.0,
+        backgroundColor: Colors.white,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Title with stylish text
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF5A71F3), // Your main theme color
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              // Main content
+              Text(
+                content,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[700],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              // Close button with modern styling
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF5A71F3), // Button color
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  'Close',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
   Widget _buildIngredientItem(String ingredient) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 2.0),
@@ -598,13 +700,13 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
 
   Widget _buildNutritionalFact(String label, double value) {
     return ListTile(
-      title: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 16.0,
+        title: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16.0,
+          ),
         ),
-      ),
-      trailing: Text(value.toStringAsFixed(2),
-          style: const TextStyle(fontSize: 16.0)));
+        trailing: Text(value.toStringAsFixed(2),
+            style: const TextStyle(fontSize: 16.0)));
   }
 }

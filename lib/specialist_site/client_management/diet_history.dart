@@ -366,7 +366,8 @@ Widget _buildHistoryCard(DietHistory history) {
       
       if (isDeleted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Deleted diet history for ${history.date}')),
+          SnackBar(content: Text('Deleted diet history for ${history.date}'),
+          backgroundColor: Colors.red,),
         );
       } else {
         setState(() {

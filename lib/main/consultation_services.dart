@@ -138,7 +138,7 @@ Dietitian: A dietitian is a trained healthcare professional who specializes in d
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Virtual Consultation',
+          'Consultation Services',
           style: TextStyle(color: Color.fromARGB(255, 90, 113, 243), fontWeight: FontWeight.bold),
         ),
         bottom: const PreferredSize(

@@ -6,7 +6,7 @@ import '../food_recipe/food_recipe.dart';
 import 'all_articles.dart';
 import 'articles.dart';
 import 'nearest_specialist.dart';
-import 'virtual_consultation.dart';
+import 'consultation_services.dart';
 import '../specialist/specialist_lists.dart';
 import '../bmi_features/bmi_tracker.dart';
 import '../health_record/health_record.dart';
@@ -492,7 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Virtual Consultation',
+                      'Consultation Services',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,

@@ -39,35 +39,55 @@ class _BookingScreenState extends State<BookingScreen>
     super.dispose();
   }
 
-  Future<void> _fetchAvailableTimeSlots() async {
-    final selectedDateString = _selectedDay.toIso8601String().split('T')[0];
+ Future<void> _fetchAvailableTimeSlots() async {
+  final selectedDateString = _selectedDay.toIso8601String().split('T')[0];
 
-    final docRef = FirebaseFirestore.instance
-        .collection('specialists')
-        .doc(widget.specialistId)
-        .collection('appointments')
-        .doc(
-            _selectedMode); // Fetch either 'physical' or 'online' document based on selected mode
+  final docRef = FirebaseFirestore.instance
+      .collection('specialists')
+      .doc(widget.specialistId)
+      .collection('appointments')
+      .doc(_selectedMode);
 
-    final docSnapshot = await docRef.get();
+  final docSnapshot = await docRef.get();
 
-    if (docSnapshot.exists) {
-      final data = docSnapshot.data();
-      if (data != null && data['date_slots'] != null) {
-        final dateSlots = Map<String, dynamic>.from(data['date_slots']);
-        setState(() {
-          availableTimeSlots =
-              List<String>.from(dateSlots[selectedDateString] ?? []);
-          // Sort the time slots manually
-          availableTimeSlots.sort((a, b) => _compareTimeSlots(a, b));
-        });
-      }
-    } else {
+  if (docSnapshot.exists) {
+    final data = docSnapshot.data();
+    if (data != null && data['date_slots'] != null) {
+      final dateSlots = Map<String, dynamic>.from(data['date_slots']);
       setState(() {
-        availableTimeSlots = [];
+        availableTimeSlots =
+            List<String>.from(dateSlots[selectedDateString] ?? []);
+        
+        // Add filtering logic for available time slots
+        final now = DateTime.now();
+        final currentDateTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+        final twoHoursFromNow = currentDateTime.add(Duration(hours: 2));
+
+        availableTimeSlots = availableTimeSlots.where((slot) {
+          // Parse the time slots into DateTime objects
+          final timeParts = slot.split(':');
+          final timeSlotDateTime = DateTime(
+            _selectedDay.year,
+            _selectedDay.month,
+            _selectedDay.day,
+            int.parse(timeParts[0]),
+            int.parse(timeParts[1]),
+          );
+
+          // Only keep time slots that are at least 2 hours from now
+          return timeSlotDateTime.isAfter(twoHoursFromNow);
+        }).toList();
+
+        // Sort the time slots manually
+        availableTimeSlots.sort((a, b) => _compareTimeSlots(a, b));
       });
     }
+  } else {
+    setState(() {
+      availableTimeSlots = [];
+    });
   }
+}
 
   int _compareTimeSlots(String a, String b) {
   // Parse time strings into DateTime objects (using a fixed date)

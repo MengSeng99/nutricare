@@ -14,7 +14,7 @@ class _SplashScreenState extends State<SplashScreen> {
   final List<Map<String, String>> _splashData = [
     {
       'image': 'images/counseling.png',
-      'title': 'Nutrition Counseling',
+      'title': 'Nutrition Counselling',
       'description': 'We solve nutrition issues for those who struggle with managing their nutrition and diet.'
     },
     {

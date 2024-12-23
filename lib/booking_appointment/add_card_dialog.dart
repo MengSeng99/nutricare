@@ -260,6 +260,7 @@ class AddCardDialog {
                               ),
                             );
                           }
+                          Navigator.of(context).pop();
                         }
                       },
                       style: ElevatedButton.styleFrom(

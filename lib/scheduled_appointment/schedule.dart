@@ -635,59 +635,83 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  // Update the _showCancelConfirmationDialog to pass refreshAppointments
   void _showCancelConfirmationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: const Text(
+          "Confirm Cancellation",
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243)),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "You are about to cancel the following appointment:",
+                style: TextStyle(fontSize: 14.0),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "Appointment ID: $appointmentId",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                "Specialist: $specialistName",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                "Date: ${DateFormat('MMMM dd, yyyy').format(date)}",
+              ),
+              Text(
+                "Time: $time",
+              ),
+              Text(
+                "Service: $service",
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "The payment will be refunded within 14 working days.",
+                style: TextStyle(fontSize: 12.0, color: Colors.grey),
+              ),
+            ],
           ),
-          title: const Text(
-            "Confirm Cancellation",
-            style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 90, 113, 243)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Dismiss the dialog
+            },
+            child: const Text("No"),
           ),
-          content: const Text(
-            "Are you sure you want to cancel this appointment? "
-            "The payment will be refunded within 14 working days.",
-            style: TextStyle(fontSize: 14.0),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Dismiss the dialog
-              },
-              child: const Text(
-                "No",
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
               ),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop(); // Dismiss the dialog
-                _cancelAppointment(
-                    context, appointmentId); // Call cancel method
-              },
-              child: const Text(
-                "Yes, Cancel",
-                style: TextStyle(color: Colors.white),
-              ),
+            onPressed: () {
+              Navigator.of(context).pop(); // Dismiss the dialog
+              _cancelAppointment(context, appointmentId); // Call cancel method
+            },
+            child: const Text(
+              "Yes, Cancel",
+              style: TextStyle(color: Colors.white),
             ),
-          ],
-        );
-      },
-    );
-  }
-
+          ),
+        ],
+      );
+    },
+  );
+}
   void _cancelAppointment(BuildContext context, String appointmentId) async {
     try {
       final detailsCollectionRef = FirebaseFirestore.instance
