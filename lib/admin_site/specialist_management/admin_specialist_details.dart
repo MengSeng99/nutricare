@@ -39,7 +39,7 @@ class _AdminSpecialistsDetailsScreenState
     _tabController.addListener(() {
       setState(() {
         showEditIcon =
-            _tabController.index == 0 && specialistData['status'] != 'inactive' && currentUserEmail == 'admin@nutricare.com';
+            _tabController.index == 0 && specialistData['status'] != 'inactive';
       });
     });
   }
@@ -70,7 +70,7 @@ class _AdminSpecialistsDetailsScreenState
         }
         
         // Check if current user is admin
-        showEditIcon = currentUserEmail == 'admin@nutricare.com' && specialistData['status'] != 'inactive'; // Set showEditIcon based on current user
+        showEditIcon =  specialistData['status'] != 'inactive'; // Set showEditIcon based on current user
 
         isLoading = false;
       });

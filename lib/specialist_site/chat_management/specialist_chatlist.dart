@@ -38,82 +38,103 @@ class _SpecialistChatListScreenState extends State<SpecialistChatListScreen> {
   }
 
   Future<void> _retrieveChatData() async {
-  try {
-    // Query chats where the current specialist is a part of
-    QuerySnapshot querySnapshot = await _firestore
-        .collection('chats')
-        .where('users', arrayContains: specialistId) // Filter by specialist
-        .get();
+    try {
+      // Query chats where the current specialist is a part of
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('chats')
+          .where('users', arrayContains: specialistId) // Filter by specialist
+          .get();
 
-    // Clear previous chat data
-    chatList.clear();
+      // Clear previous chat data
+      chatList.clear();
 
-    if (querySnapshot.docs.isEmpty) {
+      if (querySnapshot.docs.isEmpty) {
+        setState(() {
+          _isLoading = false; // Set loading to false when done
+        });
+        return;
+      }
+
+      for (var doc in querySnapshot.docs) {
+        List<String> users = List<String>.from(
+            (doc.data() as Map<String, dynamic>)['users'] ?? []);
+        var clientId = users.first == specialistId
+            ? users.last
+            : users.first; // Specify the client ID
+
+        // Fetch client data
+        DocumentSnapshot clientDoc =
+            await _firestore.collection('users').doc(clientId).get();
+        var clientData = clientDoc.data() as Map<String, dynamic>?;
+
+        // Fetch the latest message from the chat
+        QuerySnapshot messagesSnapshot = await _firestore
+            .collection('chats')
+            .doc(doc.id)
+            .collection('messages')
+            .orderBy('timestamp',
+                descending: true) // Order by most recent timestamp
+            .limit(1) // Get only the latest message
+            .get();
+
+        var lastMessageDoc = messagesSnapshot.docs.isNotEmpty
+            ? messagesSnapshot.docs.first
+            : null; // Get the first doc
+        var lastMessage = lastMessageDoc?.data() as Map<String, dynamic>?;
+
+        if (lastMessage != null) {
+          String messageText = lastMessage['text'] ?? "No text";
+          String messageType = lastMessage['messageType'] ?? 'text';
+
+          // Update lastMessage based on message type
+          if (lastMessage['senderId'] == specialistId &&
+              lastMessage['messageType'] == 'image') {
+            messageText =
+                "You: [Image]"; // Prepend "You: " for user messagestext for image
+          } else if (lastMessage['senderId'] == specialistId &&
+              lastMessage['messageType'] == 'document') {
+            messageText =
+                "You: [Document]"; // Prepend "You: " for user messages
+          } else if (messageType == 'image') {
+            messageText = lastMessage['text'] ??
+                "Image Received"; // Use "Image sent" for image messages
+          } else if (messageType == 'document') {
+            messageText = lastMessage['text'] ??
+                "Document Received"; // Use filename stored in text
+          } else if (lastMessage['senderId'] == specialistId) {
+            messageText =
+                "You: $messageText"; // Prepend "You: " for user messages
+          }
+
+          // Truncate the message if it's too long
+          messageText = _truncateMessage(messageText);
+
+          Timestamp timestamp =
+              lastMessage['timestamp'] as Timestamp? ?? Timestamp.now();
+
+          chatList.add({
+            'chatId': doc.id,
+            'lastMessage': messageText,
+            'lastTimestamp': timestamp,
+            'clientName': clientData?['name'] ?? "Unknown",
+            'profilePictureUrl': clientData?['profile_pic'] ?? "",
+            'clientId': clientId, // Store clientId
+          });
+        }
+      }
+
+      // Sort chatList by lastTimestamp
+      chatList.sort((a, b) => b['lastTimestamp']
+          .compareTo(a['lastTimestamp'])); // Sort descending order
+    } catch (error) {
+      // Optionally handle the error
+      // You could log or show an alert to the user
+    } finally {
       setState(() {
         _isLoading = false; // Set loading to false when done
       });
-      return;
     }
-
-    for (var doc in querySnapshot.docs) {
-      List<String> users =
-          List<String>.from((doc.data() as Map<String, dynamic>)['users'] ?? []);
-      var clientId = users.first == specialistId ? users.last : users.first; // Specify the client ID
-
-      // Fetch client data
-      DocumentSnapshot clientDoc =
-          await _firestore.collection('users').doc(clientId).get();
-      var clientData = clientDoc.data() as Map<String, dynamic>?;
-
-      // Fetch the latest message from the chat
-      QuerySnapshot messagesSnapshot = await _firestore
-          .collection('chats')
-          .doc(doc.id)
-          .collection('messages')
-          .orderBy('timestamp', descending: true) // Order by most recent timestamp
-          .limit(1) // Get only the latest message
-          .get();
-
-      var lastMessageDoc = messagesSnapshot.docs.isNotEmpty
-          ? messagesSnapshot.docs.first
-          : null; // Get the first doc
-      var lastMessage = lastMessageDoc?.data() as Map<String, dynamic>?;
-
-      if (lastMessage != null) {
-        String messageText = lastMessage['text'] ?? "No text";
-        // Check if the last message is from the current specialist and format accordingly
-        if (lastMessage['senderId'] == specialistId) {
-          messageText = "You: $messageText"; // Prepend "You: " for specialist messages
-        }
-
-        // Truncate the message if it's too long
-        messageText = _truncateMessage(messageText);
-
-        Timestamp timestamp = lastMessage['timestamp'] as Timestamp? ?? Timestamp.now();
-
-        chatList.add({
-          'chatId': doc.id,
-          'lastMessage': messageText,
-          'lastTimestamp': timestamp,
-          'clientName': clientData?['name'] ?? "Unknown",
-          'profilePictureUrl': clientData?['profile_pic'] ?? "",
-          'clientId': clientId, // Store clientId
-        });
-      }
-    }
-
-    // Sort chatList by lastTimestamp
-    chatList.sort((a, b) => b['lastTimestamp'].compareTo(a['lastTimestamp'])); // Sort descending order
-
-  } catch (error) {
-    // Optionally handle the error
-    // You could log or show an alert to the user
-  } finally {
-    setState(() {
-      _isLoading = false; // Set loading to false when done
-    });
   }
-}
 
   String _formatTimestamp(Timestamp timestamp) {
     DateTime dateTime = timestamp.toDate();
@@ -135,7 +156,7 @@ class _SpecialistChatListScreenState extends State<SpecialistChatListScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
-          "Client Chats",
+          "Chats with Clients",
           style: TextStyle(
             color: Color.fromARGB(255, 90, 113, 243),
             fontWeight: FontWeight.bold,
@@ -148,13 +169,14 @@ class _SpecialistChatListScreenState extends State<SpecialistChatListScreen> {
             color: Color.fromARGB(255, 220, 220, 241),
           ),
         ),
-        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
+        iconTheme:
+            const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
       ),
       body: _isLoading
-          ? Center(child: Column(
+          ? Center(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(
@@ -169,7 +191,8 @@ class _SpecialistChatListScreenState extends State<SpecialistChatListScreen> {
                     ),
                   ),
                 ],
-              ),) // Show loading indicator
+              ),
+            ) // Show loading indicator
           : chatList.isEmpty
               ? Center(
                   child: Text(
@@ -198,7 +221,9 @@ class _SpecialistChatListScreenState extends State<SpecialistChatListScreen> {
                         leading: CircleAvatar(
                           backgroundImage: chat['profilePictureUrl'].isNotEmpty
                               ? NetworkImage(chat['profilePictureUrl'])
-                              : AssetImage("images/user_profile/default_profile.png") as ImageProvider,
+                              : AssetImage(
+                                      "images/user_profile/default_profile.png")
+                                  as ImageProvider,
                         ),
                         title: Text(
                           chat['clientName'],
@@ -227,7 +252,10 @@ class _SpecialistChatListScreenState extends State<SpecialistChatListScreen> {
                                 profilePictureUrl: chat['profilePictureUrl'],
                               ),
                             ),
-                          );
+                          ).then((_) {
+                            // Reload the chat data when coming back
+                            _retrieveChatData();
+                          });
                         },
                       ),
                     );

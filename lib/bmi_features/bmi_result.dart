@@ -80,26 +80,22 @@ class BmiResultScreen extends StatelessWidget {
                     ]),
                     DataRow(cells: [
                       DataCell(Text('Normal weight')),
-                      DataCell(Text('18.5 - 24.9')),
+                      DataCell(Text('18.5 - 22.9')),
                     ]),
                     DataRow(cells: [
                       DataCell(Text('Pre-obesity')),
-                      DataCell(Text('25.0 - 29.9')),
+                      DataCell(Text('23.0 - 24.9')),
                     ]),
                     DataRow(cells: [
                       DataCell(Text('Obesity class I')),
-                      DataCell(Text('30.0 - 34.9')),
+                      DataCell(Text('25.0 - 29.9')),
                     ]),
                     DataRow(cells: [
                       DataCell(Text('Obesity class II')),
-                      DataCell(Text('35.0 - 39.9')),
-                    ]),
-                    DataRow(cells: [
-                      DataCell(Text('Obesity class III')),
-                      DataCell(Text('>= 40.0')),
+                      DataCell(Text('>= 30')),
                     ]),
                   ],
-                  dataRowHeight: 50, // Adjust row height for better spacing
+                  dataRowHeight: 50, // Adjust row height for better spacing`
                 ),
               ),
 
@@ -145,27 +141,24 @@ class BmiResultScreen extends StatelessWidget {
     if (bmi < 18.5) {
       bmiCategory = 'Underweight';
       bmiColor = Colors.blue;
-    } else if (bmi >= 18.5 && bmi <= 24.9) {
+    } else if (bmi >= 18.5 && bmi <= 22.9) {
       bmiCategory = 'Normal weight';
       bmiColor = Colors.green;
-    } else if (bmi >= 25.0 && bmi <= 29.9) {
+    } else if (bmi >= 23.0 && bmi <= 24.9) {
       bmiCategory = 'Pre-obesity';
       bmiColor = Colors.orange;
-    } else if (bmi >= 30.0 && bmi <= 34.9) {
+    } else if (bmi >= 25.0 && bmi <= 29.9) {
       bmiCategory = 'Obesity class I';
       bmiColor = Colors.red;
-    } else if (bmi >= 35.0 && bmi <= 39.9) {
+    } else {
       bmiCategory = 'Obesity class II';
       bmiColor = Colors.red.shade700;
-    } else {
-      bmiCategory = 'Obesity class III';
-      bmiColor = Colors.red.shade900;
-    }
+    } 
 
-    // Calculate the ideal weight range (BMI between 18.5 to 24.9)
+    // Calculate the ideal weight range (BMI between 18.5 to 22.9)
     double minHeightInMeters = height / 100;
     double minWeight = 18.5 * (minHeightInMeters * minHeightInMeters);
-    double maxWeight = 24.9 * (minHeightInMeters * minHeightInMeters);
+    double maxWeight = 22.9 * (minHeightInMeters * minHeightInMeters);
 
     // Get current date and time
     String formattedDate = DateTime.now().toLocal().toString().split(' ')[0];

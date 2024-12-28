@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nutricare/specialist_site/more/specialist_more.dart';
 import 'package:nutricare/specialist_site/appointment_management/specialist_schedule.dart';
 import 'package:nutricare/specialist_site/articles_management/specialist_articles.dart';
-import 'chat_management/specialist_chatlist.dart';
+import '../admin_site/recipe_management/admin_recipe.dart';
 import 'client_management/client.dart';
 
 class SpecialistDashboard extends StatefulWidget {
@@ -15,13 +15,13 @@ class SpecialistDashboard extends StatefulWidget {
 class _SpecialistDashboardState extends State<SpecialistDashboard> {
   int _selectedIndex = 0; // Handle the selected index
 
-  // List of screens for each navigation item, including the new Client screen
+  // Updated list of screens with 'AdminRecipeScreen' as the first one
   static const List<Widget> _screens = <Widget>[
-    SpecialistArticlesScreen(),     // Articles
-    SpecialistSchedulesScreen(),    // Schedule
-    SpecialistClientScreen(),       // New Client Screen
-    SpecialistChatListScreen(), 
-    SpecialistMoreScreen(),         // More
+    AdminRecipeScreen(),          // Recipes
+    SpecialistArticlesScreen(),   // Articles
+    SpecialistSchedulesScreen(),  // Schedule
+    SpecialistClientScreen(),     // Client Screen
+    SpecialistMoreScreen(),       // More
   ];
 
   void _onItemTapped(int index) {
@@ -104,26 +104,26 @@ class _SpecialistDashboardState extends State<SpecialistDashboard> {
               Icon(
                 isSelected 
                     ? (
-                       index == 0 ? Icons.article_outlined :
-                       index == 1 ? Icons.calendar_month_outlined :
-                       index == 2 ? Icons.people_outlined : 
-                       index == 3 ? Icons.message_outlined :
+                       index == 0 ? Icons.food_bank_outlined : // Recipes icon
+                       index == 1 ? Icons.article_outlined :
+                       index == 2 ? Icons.calendar_month_outlined :
+                       index == 3 ? Icons.people_outlined : // Client icon
                        Icons.more_horiz_outlined) 
                     : (
-                       index == 0 ? Icons.article :
-                       index == 1 ? Icons.calendar_month :
-                       index == 2 ? Icons.people : 
-                       index == 3 ? Icons.message :
+                       index == 0 ? Icons.food_bank : // Recipes icon
+                       index == 1 ? Icons.article :
+                       index == 2 ? Icons.calendar_month :
+                       index == 3 ? Icons.people :
                        Icons.more_horiz), 
                 color: iconColor,
                 size: 30, // Icon size
               ),
               const SizedBox(height: 4), // Space between icon and text
               Text(
-                index == 0 ? 'Articles' :
-                index == 1 ? 'Schedule' :
-                index == 2 ? 'Client' : // Label for the Client option
-                index == 3 ? 'Messages' :
+                index == 0 ? 'Recipes' : // Updated label for Recipes
+                index == 1 ? 'Articles' :
+                index == 2 ? 'Schedule' :
+                index == 3 ? 'Client' : // Label for the Client option
                 'More',
                 style: TextStyle(
                   color: iconColor, 

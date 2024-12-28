@@ -29,71 +29,78 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
     _loadDietHistory(); // Load diet history on initialization
   }
 
- Future<void> _loadDietHistory() async {
-  setState(() {
-    isLoading = true; // Set loading state to true
-  });
-
-  // Retrieve calorie goal from user's document
-  DocumentSnapshot userDoc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(widget.clientId)
-      .get();
-
-  // Check if the user document exists
-  if (userDoc.exists && userDoc.data() != null) {
-    calorieGoal = userDoc['calorieGoal'] ?? 0; // Assuming this exists
-  }
-
-  QuerySnapshot dietSnapshot = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(widget.clientId)
-      .collection('dietHistory')
-      .get();
-
-  if (dietSnapshot.docs.isEmpty) {
+  Future<void> _loadDietHistory() async {
     setState(() {
-      dietHistories = [];
-      filteredHistories = [];
+      isLoading = true; // Set loading state to true
+    });
+
+    // Retrieve calorie goal from user's document
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.clientId)
+        .get();
+
+    // Check if the user document exists
+    if (userDoc.exists && userDoc.data() != null) {
+      calorieGoal = userDoc['calorieGoal'] ?? 0; // Assuming this exists
+    }
+
+    QuerySnapshot dietSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.clientId)
+        .collection('dietHistory')
+        .get();
+
+    if (dietSnapshot.docs.isEmpty) {
+      setState(() {
+        dietHistories = [];
+        filteredHistories = [];
+        isLoading = false;
+      });
+      return;
+    }
+
+    List<DietHistory> newHistories = [];
+
+    for (var doc in dietSnapshot.docs) {
+      var mealData = doc.data() as Map<String, dynamic>?;
+
+      if (mealData != null) {
+        DateTime.parse(doc.id);
+        List<MealHistory> meals = [];
+        List<String> mealTypes = [
+          'Breakfast',
+          'Lunch',
+          'Dinner',
+          'Snack',
+          'Other'
+        ];
+
+        for (String mealType in mealTypes) {
+          var mealInfo = mealData[mealType] as Map<String, dynamic>?;
+          if (mealInfo != null) {
+            meals.add(MealHistory(
+              mealType: mealType,
+              name: mealInfo['name'] ?? 'Unnamed Meal',
+              calories: mealInfo['Calories'] ?? 0,
+              protein: mealInfo['Protein'] ?? 0,
+              carbs: mealInfo['Carbohydrate'] ?? 0,
+              fat: mealInfo['Fat'] ?? 0,
+              calorieGoal: mealInfo['CalorieGoal'] ??
+                  0, // Assuming it's here, before we populate meals
+            ));
+          }
+        }
+        newHistories.add(DietHistory(date: doc.id, meals: meals));
+      }
+    }
+
+    setState(() {
+      dietHistories = newHistories;
+      filteredHistories = newHistories;
       isLoading = false;
     });
-    return;
   }
-
-  List<DietHistory> newHistories = [];
-
-  for (var doc in dietSnapshot.docs) {
-    var mealData = doc.data() as Map<String, dynamic>?;
-
-    if (mealData != null) {
-      DateTime.parse(doc.id);
-      List<MealHistory> meals = [];
-      List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Other'];
-
-      for (String mealType in mealTypes) {
-        var mealInfo = mealData[mealType] as Map<String, dynamic>?;
-        if (mealInfo != null) {
-          meals.add(MealHistory(
-            mealType: mealType,
-            name: mealInfo['name'] ?? 'Unnamed Meal',
-            calories: mealInfo['Calories'] ?? 0,
-            protein: mealInfo['Protein'] ?? 0,
-            carbs: mealInfo['Carbohydrate'] ?? 0,
-            fat: mealInfo['Fat'] ?? 0,
-            calorieGoal: mealInfo['CalorieGoal'] ?? 0, // Assuming it's here, before we populate meals
-          ));
-        }
-      }
-      newHistories.add(DietHistory(date: doc.id, meals: meals));
-    }
-  }
-
-  setState(() {
-    dietHistories = newHistories;
-    filteredHistories = newHistories;
-    isLoading = false;
-  });
-}
 
   void _selectDateRange() async {
     final DateTimeRange? pickedRange = await showDateRangePicker(
@@ -126,6 +133,124 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
       endDate = null;
       filteredHistories = dietHistories;
     });
+  }
+
+  Future<void> _editMeal(MealHistory meal, String date) async {
+    // Pass the date along with the meal details
+    final TextEditingController nameController =
+        TextEditingController(text: meal.name);
+    final TextEditingController caloriesController =
+        TextEditingController(text: meal.calories.toString());
+    final TextEditingController proteinController =
+        TextEditingController(text: meal.protein.toString());
+    final TextEditingController carbsController =
+        TextEditingController(text: meal.carbs.toString());
+    final TextEditingController fatController =
+        TextEditingController(text: meal.fat.toString());
+
+    // Show a dialog for editing meal details
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Text('Edit ${meal.mealType}',
+              style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              children: <Widget>[
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(labelText: 'Meal Name'),
+                ),
+                TextField(
+                  controller: caloriesController,
+                  decoration: InputDecoration(labelText: 'Calories'),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: proteinController,
+                  decoration: InputDecoration(labelText: 'Protein (g)'),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: carbsController,
+                  decoration: InputDecoration(labelText: 'Carbs (g)'),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: fatController,
+                  decoration: InputDecoration(labelText: 'Fat (g)'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+              child: Text('Save', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                int newCalories = int.tryParse(caloriesController.text) ?? 0;
+                int newProtein = int.tryParse(proteinController.text) ?? 0;
+                int newCarbs = int.tryParse(carbsController.text) ?? 0;
+                int newFat = int.tryParse(fatController.text) ?? 0;
+
+                // Update the meal in Firestore with the current date
+                _updateMealInFirestore(date, meal.mealType, nameController.text,
+                    newCalories, newProtein, newCarbs, newFat);
+
+                // Update the meal in the local state if necessary
+                setState(() {
+                  meal.name = nameController.text;
+                  meal.calories = newCalories;
+                  meal.protein = newProtein;
+                  meal.carbs = newCarbs;
+                  meal.fat = newFat;
+                });
+
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Update the _updateMealInFirestore method to include the date
+  Future<void> _updateMealInFirestore(String date, String mealType, String name,
+      int calories, int protein, int carbs, int fat) async {
+    try {
+      DocumentReference mealRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.clientId)
+          .collection('dietHistory')
+          .doc(date); // Use the date for the document ID
+
+      await mealRef.update({
+        mealType: {
+          'name': name,
+          'Calories': calories,
+          'Protein': protein,
+          'Carbohydrate': carbs,
+          'Fat': fat,
+        },
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update meal: $e')),
+      );
+    }
   }
 
   @override
@@ -272,248 +397,274 @@ class _DietHistoryWidgetState extends State<DietHistoryWidget> {
     );
   }
 
-Widget _buildHistoryCard(DietHistory history) {
-  int totalProteins =
-      history.meals.fold(0, (sum, meal) => sum + meal.protein);
-  int totalCarbs = history.meals.fold(0, (sum, meal) => sum + meal.carbs);
-  int totalFats = history.meals.fold(0, (sum, meal) => sum + meal.fat);
+  Widget _buildHistoryCard(DietHistory history) {
+    int totalProteins =
+        history.meals.fold(0, (sum, meal) => sum + meal.protein);
+    int totalCarbs = history.meals.fold(0, (sum, meal) => sum + meal.carbs);
+    int totalFats = history.meals.fold(0, (sum, meal) => sum + meal.fat);
 
-  int totalCalories =
-      history.meals.fold(0, (sum, meal) => sum + meal.calories);
-  
-  // Determine the status of the calorie goal
-  String caloricFeedback;
-  Color feedbackColor;
-  int excessCalories = totalCalories > calorieGoal ? totalCalories - calorieGoal : 0;
+    int totalCalories =
+        history.meals.fold(0, (sum, meal) => sum + meal.calories);
 
-  if (excessCalories > 0) {
-    caloricFeedback = 'Exceeds by $excessCalories kcal';
-    feedbackColor = Colors.red;
-  } else {
-    caloricFeedback = 'Remaining: ${calorieGoal - totalCalories} kcal to reach goal';
-    feedbackColor = Colors.green;
-  }
-  
-  return Dismissible(
-    key: Key(history.date), 
-    background: Container(
-      color: Colors.red, 
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 20),
-      child: const Icon(Icons.delete, color: Colors.white), 
-    ),
-    direction: DismissDirection.endToStart,
-    confirmDismiss: (direction) async {
-      final confirmation = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            title: RichText(
-              text: TextSpan(
-                text: 'Delete Diet History',
-                style: TextStyle(
-                  color: primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+    // Determine the status of the calorie goal
+    String caloricFeedback;
+    Color feedbackColor;
+    int excessCalories =
+        totalCalories > calorieGoal ? totalCalories - calorieGoal : 0;
+
+    if (excessCalories > 0) {
+        caloricFeedback = 'Exceeds by $excessCalories kcal';
+        feedbackColor = Colors.red;
+    } else {
+        caloricFeedback =
+            'Remaining: ${calorieGoal - totalCalories} kcal to reach goal';
+        feedbackColor = Colors.green;
+    }
+
+    return Dismissible(
+      key: Key(history.date),
+      background: Container(
+        color: Colors.red,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        final confirmation = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              title: RichText(
+                text: TextSpan(
+                  text: 'Delete Diet History',
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
                 ),
               ),
+              content: RichText(
+                text: TextSpan(
+                  text: 'Are you sure you want to delete this diet history on ',
+                  style: TextStyle(color: Colors.black),
+                  children: <TextSpan>[
+                    TextSpan(
+                      text: history.date,
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(text: '?'),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  child: Text('Delete', style: TextStyle(color: Colors.white)),
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                  },
+                ),
+              ],
+            );
+          },
+        );
+
+        return confirmation ?? false;
+      },
+      onDismissed: (direction) async {
+        bool isDeleted = await _deleteDietHistory(history.date);
+
+        if (isDeleted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Deleted diet history for ${history.date}'),
+              backgroundColor: Colors.red,
             ),
-            content: RichText(
-              text: TextSpan(
-                text: 'Are you sure you want to delete this diet history on ',
-                style: TextStyle(color: Colors.black), 
-                children: <TextSpan>[
-                  TextSpan(
-                    text: history.date, 
+          );
+        } else {
+          setState(() {
+            filteredHistories.add(history); // Reinsert if not deleted
+          });
+        }
+      },
+      child: Card(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: Colors.grey.shade400, width: 1),
+        ),
+        margin: const EdgeInsets.only(bottom: 16),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Date Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Date: ${history.date}',
                     style: TextStyle(
-                      color: primaryColor,
-                      fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800]),
+                  ),
+                  Icon(Icons.calendar_today, color: primaryColor, size: 24),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Calorie Goal and Progress Display
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Calorie Goal: $calorieGoal kcal',
+                          style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Total Calories Consumed: $totalCalories kcal',
+                          style: TextStyle(
+                              fontSize: 18,
+                              color: feedbackColor,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          caloricFeedback,
+                          style: TextStyle(fontSize: 16, color: feedbackColor),
+                        ),
+                      ],
                     ),
                   ),
-                  TextSpan(text: '?'), 
+                  const SizedBox(width: 10),
+                  // Progress Circle
+                  CircularProgressIndicator(
+                    value: calorieGoal > 0 ? totalCalories / calorieGoal : 0,
+                    backgroundColor: Colors.grey[300],
+                    color: feedbackColor,
+                    strokeWidth: 7,
+                  ),
                 ],
               ),
-            ),
-            actions: [
-              TextButton(
-                child: Text('Cancel'),
-                onPressed: () {
-                  Navigator.of(context).pop(false); 
-                },
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                ),
-                child: Text('Delete', style: TextStyle(color: Colors.white)),
-                onPressed: () {
-                  Navigator.of(context).pop(true); 
-                },
-              ),
-            ],
-          );
-        },
-      );
 
-      return confirmation ?? false; 
-    },
-    onDismissed: (direction) async {
-      bool isDeleted = await _deleteDietHistory(history.date);
-      
-      if (isDeleted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Deleted diet history for ${history.date}'),
-          backgroundColor: Colors.red,),
-        );
-      } else {
-        setState(() {
-          filteredHistories.add(history); // Reinsert if not deleted
-        });
-      }
-    },
-    child: Card(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: Colors.grey.shade400, width: 1),
-      ),
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Date Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Date: ${history.date}',
-                  style: TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800]),
-                ),
-                Icon(Icons.calendar_today, color: primaryColor, size: 24),
-              ],
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Calorie Goal and Progress Display
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Calorie Goal: $calorieGoal kcal',
-                        style: TextStyle(fontSize: 18, color: Colors.black, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        'Total Calories Consumed: $totalCalories kcal',
-                        style: TextStyle(fontSize: 18, color: feedbackColor, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        caloricFeedback,
-                        style: TextStyle(fontSize: 16, color: feedbackColor),
-                      ),
-                    ],
-                  ),
+              // Summary Section with Icons
+              if (history.meals.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Summary:',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildNutrientInfo(Icons.local_fire_department,
+                            "Calories", "$totalCalories kcal"),
+                        _buildNutrientInfo(Icons.fitness_center, "Protein",
+                            "$totalProteins g"),
+                        _buildNutrientInfo(
+                            Icons.grain, "Carbs", "$totalCarbs g"),
+                        _buildNutrientInfo(
+                            Icons.bubble_chart, "Fat", "$totalFats g"),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                // Optional: Progress Circle (Add a circular progress indicator)
-                CircularProgressIndicator(
-                  value: totalCalories / calorieGoal,
-                  backgroundColor: Colors.grey[300],
-                  color: feedbackColor,
-                  strokeWidth: 7,
-                ),
-              ],
-            ),
 
-            const SizedBox(height: 16),
-
-            // Summary Section with Icons
-            if (history.meals.isNotEmpty)
+              // Meals Section
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Summary:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildNutrientInfo(Icons.local_fire_department, "Calories", "$totalCalories kcal"),
-                      _buildNutrientInfo(Icons.fitness_center, "Protein", "$totalProteins g"),
-                      _buildNutrientInfo(Icons.grain, "Carbs", "$totalCarbs g"),
-                      _buildNutrientInfo(Icons.bubble_chart, "Fat", "$totalFats g"),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                children: history.meals.isEmpty
+                    ? [
+                        Text(
+                          'No Meals Logged',
+                          style:
+                              TextStyle(color: Colors.redAccent, fontSize: 16),
+                        )
+                      ]
+                    : history.meals.map((meal) {
+                        return Tooltip(
+                          message: 'Tap to edit nutritional facts',
+                          child: GestureDetector(
+                            onTap: () {
+                              _editMeal(meal, history.date);
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildMealCard(meal),
+                                const Divider(thickness: 1, color: Colors.grey),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
               ),
-            // Meals Section
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: history.meals.isEmpty
-                  ? [
-                      Text(
-                        'No Meals Logged',
-                        style: TextStyle(color: Colors.redAccent, fontSize: 16),
-                      )
-                    ]
-                  : history.meals.map((meal) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildMealCard(meal),
-                          const Divider(thickness: 1, color: Colors.grey),
-                        ],
-                      );
-                    }).toList(),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
-
-Future<bool> _deleteDietHistory(String date) async {
-  try {
-    // Delete the document from Firestore
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.clientId)
-        .collection('dietHistory')
-        .doc(date) // Assuming the `date` is the document ID
-        .delete();
-
-    // Update the local state to reflect the deletion
-    setState(() {
-      dietHistories.removeWhere((history) => history.date == date);
-      filteredHistories.removeWhere((history) => history.date == date);
-    });
-    
-    return true; // Return true if deletion was successful
-  } catch (e) {
-    // Handle error if necessary
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to delete history: $e')),
     );
-    return false; // Return false if an error occurred
-  }
 }
+  Future<bool> _deleteDietHistory(String date) async {
+    try {
+      // Delete the document from Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.clientId)
+          .collection('dietHistory')
+          .doc(date) // Assuming the `date` is the document ID
+          .delete();
 
-// Helper widget for displaying each nutrient with an icon
+      // Update the local state to reflect the deletion
+      setState(() {
+        dietHistories.removeWhere((history) => history.date == date);
+        filteredHistories.removeWhere((history) => history.date == date);
+      });
+
+      return true; // Return true if deletion was successful
+    } catch (e) {
+      // Handle error if necessary
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete history: $e')),
+      );
+      return false; // Return false if an error occurred
+    }
+  }
+
+  // Helper widget for displaying each nutrient with an icon
   Widget _buildNutrientInfo(IconData icon, String label, String value) {
     return Column(
       children: [
@@ -541,7 +692,7 @@ Future<bool> _deleteDietHistory(String date) async {
               Text(
                 meal.mealType,
                 style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                     TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 5),
               Text(
@@ -553,7 +704,7 @@ Future<bool> _deleteDietHistory(String date) async {
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(
               '${meal.calories} kcal',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style:  TextStyle(fontWeight: FontWeight.bold),
             ),
             Text(
               'Protein: ${meal.protein} g\nCarbs: ${meal.carbs} g\nFat: ${meal.fat} g',
@@ -577,12 +728,12 @@ class DietHistory {
 }
 
 class MealHistory {
-  final String mealType;
-  final String name;
-  final int calories;
-  final int protein;
-  final int carbs;
-  final int fat;
+  String mealType;
+  String name;
+  int calories;
+  int protein;
+  int carbs;
+  int fat;
   final int calorieGoal;
 
   MealHistory({
@@ -591,7 +742,7 @@ class MealHistory {
     required this.calories,
     required this.protein,
     required this.carbs,
-    required this.fat, 
+    required this.fat,
     required this.calorieGoal,
   });
 }

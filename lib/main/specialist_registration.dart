@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For FilteringTextInputFormatter
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:image_picker/image_picker.dart'; // Still needed for profile picture
+import 'package:image_picker/image_picker.dart'; // For picking images
+import 'package:file_picker/file_picker.dart'; // For picking files
 import 'dart:io';
 
 class SpecialistRegistrationScreen extends StatefulWidget {
@@ -24,14 +25,13 @@ class _SpecialistRegistrationScreenState
 
   late List<dynamic> services;
 
-  String? profilePictureUrl;
   final ImagePicker _picker = ImagePicker();
-  XFile? _imageFile;
+  XFile? _imageFile; // Variable to store profile picture
+  String? _documentPath; // Variable to store the document path (AHP license)
+  String? _documentName; // Variable to store the name of the document
 
   String? selectedGender;
   String? selectedSpecialization;
-
-  String? uploadedImagePath; // Variable to store uploaded image path
 
   @override
   void initState() {
@@ -44,9 +44,9 @@ class _SpecialistRegistrationScreenState
     phoneController = TextEditingController();
     services = [];
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-    _showWelcomeDialog();
-  });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showWelcomeDialog();
+    });
   }
 
   @override
@@ -91,6 +91,16 @@ class _SpecialistRegistrationScreenState
       return;
     }
 
+    if (_documentPath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please upload your AHP license!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (!isEmailValid(emailController.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -103,7 +113,8 @@ class _SpecialistRegistrationScreenState
     }
 
     try {
-      String? downloadUrl = await uploadProfilePicture();
+      String? profilePictureUrl = await uploadProfilePicture();
+      String? documentUrl = await uploadDocument();
 
       final newRegistrationEnquiry = {
         'name': nameController.text,
@@ -116,7 +127,8 @@ class _SpecialistRegistrationScreenState
         'specialization': selectedSpecialization,
         'about': aboutController.text,
         'services': services,
-        'profile_picture_url': downloadUrl,
+        'profile_picture_url': profilePictureUrl,
+        'document_url': documentUrl, // Add document URL to Firestore
         'submitDate': DateTime.now().toIso8601String(),
       };
 
@@ -165,8 +177,9 @@ class _SpecialistRegistrationScreenState
       try {
         FirebaseStorage storage = FirebaseStorage.instance;
         String fileName = _imageFile!.name;
-        uploadedImagePath = 'profile_pictures/$fileName'; // Store the path
-        Reference ref = storage.ref().child(uploadedImagePath!);
+        String uploadedImagePath =
+            'profile_pictures/$fileName'; // Store the path
+        Reference ref = storage.ref().child(uploadedImagePath);
         await ref.putFile(File(_imageFile!.path));
         return await ref.getDownloadURL(); // Return the download URL
       } catch (e) {
@@ -176,6 +189,26 @@ class _SpecialistRegistrationScreenState
       }
     }
     return null; // Return null if there was no image to upload
+  }
+
+  // Method to upload the document
+  Future<String?> uploadDocument() async {
+    if (_documentPath != null) {
+      try {
+        FirebaseStorage storage = FirebaseStorage.instance;
+        String fileName = _documentName ??
+            "document"; // Get the file name or default to "document"
+        String uploadedDocumentPath = 'documents/$fileName'; // Store the path
+        Reference ref = storage.ref().child(uploadedDocumentPath);
+        await ref.putFile(File(_documentPath!)); // Directly upload the document
+        return await ref.getDownloadURL(); // Return the download URL
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading document: $e')),
+        );
+      }
+    }
+    return null; // Return null if there was no document to upload
   }
 
   bool isEmailValid(String email) {
@@ -192,6 +225,30 @@ class _SpecialistRegistrationScreenState
         // Optionally, you can display a confirmation or preview of the image
       });
     }
+  }
+
+  // New method to pick the document using FilePicker
+  Future<void> pickDocument() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.any, // Allow any document type, adjust as needed
+    );
+
+    if (result != null) {
+      setState(() {
+        _documentPath =
+            result.files.single.path; // Store the selected file path
+        _documentName =
+            result.files.single.name; // Store the name of the document
+      });
+    }
+  }
+
+  // Method to remove the uploaded document
+  void removeDocument() {
+    setState(() {
+      _documentPath = null; // Clear the document path
+      _documentName = null; // Clear the document name
+    });
   }
 
   void _showWelcomeDialog() {
@@ -542,6 +599,43 @@ class _SpecialistRegistrationScreenState
             style: TextStyle(
                 color: Color.fromARGB(255, 90, 113, 243),
                 fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Color.fromARGB(255, 90, 113, 243)),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    backgroundColor: Colors.white,
+                    title: const Text(
+                      "Important Note",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 90, 113, 243)),
+                    ),
+                    content: const Text(
+                      'This is an inquiry form for specialist registration. '
+                      'By submitting this form, you are not directly signing up for an account. '
+                      'Our administrator will review your submission and contact you if you are selected to become a part of our community.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child:
@@ -623,6 +717,81 @@ class _SpecialistRegistrationScreenState
                 const SizedBox(height: 10),
                 _buildAboutField(),
                 const SizedBox(height: 20),
+
+                // Section for document upload
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('AHP License',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    IconButton(
+                      icon: const Icon(Icons.info_outline,
+                          color: Color.fromARGB(255, 90, 113, 243)),
+                      tooltip: 'Info',
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              backgroundColor: Colors.white,
+                              title: const Text(
+                                "AHP License Upload Information",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color.fromARGB(255, 90, 113, 243)),
+                              ),
+                              content: const Text(
+                                'Please upload your AHP license document to prove you are a professional and relevant specialist.',
+                              ),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: const Text('OK'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+
+                // Show file name and remove button if a document is uploaded
+                if (_documentPath != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _documentName ?? 'No document',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle,
+                              color: Colors.red),
+                          onPressed: removeDocument,
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ElevatedButton(
+                    onPressed: pickDocument,
+                    child: const Text('Upload Document (PDF, DOC, etc.)'),
+                  ),
+
+                const SizedBox(height: 20),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -661,7 +830,7 @@ class _SpecialistRegistrationScreenState
                 Center(
                   child: ElevatedButton.icon(
                     onPressed: sendRegistrationEnquiry,
-                    label: const Text('Sign Up',
+                    label: const Text('Submit Inquiry',
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,

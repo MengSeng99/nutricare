@@ -19,11 +19,13 @@ class _EarningsScreenState extends State<EarningsScreen> {
   int? selectedMonth;
   int? selectedYear;
   bool noTransactionsForSelectedDate = false; // Indicator for showing no transactions
+  double currentRate = 0.0;
 
   @override
   void initState() {
     super.initState();
     _fetchCurrentUserId();
+    _fetchCurrentRate();
   }
 
   Future<void> _fetchCurrentUserId() async {
@@ -34,6 +36,24 @@ class _EarningsScreenState extends State<EarningsScreen> {
       await _fetchData(); // Fetch both earnings and withdrawals together
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No user is signed in')));
+    }
+  }
+
+  Future<void> _fetchCurrentRate() async {
+    try {
+      var snapshot = await FirebaseFirestore.instance
+          .collection('rates')
+          .doc('current_rate_doc') // Document ID where rates are stored
+          .get();
+          
+      if (snapshot.exists) {
+        setState(() {
+          currentRate = snapshot.data()?['rate']?.toDouble() ?? 0.0; // Store the fetched rate
+        });
+      }
+    } catch (e) {
+      // Handle error if fetching rate fails
+      print('Error fetching current rate: $e');
     }
   }
 
@@ -321,6 +341,16 @@ class _EarningsScreenState extends State<EarningsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Display Current Rate
+                            Text(
+                              'Current Rate: ${(currentRate * 100).toStringAsFixed(1)}%',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color.fromARGB(255, 90, 113, 243),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [

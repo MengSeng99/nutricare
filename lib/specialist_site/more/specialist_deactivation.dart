@@ -86,7 +86,7 @@ class _SpecialistDeactivationState extends State<SpecialistDeactivation> {
 
   Future<void> _pickDate(BuildContext context) async {
     final DateTime now = DateTime.now();
-    final DateTime startFrom = now.add(const Duration(days: 14));
+    final DateTime startFrom = DateTime(now.year, now.month + 1, now.day);
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: startFrom,

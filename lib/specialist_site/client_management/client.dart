@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../chat_management/specialist_chatlist.dart';
 import 'client_details.dart';
 
 // Client model to hold client details
@@ -212,6 +213,20 @@ class _SpecialistClientScreenState extends State<SpecialistClientScreen> {
             color: Color.fromARGB(255, 90, 113, 243),
           ),
         ),
+        actions: [
+        IconButton(
+          icon: const Icon(Icons.message_outlined, color: Color.fromARGB(255, 90, 113, 243)),
+          onPressed: () {
+            // Navigate to SpecialistChatListScreen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SpecialistChatListScreen(),
+              ),
+            );
+          },
+        ),
+      ],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(

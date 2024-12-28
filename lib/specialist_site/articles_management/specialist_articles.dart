@@ -46,26 +46,29 @@ class SpecialistArticlesScreen extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('articles')
-            .where('specialistId',
-                isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+  stream: FirebaseFirestore.instance
+      .collection('articles')
+      .snapshots(), // Get all articles without a filter
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-          if (snapshot.hasError) {
-            return const Center(child: Text('Error loading articles'));
-          }
+    if (snapshot.hasError) {
+      return const Center(child: Text('Error loading articles'));
+    }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('No articles found.'));
-          }
+    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+      return const Center(child: Text('No articles found.'));
+    }
 
-          // Articles fetched successfully
-          final articles = snapshot.data!.docs;
+    // Articles fetched successfully
+    final articles = snapshot.data!.docs
+        .where((article) => (article.data() as Map<String, dynamic>)['specialistId'] == FirebaseAuth.instance.currentUser?.uid)
+        .toList()
+      ..sort((a, b) => 
+          (b.data() as Map<String, dynamic>)['postDate'].compareTo((a.data() as Map<String, dynamic>)['postDate'])
+      );
 
           return ListView.builder(
             itemCount: articles.length,

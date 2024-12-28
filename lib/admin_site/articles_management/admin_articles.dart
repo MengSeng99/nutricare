@@ -279,7 +279,10 @@ class ArticlesListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('articles').snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('articles')
+          .orderBy('postDate', descending: true) // Sort articles by postDate
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -291,7 +294,7 @@ class ArticlesListView extends StatelessWidget {
         final articles = snapshot.data!.docs.where((article) {
           final articleData = article.data() as Map<String, dynamic>;
           final title = articleData['title']?.toLowerCase() ?? '';
-          final matchesSearch = title.startsWith(searchKeyword.toLowerCase());
+          final matchesSearch = title.contains(searchKeyword.toLowerCase());
           final matchesSpecialist = selectedSpecialistIds.isEmpty ||
               selectedSpecialistIds.contains(articleData['specialistId']);
 
@@ -517,10 +520,11 @@ class ArticlesListView extends StatelessWidget {
                 Navigator.of(context).pop(); // Close the dialog
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                      content: Text(
-                    'Article removed successfully',
-                    style: TextStyle(backgroundColor: Colors.green),
-                  )),
+                    content: Text(
+                      'Article removed successfully',
+                    ),
+                    backgroundColor: Colors.green,
+                  ),
                 );
               },
               child:
@@ -532,3 +536,4 @@ class ArticlesListView extends StatelessWidget {
     );
   }
 }
+

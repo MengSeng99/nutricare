@@ -392,14 +392,12 @@ class _BmiHistoryScreenState extends State<BmiHistoryScreen> {
 Color getBmiColor(double bmi) {
     if (bmi < 18.5) {
       return Colors.blue; // Underweight
-    } else if (bmi >= 18.5 && bmi <= 24.9) {
+    } else if (bmi >= 18.5 && bmi <= 22.9) {
       return Colors.green; // Normal weight
-    } else if (bmi >= 25.0 && bmi <= 29.9) {
+    } else if (bmi >= 23.0 && bmi <= 24.9) {
       return Colors.orange; // Pre-obesity
-    } else if (bmi >= 30.0 && bmi <= 34.9) {
+    } else if (bmi >= 25.0 && bmi <= 29.9) {
       return Colors.red; // Obesity class I
-    } else if (bmi >= 35.0 && bmi <= 39.9) {
-      return Colors.red.shade700; // Obesity class II
     } else {
       return Colors.red.shade900; // Obesity class III
     }
@@ -511,7 +509,7 @@ Widget _buildDetailRow(IconData icon, String title, String value) {
                     dashArray: [5, 5],
                   ),
                   HorizontalLine(
-                    y: 24.9,
+                    y: 22.9,
                     color: Colors.green.withOpacity(0.8),
                     strokeWidth: 2,
                     dashArray: [5, 5],
@@ -581,7 +579,7 @@ Widget _buildDetailRow(IconData icon, String title, String value) {
                     ),
                     const SizedBox(width: 8),
                     const Text(
-                      "Normal BMI range (18.5 - 24.9).",
+                      "Normal BMI range (18.5 - 22.9).",
                       style: TextStyle(fontSize: 12, color: Colors.black54),
                     ),
                   ],

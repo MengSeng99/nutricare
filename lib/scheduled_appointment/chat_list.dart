@@ -47,8 +47,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         .where('users', arrayContains: currentUserId) // Filter by current user
         .get();
 
-    // Clear the chat list before adding new data
-    chatList.clear(); 
+    chatList.clear(); // Clear the chat list before adding new data
 
     if (querySnapshot.docs.isEmpty) {
       setState(() {
@@ -85,10 +84,21 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
       if (lastMessage != null) {
         String messageText = lastMessage['text'] ?? "No text";
-        // Check if the last message is from the current user and format accordingly
-        if (lastMessage['senderId'] == currentUserId) {
-          messageText =
-              "You: $messageText"; // Prepend "You: " for user messages
+        String messageType = lastMessage['messageType'] ?? 'text'; 
+
+         // Update lastMessage based on message type
+        if (lastMessage['senderId'] == currentUserId && lastMessage['messageType'] == 'image') {
+          messageText = "You: [Image]"; // Prepend "You: " for user messagestext for image
+        }
+        else if (lastMessage['senderId'] == currentUserId && lastMessage['messageType'] == 'document') {
+          messageText = "You: [Document]"; // Prepend "You: " for user messages
+        }
+          else if (messageType == 'image') {
+          messageText = lastMessage['text'] ?? "Image Received"; // Use "Image sent" for image messages
+        } else if (messageType == 'document') {
+          messageText = lastMessage['text'] ?? "Document Received"; // Use filename stored in text
+        } else if (lastMessage['senderId'] == currentUserId) {
+          messageText = "You: $messageText"; // Prepend "You: " for user messages
         }
 
         // Truncate the message if it's too long
@@ -116,7 +126,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       _isLoading = false; // Set loading to false when done
     });
   } catch (error) {
-    // print("Error retrieving chat data: $error");
+    // Handle error
     setState(() {
       _isLoading = false; // Set loading to false even on error
     });
@@ -224,7 +234,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                 profilePictureUrl: chat['profilePictureUrl'],
                               ),
                             ),
-                          );
+                          ).then((_) {
+                            // Reload the chat data when coming back
+                            _retrieveChatData();
+                          });
                         },
                       ),
                     );

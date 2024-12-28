@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:nutricare/specialist_site/more/specialist_deactivation.dart';
 import 'package:nutricare/specialist_site/more/specialist_earning.dart';
 import '../../authentication_process/login.dart';
-import '../../food_recipe/food_recipe.dart';
 import '../../settings/feedback.dart';
 import 'package:nutricare/admin_site/specialist_management/admin_specialist_details.dart';
 
@@ -48,10 +47,6 @@ class SpecialistMoreScreen extends StatelessWidget {
                   ),
                 ),
               );
-            }),
-            const SizedBox(height: 10),
-            _buildSettingOption(context, Icons.restaurant, 'Food Recipe', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const FoodRecipeScreen()));
             }),
             const SizedBox(height: 10),
             _buildSettingOption(context, Icons.feedback_outlined, 'Feedback', () {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // Admin screen to view specialist registration enquiries
 class AdminSpecialistEnquiriesScreen extends StatefulWidget {
@@ -112,36 +114,36 @@ class _AdminSpecialistEnquiriesScreenState
               ],
             ),
           ),
-         Expanded(
-  child: StreamBuilder<List<SpecialistEnquiry>>(
-    stream: readSpecialistEnquiries(filter == 'Bookmarked'),
-    builder: (context, snapshot) {
-      if (snapshot.hasError) {
-        return Center(
-            child: Text('Something went wrong: ${snapshot.error}'));
-      }
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
+          Expanded(
+            child: StreamBuilder<List<SpecialistEnquiry>>(
+              stream: readSpecialistEnquiries(filter == 'Bookmarked'),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Text('Something went wrong: ${snapshot.error}'));
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-      final enquiries = snapshot.data!;
+                final enquiries = snapshot.data!;
 
-      // Check if the filter is 'Bookmarked' and there are no inquiries
-      if (filter == 'Bookmarked' && enquiries.isEmpty) {
-        return Center(child: Text('No specialist enquiries added to your bookmark.'));
-      }
+                // Check if the filter is 'Bookmarked' and there are no inquiries
+                if (filter == 'Bookmarked' && enquiries.isEmpty) {
+                  return Center(child: Text('No specialist enquiries added to your bookmark.'));
+                }
 
-      return ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: enquiries.length,
-        itemBuilder: (context, index) {
-          final enquiry = enquiries[index];
-          return EnquiryCard(enquiry: enquiry);
-        },
-      );
-    },
-  ),
-),
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: enquiries.length,
+                  itemBuilder: (context, index) {
+                    final enquiry = enquiries[index];
+                    return EnquiryCard(enquiry: enquiry);
+                  },
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -149,10 +151,13 @@ class _AdminSpecialistEnquiriesScreenState
 
   Stream<List<SpecialistEnquiry>> readSpecialistEnquiries(bool onlyBookmarked) {
     Query query = FirebaseFirestore.instance
-        .collection('specialist_registration_enquiries');
+        .collection('specialist_registration_enquiries')
+        .orderBy('submitDate', descending: true); // Sort by submitDate
+
     if (onlyBookmarked) {
       query = query.where('bookmarked', isEqualTo: 1);
     }
+
     return query.snapshots().map((snapshot) => snapshot.docs
         .map((doc) => SpecialistEnquiry.fromJson(
             doc.data() as Map<String, dynamic>,
@@ -249,14 +254,51 @@ class EnquiryCard extends StatelessWidget {
             const SizedBox(height: 12),
             _buildServicesList(enquiry.services),
             const SizedBox(height: 8),
+            // Display Document as an icon
+            if (enquiry.documentUrl != null) ...[
+              Text(
+              'AHP License:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+              Row(
+                children: [
+                  Icon(Icons.attach_file, color: Color.fromARGB(255, 90, 113, 243)),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () => _launchURL(enquiry.documentUrl!),
+                    child: const Text(
+                      "View Document",
+                      style: TextStyle(
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
             Text(
-              'Submitted on: ${DateTime.parse(enquiry.submitDate).toLocal().toString().split(' ')[0]}',
+              'Submitted on: ${_formatDate(enquiry.submitDate)}', // Update here
               style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _formatDate(String dateString) {
+    DateTime dateTime = DateTime.parse(dateString); // Convert string to DateTime
+    return DateFormat('yyyy-MM-dd – HH:mm').format(dateTime); // Format date and time
+  }
+
+  void _launchURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
   }
 
   Widget _buildInfoRow(IconData icon, String text) {
@@ -304,8 +346,7 @@ class EnquiryCard extends StatelessWidget {
           var service = entry.value;
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 2.0),
-            child:
-                Text('$index. ${service['name']}: ${service['description']}'),
+            child: Text('$index. ${service['name']}: ${service['description']}'),
           );
         }),
       ],
@@ -324,12 +365,13 @@ class SpecialistEnquiry {
   final String specialization;
   final String about;
   final String profilePictureUrl;
+  final String? documentUrl; // New field for document URL
   final List<Map<String, dynamic>> services;
   final String submitDate;
   final int bookmarked; // 0 or 1 for bookmark status
 
   SpecialistEnquiry({
-    required this.id, // Document ID
+    required this.id,
     required this.name,
     required this.email,
     required this.phone,
@@ -338,8 +380,9 @@ class SpecialistEnquiry {
     required this.gender,
     required this.specialization,
     required this.about,
-    required this.services,
     required this.profilePictureUrl,
+    this.documentUrl, // Optional document URL
+    required this.services,
     required this.submitDate,
     required this.bookmarked,
   });
@@ -360,6 +403,7 @@ class SpecialistEnquiry {
           json['services'].map((item) => Map<String, dynamic>.from(item))),
       submitDate: json['submitDate'],
       bookmarked: json['bookmarked'] ?? 0, // Default to 0 if not present
+      documentUrl: json['document_url'], // New field for document URL
     );
   }
 }
