@@ -295,10 +295,10 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> {
 
     if (specialist.isFavorite) {
       await userFavoritesRef.doc(specialist.id).set({
-        'name': specialist.name,
-        'specialization': specialist.specialization,
-        'organization': specialist.organization,
-        'profile_picture_url': specialist.profilePictureUrl,
+        // 'name': specialist.name,
+        // 'specialization': specialist.specialization,
+        // 'organization': specialist.organization,
+        // 'profile_picture_url': specialist.profilePictureUrl,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content:

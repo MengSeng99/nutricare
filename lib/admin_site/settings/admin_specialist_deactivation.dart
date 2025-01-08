@@ -24,7 +24,7 @@ class _AdminEnquiryReviewScreenState extends State<AdminEnquiryReviewScreen> {
   Future<void> _fetchEnquiries() async {
     try {
       final enquirySnapshot = await FirebaseFirestore.instance
-          .collection('specialist_enquiries')
+          .collection('specialist_deactivation_enquiries')
           .get();
 
       List<Map<String, dynamic>> enquiries = [];
@@ -65,7 +65,7 @@ class _AdminEnquiryReviewScreenState extends State<AdminEnquiryReviewScreen> {
       DateTime now = DateTime.now();
 
       await FirebaseFirestore.instance
-          .collection('specialist_enquiries')
+          .collection('specialist_deactivation_enquiries')
           .doc(specialistId)
           .update({
         'status': status,
@@ -137,14 +137,32 @@ class _AdminEnquiryReviewScreenState extends State<AdminEnquiryReviewScreen> {
   }
 
   List<Map<String, dynamic>> _filteredEnquiries() {
-    if (_selectedStatus == 'All') {
-      return _enquiries;
-    } else {
-      return _enquiries
-          .where((enquiry) => enquiry['status'] == _selectedStatus)
-          .toList();
-    }
+  List<Map<String, dynamic>> filteredEnquiries;
+
+  // Filter by selected status first
+  if (_selectedStatus == 'All') {
+    filteredEnquiries = _enquiries;
+  } else {
+    filteredEnquiries = _enquiries
+        .where((enquiry) => enquiry['status'] == _selectedStatus)
+        .toList();
   }
+
+  // Sort by status: 'Pending' first, then by submission date
+  filteredEnquiries.sort((a, b) {
+    // Compare status; bring 'Pending' to the front
+    if (a['status'] == 'Pending' && b['status'] != 'Pending') {
+      return -1;  // 'a' comes before 'b'
+    } else if (a['status'] != 'Pending' && b['status'] == 'Pending') {
+      return 1;  // 'b' comes before 'a'
+    } else {
+      // If both have the same status, sort by submission date
+      return (a['submittedDate'] as Timestamp).compareTo(b['submittedDate'] as Timestamp);
+    }
+  });
+
+  return filteredEnquiries;
+}
 
   @override
   Widget build(BuildContext context) {
@@ -382,6 +400,7 @@ class _AdminEnquiryReviewScreenState extends State<AdminEnquiryReviewScreen> {
                                           'No Email',
                                       style: const TextStyle(
                                           fontSize: 14, color: Colors.grey),
+                                          maxLines: 2,
                                     ),
                                   ],
                                 ),
@@ -397,6 +416,7 @@ class _AdminEnquiryReviewScreenState extends State<AdminEnquiryReviewScreen> {
                                           'No Organization',
                                       style: const TextStyle(
                                           fontSize: 14, color: Colors.grey),
+                                          maxLines: 2,
                                     ),
                                   ],
                                 ),

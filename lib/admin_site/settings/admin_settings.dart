@@ -71,9 +71,10 @@ Widget build(BuildContext context) {
           const SizedBox(height: 20),
           _buildLogoutOption(context),
           const SizedBox(height: 20), // Add space above the new button
+          //*********This button is to create time slots for a specialist in Firestore database
           // ElevatedButton(
           //  onPressed: () async {
-          //   await saveTimeSlotsToFirestore(specialistId);
+          //   await saveTimeSlotsToFirestore("8SeiL4oPD5SqKpiBFBeITdezh3q2");
           //   // Show a snackbar after creating the time slots
           //   ScaffoldMessenger.of(context).showSnackBar(
           //     SnackBar(content: Text('Time slots created successfully!')),
@@ -96,12 +97,12 @@ Widget build(BuildContext context) {
 
 Future<void> saveTimeSlotsToFirestore(String specialistId) async {
     // Define the date range and time slots
-    DateTime startDate = DateTime(2024, 12, 2);
-    DateTime endDate = DateTime(2024, 12, 31);
-    List<String> timeSlots = ["09:00", "10:30", "14:00", "15:30"];
+    DateTime startDate = DateTime(2025, 1, 8);
+    DateTime endDate = DateTime(2025, 1, 31);
+    List<String> timeSlots = ["09:00", "10:30", "12:00","14:00", "15:30"];
 
     // Excluded dates: 7, 8, 14, 15, 21, 22, 28, 29
-    Set<int> excludedDays = {7, 8, 14, 15, 21, 22, 28, 29};
+    Set<int> excludedDays = {11, 12, 18, 19, 25, 26};
 
     // Iterate over each day in the date range
     for (DateTime date = startDate; date.isBefore(endDate.add(Duration(days: 1))); date = date.add(Duration(days: 1))) {
@@ -118,7 +119,7 @@ Future<void> saveTimeSlotsToFirestore(String specialistId) async {
           .collection('specialists')
           .doc(specialistId)
           .collection('appointments')
-          .doc('Physical');
+          .doc('Online');
 
       // Get the existing data
       DocumentSnapshot snapshot = await appointmentDocRef.get();

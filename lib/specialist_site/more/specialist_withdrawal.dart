@@ -28,11 +28,6 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       'logo': 'https://cdn2.downdetector.com/static/uploads/logo/CIMB-Logo.png',
     },
     {
-      'name': 'Public Bank',
-      'logo':
-          'https://images.seeklogo.com/logo-png/11/1/public-bank-logo-png_seeklogo-113575.png?v=638687197180000000',
-    },
-    {
       'name': 'Maybank',
       'logo':
           'https://logos-world.net/wp-content/uploads/2023/02/Maybank-Logo.png',
@@ -41,11 +36,6 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       'name': 'Hong Leong Bank',
       'logo':
           'https://s.hongleongconnect.my/rib/js/chatbot/assets/images/hlb-brand.png',
-    },
-    {
-      'name': 'Bank Islam',
-      'logo':
-          'https://seeklogo.com/images/B/Bank_Islam-logo-A212255EF5-seeklogo.com.png',
     },
   ];
 

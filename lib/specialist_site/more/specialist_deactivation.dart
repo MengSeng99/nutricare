@@ -49,7 +49,7 @@ class _SpecialistDeactivationState extends State<SpecialistDeactivation> {
   Future<void> _fetchEnquiryStatus() async {
     try {
       final doc = await FirebaseFirestore.instance
-          .collection('specialist_enquiries')
+          .collection('specialist_deactivation_enquiries')
           .doc(widget.specialistId)
           .get();
 
@@ -103,7 +103,7 @@ class _SpecialistDeactivationState extends State<SpecialistDeactivation> {
   Future<void> _saveEnquiry() async {
     try {
       await FirebaseFirestore.instance
-          .collection('specialist_enquiries')
+          .collection('specialist_deactivation_enquiries')
           .doc(widget.specialistId)
           .set({
         'specialistId': widget.specialistId,

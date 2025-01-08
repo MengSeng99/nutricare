@@ -220,23 +220,28 @@ Please review the details above and let us know if you spot any errors.
   }
 
   Widget _buildSummaryRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          Text(
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        SizedBox( // This will limit the width of the Text widget
+          width: MediaQuery.of(context).size.width * 0.4, // You can adjust this value as per your requirement
+          child: Text(
             value,
             style: const TextStyle(fontSize: 16, color: Colors.grey),
+            maxLines: 3, // This will allow the text to wrap to the next line if it exceeds the available space
+            overflow: TextOverflow.ellipsis,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildSectionCard(String title, List<Widget> children) {
     return Card(

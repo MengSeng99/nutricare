@@ -38,8 +38,7 @@ class _AdminSpecialistEnquiriesScreenState
             const IconThemeData(color: Color.fromARGB(255, 90, 113, 243)),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child:
-              Divider(height: 0.5, color: Color.fromARGB(255, 220, 220, 241)),
+          child: Divider(height: 0.5, color: Color.fromARGB(255, 220, 220, 241)),
         ),
       ),
       body: Column(
@@ -64,8 +63,7 @@ class _AdminSpecialistEnquiriesScreenState
                     fontWeight: FontWeight.bold,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(100), // Fully rounded corners
+                    borderRadius: BorderRadius.circular(100),
                     side: BorderSide(
                       color: filter == 'All'
                           ? const Color.fromARGB(255, 90, 113, 243)
@@ -73,11 +71,9 @@ class _AdminSpecialistEnquiriesScreenState
                       width: 2.0,
                     ),
                   ),
-                  labelPadding: const EdgeInsets.symmetric(
-                      horizontal: 8.0), // Padding around the text
-                  elevation:
-                      filter == 'All' ? 2 : 1, // Slight elevation when selected
-                  pressElevation: 2, // More elevation on press
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  elevation: filter == 'All' ? 2 : 1,
+                  pressElevation: 2,
                 ),
                 const SizedBox(width: 10),
                 ChoiceChip(
@@ -95,8 +91,7 @@ class _AdminSpecialistEnquiriesScreenState
                     fontWeight: FontWeight.bold,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(100), // Fully rounded corners
+                    borderRadius: BorderRadius.circular(100),
                     side: BorderSide(
                       color: filter == 'Bookmarked'
                           ? const Color.fromARGB(255, 90, 113, 243)
@@ -104,19 +99,16 @@ class _AdminSpecialistEnquiriesScreenState
                       width: 2.0,
                     ),
                   ),
-                  labelPadding: const EdgeInsets.symmetric(
-                      horizontal: 8.0), // Padding around the text
-                  elevation: filter == 'Bookmarked'
-                      ? 2
-                      : 1, // Slight elevation when selected
-                  pressElevation: 2, // More elevation on press
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  elevation: filter == 'Bookmarked' ? 2 : 1,
+                  pressElevation: 2,
                 ),
               ],
             ),
           ),
           Expanded(
             child: StreamBuilder<List<SpecialistEnquiry>>(
-              stream: readSpecialistEnquiries(filter == 'Bookmarked'),
+              stream: readAllSpecialistEnquiries(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
@@ -128,16 +120,24 @@ class _AdminSpecialistEnquiriesScreenState
 
                 final enquiries = snapshot.data!;
 
-                // Check if the filter is 'Bookmarked' and there are no inquiries
-                if (filter == 'Bookmarked' && enquiries.isEmpty) {
+                // Filter enquiries based on selected chip
+                final filteredEnquiries = enquiries.where((enquiry) {
+                  if (filter == 'Bookmarked') {
+                    return enquiry.bookmarked == 1;
+                  }
+                  return true; // return all if filter is 'All'
+                }).toList();
+
+                // Check if there are no inquiries in the bookmark filter
+                if (filter == 'Bookmarked' && filteredEnquiries.isEmpty) {
                   return Center(child: Text('No specialist enquiries added to your bookmark.'));
                 }
 
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: enquiries.length,
+                  itemCount: filteredEnquiries.length,
                   itemBuilder: (context, index) {
-                    final enquiry = enquiries[index];
+                    final enquiry = filteredEnquiries[index];
                     return EnquiryCard(enquiry: enquiry);
                   },
                 );
@@ -149,20 +149,16 @@ class _AdminSpecialistEnquiriesScreenState
     );
   }
 
-  Stream<List<SpecialistEnquiry>> readSpecialistEnquiries(bool onlyBookmarked) {
-    Query query = FirebaseFirestore.instance
+  // Fetch all specialist enquiries from Firestore
+  Stream<List<SpecialistEnquiry>> readAllSpecialistEnquiries() {
+    return FirebaseFirestore.instance
         .collection('specialist_registration_enquiries')
-        .orderBy('submitDate', descending: true); // Sort by submitDate
-
-    if (onlyBookmarked) {
-      query = query.where('bookmarked', isEqualTo: 1);
-    }
-
-    return query.snapshots().map((snapshot) => snapshot.docs
-        .map((doc) => SpecialistEnquiry.fromJson(
-            doc.data() as Map<String, dynamic>,
-            doc.id)) // Pass doc.id for the ID
-        .toList());
+        .orderBy('submitDate', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => SpecialistEnquiry.fromJson(
+                doc.data(), doc.id))
+            .toList());
   }
 }
 
@@ -178,7 +174,7 @@ class EnquiryCard extends StatelessWidget {
       elevation: 2,
       color: Colors.white,
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
+        side: const BorderSide(color: Color.fromARGB(255, 221, 222, 226), width: 1),
         borderRadius: BorderRadius.circular(15),
       ),
       child: Padding(
@@ -192,14 +188,14 @@ class EnquiryCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 30,
                   backgroundImage: NetworkImage(enquiry.profilePictureUrl),
-                  backgroundColor: Color.fromARGB(255, 90, 113, 243),
+                  backgroundColor: const Color.fromARGB(255, 90, 113, 243),
                 ),
                 IconButton(
                   icon: Icon(
                     enquiry.bookmarked == 1
                         ? Icons.bookmark
                         : Icons.bookmark_border,
-                    color: Color.fromARGB(255, 90, 113, 243),
+                    color: const Color.fromARGB(255, 90, 113, 243),
                   ),
                   onPressed: () {
                     // Toggle the bookmark status
@@ -230,18 +226,18 @@ class EnquiryCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Experience: ${enquiry.experienceYears} years',
-              style: TextStyle(fontWeight: FontWeight.w500),
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             _buildGenderRow(enquiry.gender),
             const SizedBox(height: 8),
             Text(
               'Specialization: ${enquiry.specialization}',
-              style: TextStyle(fontWeight: FontWeight.w500),
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Text(
               'About:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             SizedBox(
               child: SingleChildScrollView(
@@ -254,15 +250,14 @@ class EnquiryCard extends StatelessWidget {
             const SizedBox(height: 12),
             _buildServicesList(enquiry.services),
             const SizedBox(height: 8),
-            // Display Document as an icon
             if (enquiry.documentUrl != null) ...[
-              Text(
-              'AHP License:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+              const Text(
+                'AHP License:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               Row(
                 children: [
-                  Icon(Icons.attach_file, color: Color.fromARGB(255, 90, 113, 243)),
+                  const Icon(Icons.attach_file, color: Color.fromARGB(255, 90, 113, 243)),
                   const SizedBox(width: 8),
                   InkWell(
                     onTap: () => _launchURL(enquiry.documentUrl!),
@@ -279,7 +274,7 @@ class EnquiryCard extends StatelessWidget {
               const SizedBox(height: 8),
             ],
             Text(
-              'Submitted on: ${_formatDate(enquiry.submitDate)}', // Update here
+              'Submitted on: ${_formatDate(enquiry.submitDate)}',
               style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
           ],
@@ -289,8 +284,8 @@ class EnquiryCard extends StatelessWidget {
   }
 
   String _formatDate(String dateString) {
-    DateTime dateTime = DateTime.parse(dateString); // Convert string to DateTime
-    return DateFormat('yyyy-MM-dd – HH:mm').format(dateTime); // Format date and time
+    DateTime dateTime = DateTime.parse(dateString);
+    return DateFormat('yyyy-MM-dd – HH:mm').format(dateTime);
   }
 
   void _launchURL(String url) async {
@@ -305,7 +300,7 @@ class EnquiryCard extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: Color.fromARGB(255, 90, 113, 243)),
+        Icon(icon, color: const Color.fromARGB(255, 90, 113, 243)),
         const SizedBox(width: 8),
         Expanded(
           child: Text(text, style: const TextStyle(fontSize: 14)),
@@ -328,7 +323,7 @@ class EnquiryCard extends StatelessWidget {
 
     return Row(
       children: [
-        Text('Gender: $gender', style: TextStyle(fontSize: 14)),
+        Text('Gender: $gender', style: const TextStyle(fontSize: 14)),
         const SizedBox(width: 8),
         Icon(icon, color: color, size: 20),
       ],
@@ -339,7 +334,7 @@ class EnquiryCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Services:', style: const TextStyle(fontWeight: FontWeight.bold)),
+        const Text('Services:', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         ...services.asMap().entries.map((entry) {
           int index = entry.key + 1;

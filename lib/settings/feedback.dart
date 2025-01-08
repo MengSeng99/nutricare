@@ -140,40 +140,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> with SingleTickerProvid
                 const SizedBox(height: 20),
                 Center(
                   child: ElevatedButton(
-                    onPressed: () async {
-                      final feedback = feedbackController.text.trim(); // Remove spaces
-
-                      if (feedback.isNotEmpty) {
-                        // Store feedback in Firestore
-                        Map<String, dynamic> feedbackData = {
-                          'feedback': feedback, // Store trimmed feedback
-                          'userType': userType, // Use determined userType
-                          'timestamp': FieldValue.serverTimestamp(),
-                        };
-
-                        // Add userEmail if not anonymous
-                        if (!isAnonymous && user != null) {
-                          feedbackData['userEmail'] = user.email; // Save user email
-                        }
-
-                        await FirebaseFirestore.instance.collection('feedback').add(feedbackData);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Feedback sent successfully! Thank you!'),
-                            backgroundColor: Colors.green,
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                        feedbackController.clear();
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Please enter feedback before sending.'),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      }
+                    onPressed: () {
+                      _showConfirmationDialog(userType, user);
                     },
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
@@ -192,6 +160,85 @@ class _FeedbackScreenState extends State<FeedbackScreen> with SingleTickerProvid
         ),
       ),
     );
+  }
+
+  Future<void> _showConfirmationDialog(String userType, User? user) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // Prevent dismissing by tapping outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text(
+            'Confirm Submission',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 90, 113, 243),
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to send this feedback?',
+            style: TextStyle(
+              fontSize: 16,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: const Text('Confirm'),
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the dialog
+                await _sendFeedback(userType, user); // Send feedback
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _sendFeedback(String userType, User? user) async {
+    final feedback = feedbackController.text.trim(); // Remove spaces
+
+    if (feedback.isNotEmpty) {
+      // Store feedback in Firestore
+      Map<String, dynamic> feedbackData = {
+        'feedback': feedback, // Store trimmed feedback
+        'userType': userType, // Use determined userType
+        'timestamp': FieldValue.serverTimestamp(),
+      };
+
+      // Add userEmail if not anonymous
+      if (!isAnonymous && user != null) {
+        feedbackData['userEmail'] = user.email; // Save user email
+      }
+
+      await FirebaseFirestore.instance.collection('feedback').add(feedbackData);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Feedback sent successfully! Thank you!'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      feedbackController.clear();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter feedback before sending.'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
 

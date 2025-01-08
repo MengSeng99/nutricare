@@ -222,6 +222,7 @@ class SpecialistAppointmentsScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15),
               ),
+              backgroundColor: Colors.white,
               title: const Text(
                 'Add Appointment Time Slot',
                 style: TextStyle(

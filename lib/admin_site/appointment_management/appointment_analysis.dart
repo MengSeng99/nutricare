@@ -11,8 +11,7 @@ class AppointmentAnalysisScreen extends StatefulWidget {
       _AppointmentAnalysisScreenState();
 }
 
-class _AppointmentAnalysisScreenState
-    extends State<AppointmentAnalysisScreen> {
+class _AppointmentAnalysisScreenState extends State<AppointmentAnalysisScreen> {
   String? selectedStatus;
   String? selectedMonth;
   String? selectedMode; // New variable for mode selection
@@ -103,7 +102,11 @@ class _AppointmentAnalysisScreenState
                       },
                       items: [
                         const DropdownMenuItem(
-                            value: null, child: Text('All (Month)',style: TextStyle(fontSize: 14),)),
+                            value: null,
+                            child: Text(
+                              'All (Month)',
+                              style: TextStyle(fontSize: 14),
+                            )),
                         ...List.generate(12, (index) {
                           final month =
                               DateFormat('MMMM').format(DateTime(0, index + 1));
@@ -127,7 +130,11 @@ class _AppointmentAnalysisScreenState
                       },
                       items: [
                         const DropdownMenuItem(
-                            value: null, child: Text('All (Status)',style: TextStyle(fontSize: 14),)),
+                            value: null,
+                            child: Text(
+                              'All (Status)',
+                              style: TextStyle(fontSize: 14),
+                            )),
                         const DropdownMenuItem(
                             value: 'Confirmed', child: Text('Confirmed')),
                         const DropdownMenuItem(
@@ -150,9 +157,16 @@ class _AppointmentAnalysisScreenState
                         });
                       },
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('All (Mode)',style: TextStyle(fontSize: 14),)),
-                        const DropdownMenuItem(value: 'Online', child: Text('Online')),
-                        const DropdownMenuItem(value: 'Physical', child: Text('Physical')),
+                        const DropdownMenuItem(
+                            value: null,
+                            child: Text(
+                              'All (Mode)',
+                              style: TextStyle(fontSize: 14),
+                            )),
+                        const DropdownMenuItem(
+                            value: 'Online', child: Text('Online')),
+                        const DropdownMenuItem(
+                            value: 'Physical', child: Text('Physical')),
                       ],
                     ),
                   ),
@@ -162,7 +176,8 @@ class _AppointmentAnalysisScreenState
                         ? DropdownButton<int>(
                             isExpanded: true,
                             hint: const Text("Select Year",
-                                style: TextStyle(color: Colors.grey,fontSize: 14)),
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: 14)),
                             value: selectedYear,
                             onChanged: (value) {
                               setState(() {
@@ -211,7 +226,9 @@ class _AppointmentAnalysisScreenState
         List<String> filteredDates = data.keys.toList();
 
         // Filtering by month, year, and mode
-        if (selectedMonth != null || selectedYear != null || selectedMode != null) {
+        if (selectedMonth != null ||
+            selectedYear != null ||
+            selectedMode != null) {
           filteredDates = filteredDates.where((date) {
             final parsedDate = DateFormat('MMM dd, yyyy').parse(date);
             bool matchesMonth = selectedMonth == null ||
@@ -249,8 +266,8 @@ class _AppointmentAnalysisScreenState
           if (selectedStatus == null || selectedStatus == 'Canceled') {
             double canceledCount = statusCounts['Canceled']?.toDouble() ?? 0;
             total += canceledCount;
-            rods.add(BarChartRodData(
-                toY: canceledCount, color: Colors.redAccent));
+            rods.add(
+                BarChartRodData(toY: canceledCount, color: Colors.redAccent));
           }
 
           barGroups
@@ -286,7 +303,9 @@ class _AppointmentAnalysisScreenState
                     showTitles: true,
                     reservedSize: 30,
                     getTitlesWidget: (value, meta) {
-                      if (value.toInt() >= filteredDates.length) {
+                      // Only show titles for every 2nd date (or any other number you choose)
+                      if (value.toInt() % 2 != 0 ||
+                          value.toInt() >= filteredDates.length) {
                         return Container();
                       }
                       final date = filteredDates[value.toInt()];
@@ -336,25 +355,31 @@ class _AppointmentAnalysisScreenState
               borderData: FlBorderData(
                   show: true,
                   border: Border.all(color: const Color(0xff37434d), width: 1)),
-              barTouchData: BarTouchData(
-                enabled: true,
-                touchTooltipData: BarTouchTooltipData(
-                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    String status = '';
-                    if (rodIndex == 0) {
-                      status = 'Confirmed';
-                    } else if (rodIndex == 1) {
-                      status = 'Completed';
-                    } else if (rodIndex == 2) {
-                      status = 'Canceled';
-                    }
-                    return BarTooltipItem(
-                      '$status: ${rod.toY.toInt()}',
-                      TextStyle(color: rod.color),
-                    );
-                  },
-                ),
-              ),
+             barTouchData: BarTouchData(
+  enabled: true,
+  touchTooltipData: BarTouchTooltipData(
+    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+      String status = '';
+      String date = filteredDates[groupIndex]; // Get the date based on the group index
+      String formattedDate = DateFormat('MMM dd, yyyy').format(
+        DateFormat('MMM dd, yyyy').parse(date),
+      );
+
+      if (rodIndex == 0) {
+        status = 'Confirmed';
+      } else if (rodIndex == 1) {
+        status = 'Completed';
+      } else if (rodIndex == 2) {
+        status = 'Canceled';
+      }
+
+      return BarTooltipItem(
+        '$formattedDate\n$status: ${rod.toY.toInt()}',
+        TextStyle(color: rod.color),
+      );
+    },
+  ),
+),
               barGroups: barGroups,
             ),
           ),
@@ -376,8 +401,11 @@ class _AppointmentAnalysisScreenState
       for (var detailDoc in detailsSnapshot.docs) {
         final detailData = detailDoc.data() as Map<String, dynamic>;
         String status = detailData['appointmentStatus'];
-        String mode = detailData['appointmentMode'] ?? "Unknown Mode"; // New line
-        if (selectedMode != null && selectedMode != mode) continue; // Apply filter
+        String mode =
+            detailData['appointmentMode'] ?? "Unknown Mode"; // New line
+        if (selectedMode != null && selectedMode != mode) {
+          continue; // Apply filter
+        }
 
         DateTime date = (detailData['selectedDate'] as Timestamp).toDate();
         String formattedDate = DateFormat('MMM dd, yyyy').format(date);
@@ -398,41 +426,49 @@ class _AppointmentAnalysisScreenState
   }
 
   Future<Map<String, int>> _fetchSpecialistData() async {
-  Map<String, int> specialistCounts = {};
+    Map<String, int> specialistCounts = {};
 
-  Query query = FirebaseFirestore.instance.collection('appointments');
-  QuerySnapshot appointmentSnapshot = await query.get();
+    Query query = FirebaseFirestore.instance.collection('appointments');
+    QuerySnapshot appointmentSnapshot = await query.get();
 
-  for (var appointmentDoc in appointmentSnapshot.docs) {
-    QuerySnapshot detailsSnapshot =
-        await appointmentDoc.reference.collection('details').get();
+    for (var appointmentDoc in appointmentSnapshot.docs) {
+      QuerySnapshot detailsSnapshot =
+          await appointmentDoc.reference.collection('details').get();
 
-    for (var detailDoc in detailsSnapshot.docs) {
-      final detailData = detailDoc.data() as Map<String, dynamic>;
-      String specialistName = detailData['specialistName'] ?? "Unknown Specialist"; 
-      String mode = detailData['appointmentMode'] ?? "Unknown Mode"; // New line
+      for (var detailDoc in detailsSnapshot.docs) {
+        final detailData = detailDoc.data() as Map<String, dynamic>;
+        String specialistName =
+            detailData['specialistName'] ?? "Unknown Specialist";
+        String mode =
+            detailData['appointmentMode'] ?? "Unknown Mode"; // New line
 
-      // Apply filters for mode, status, and month
-      if (selectedMode != null && selectedMode != mode) continue; // Filter by mode
-      String status = detailData['appointmentStatus'];
-      if (selectedStatus != null && selectedStatus != status) continue; // Filter by status
-      DateTime date = (detailData['selectedDate'] as Timestamp).toDate();
+        // Apply filters for mode, status, and month
+        if (selectedMode != null && selectedMode != mode) {
+          continue; // Filter by mode
+        }
+        String status = detailData['appointmentStatus'];
+        if (selectedStatus != null && selectedStatus != status) {
+          continue; // Filter by status
+        }
+        DateTime date = (detailData['selectedDate'] as Timestamp).toDate();
 
-      // Check month filter
-      if (selectedMonth != null && DateFormat('MMMM').format(date) != selectedMonth) {
-        continue; // Filter by month
-      }
+        // Check month filter
+        if (selectedMonth != null &&
+            DateFormat('MMMM').format(date) != selectedMonth) {
+          continue; // Filter by month
+        }
 
-      // Increment specialist count
-      if (specialistCounts.containsKey(specialistName)) {
-        specialistCounts[specialistName] = specialistCounts[specialistName]! + 1;
-      } else {
-        specialistCounts[specialistName] = 1;
+        // Increment specialist count
+        if (specialistCounts.containsKey(specialistName)) {
+          specialistCounts[specialistName] =
+              specialistCounts[specialistName]! + 1;
+        } else {
+          specialistCounts[specialistName] = 1;
+        }
       }
     }
+    return specialistCounts;
   }
-  return specialistCounts;
-}
 
   Widget _buildSpecialistChart() {
     return FutureBuilder<Map<String, int>>(
@@ -516,7 +552,8 @@ class _AppointmentAnalysisScreenState
               const SizedBox(height: 10),
               Text(
                 'Total Appointments: $totalCount',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ],
           ),
